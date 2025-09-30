@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram, Linkedin, Apple, Play } from 'lucide-react'; // Import Apple and Play icons
+import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
 const AppFooter: React.FC = () => {
   return (
@@ -20,7 +20,8 @@ const AppFooter: React.FC = () => {
           <ul className="space-y-2">
             <li><Link to="/" className="text-sm hover:text-green-400 transition-colors">Home</Link></li>
             <li><a href="#categories" className="text-sm hover:text-green-400 transition-colors">Services</a></li>
-            <li><a href="#tasks" className="text-sm hover:text-green-400 transition-colors">Browse Tasks</a></li>
+            <li><Link to="/browse-taskers" className="text-sm hover:text-green-400 transition-colors">Browse Taskers</Link></li> {/* Updated link */}
+            <li><Link to="/my-tasks" className="text-sm hover:text-green-400 transition-colors">My Tasks</Link></li> {/* Updated link */}
             <li><Link to="/features-earnings" className="text-sm hover:text-green-400 transition-colors">Become a Tasker</Link></li>
             <li><a href="#how-it-works" className="text-sm hover:text-green-400 transition-colors">How It Works</a></li>
           </ul>
@@ -54,17 +55,15 @@ const AppFooter: React.FC = () => {
               <Linkedin size={24} />
             </a>
           </div>
-
           <h3 className="text-white text-lg font-semibold mb-4">Download Our App</h3>
           <div className="flex space-x-4">
-            <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
-              <Play size={32} /> {/* Google Play icon */}
+            <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer">
+              <img src="/google-play-badge.png" alt="Get it on Google Play" className="h-10" />
             </a>
-            <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
-              <Apple size={32} /> {/* Apple App Store icon */}
+            <a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer">
+              <img src="/app-store-badge.png" alt="Download on the App Store" className="h-10" />
             </a>
           </div>
-
           <p className="text-sm mt-6">&copy; {new Date().getFullYear()} Tasko. All rights reserved.</p>
         </div>
       </div>

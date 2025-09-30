@@ -1,27 +1,13 @@
 import React from 'react';
-import { Home, LayoutGrid, ListTodo, User } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Home, LayoutGrid, ListTodo, User, MessageSquare } from 'lucide-react'; // Added MessageSquare
+import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth'; // Import useAuth
-import { useModal } from './ModalProvider'; // Import useModal
 
 interface BottomNavigationProps {
-  // onProfileClick: () => void; // No longer needed as we'll handle navigation directly
+  onProfileClick: () => void;
 }
 
-const BottomNavigation: React.FC<BottomNavigationProps> = () => {
-  const { isAuthenticated } = useAuth();
-  const { openLoginModal } = useModal();
-  const navigate = useNavigate();
-
-  const handleProfileClick = () => {
-    if (isAuthenticated) {
-      navigate('/profile'); // Navigate to the new ProfilePage
-    } else {
-      openLoginModal(); // Open login modal if not authenticated
-    }
-  };
-
+const BottomNavigation: React.FC<BottomNavigationProps> = ({ onProfileClick }) => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50 md:hidden pb-[var(--safe-area-bottom)]">
       <div className="flex justify-around py-2">
@@ -35,22 +21,38 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <Home size={20} className="mb-1" />
           <span>Home</span>
         </NavLink>
-        <a
-          href="#categories"
-          className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+        <NavLink
+          to="/browse-taskers" // New NavLink for Browse Taskers
+          className={({ isActive }) => cn(
+            "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+            isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          )}
         >
           <LayoutGrid size={20} className="mb-1" />
-          <span>Services</span>
-        </a>
-        <a
-          href="#tasks"
-          className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          <span>Taskers</span>
+        </NavLink>
+        <NavLink
+          to="/my-tasks" // Changed to NavLink for My Tasks
+          className={({ isActive }) => cn(
+            "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+            isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          )}
         >
           <ListTodo size={20} className="mb-1" />
-          <span>Tasks</span>
-        </a>
+          <span>My Tasks</span>
+        </NavLink>
+        <NavLink
+          to="/chat" // New NavLink for Chat
+          className={({ isActive }) => cn(
+            "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+            isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          )}
+        >
+          <MessageSquare size={20} className="mb-1" />
+          <span>Chat</span>
+        </NavLink>
         <button
-          onClick={handleProfileClick}
+          onClick={onProfileClick} // This will now navigate to /profile
           className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
         >
           <User size={20} className="mb-1" />
