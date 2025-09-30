@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { Chrome } from 'lucide-react'; // Changed from Google to Chrome
+import { Chrome } from 'lucide-react';
+import { useModal } from './ModalProvider'; // Import useModal
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface SignupModalProps {
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
   const { signInWithGoogle } = useAuth();
+  const { openLoginModal } = useModal(); // Get openLoginModal from context
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignup = async () => {
@@ -28,6 +30,11 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleSwitchToLogin = () => {
+    onClose(); // Close signup modal
+    openLoginModal(); // Open login modal
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -38,19 +45,6 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {/* Placeholder for email/password signup if needed later */}
-          {/* <div className="grid gap-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input id="name" placeholder="Juan Dela Cruz" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" />
-          </div> */}
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
               Or continue with
@@ -69,7 +63,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
           </Button>
         </div>
         <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
-          Already have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]">Login</Button>
+          Already have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]" onClick={handleSwitchToLogin}>Login</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
