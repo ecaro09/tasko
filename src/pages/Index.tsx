@@ -8,7 +8,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster, toast } from "sonner"; // Using sonner for toasts
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus } from 'lucide-react'; // Import Plus icon
+import { MapPin } from 'lucide-react';
 import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
@@ -166,7 +166,7 @@ const Index = () => {
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-4xl font-bold text-green-600">📋 Available Tasks Near You</h2>
             <Button onClick={() => setShowPostTaskModal(true)} className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-2">
-              <Plus size={20} /> Post a Task
+              <span className="fas fa-plus"></span> Post a Task
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
