@@ -14,12 +14,27 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createTask } from '@/lib/data'; // Adjusted import path
 import { getEnhancedTaskSuggestions } from '@/ai/flows/enhanced-suggestions';
-import type { TaskCategory, Location } from '@/lib/types';
+import type { Location } from '@/lib/types'; // Removed TaskCategory import as it's redefined locally
+
+const categories = [
+  'Cleaning', 'Repairs', 'Errands', 'Deliveries', 'Carpentry',
+  'Plumbing', 'Electrical', 'IT Support', 'Home Improvement',
+  'Gardening', 'Moving', 'Event Planning', 'Pet Care', 'Personal Care', 'Other'
+] as const; // Define as const tuple for z.enum
+
+type TaskCategory = typeof categories[number]; // Derive TaskCategory type from the const tuple
 
 const taskFormSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  category: z.string().min(1, 'Please select a category'),
+  category: z.enum(categories, {
+    errorMap: (issue, ctx) => {
+      if (issue.code === z.ZodIssueCode.invalid_enum_value) {
+        return { message: 'Please select a valid category' };
+      }
+      return { message: 'Please select a category' };
+    },
+  }),
   price: z.number().min(50, 'Price must be at least ₱50'),
   location: z.object({
     barangay: z.string().min(1, 'Barangay is required'),
@@ -30,12 +45,6 @@ const taskFormSchema = z.object({
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
-
-const categories: TaskCategory[] = [
-  'Cleaning', 'Repairs', 'Errands', 'Deliveries', 'Carpentry',
-  'Plumbing', 'Electrical', 'IT Support', 'Home Improvement',
-  'Gardening', 'Moving', 'Event Planning', 'Pet Care', 'Personal Care', 'Other'
-];
 
 export default function EnhancedCreateTaskForm() {
   const { user, userData } = useAuth();
@@ -60,6 +69,7 @@ export default function EnhancedCreateTaskForm() {
         city: '',
         province: '',
       },
+      category: 'Other', // Set a default category to avoid initial validation issues
     },
   });
 
@@ -80,8 +90,12 @@ export default function EnhancedCreateTaskForm() {
           
           // Auto-fill suggestions
           if (suggestions.suggestedCategories.length > 0) {
-            setSelectedCategories(suggestions.suggestedCategories as TaskCategory[]);
-            setValue('category', suggestions.suggestedCategories[0]);
+            // Ensure the suggested category is one of the valid TaskCategory types
+            const validCategory = categories.find(cat => cat === suggestions.suggestedCategories[0]);
+            if (validCategory) {
+              setSelectedCategories([validCategory]);
+              setValue('category', validCategory);
+            }
           }
           if (suggestions.suggestedPrice > 0) {
             setValue('price', suggestions.suggestedPrice);
@@ -113,11 +127,13 @@ export default function EnhancedCreateTaskForm() {
       const taskData = {
         ...data,
         clientId: user.uid,
-        client: userData,
+        // client and tasker are omitted as they are populated by the server-side logic
         status: 'posted' as const,
         scheduleDate: new Date(data.scheduleDate),
         serviceFee: 50, // Default service fee
         paymentMethod: 'gcash',
+        createdAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
+        updatedAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
       };
 
       const result = await createTask(taskData);

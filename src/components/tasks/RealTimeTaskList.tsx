@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore'; // Added doc, getDoc, Timestamp
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Calendar, Wallet, User } from 'lucide-react';
+import { MapPin, Calendar, Wallet, User as UserIcon } from 'lucide-react'; // Renamed User to UserIcon to avoid conflict
 import { Link } from 'react-router-dom'; // Adjusted import
-import type { Task } from '@/lib/types';
+import type { Task, User } from '@/lib/types'; // Imported User type
 
 interface RealTimeTaskListProps {
   filter?: 'all' | 'user' | 'category';
@@ -52,20 +52,20 @@ export default function RealTimeTaskList({
           
           // Fetch client data
           const clientDoc = await getDoc(doc(db, 'users', taskData.clientId));
-          const client = clientDoc.exists() ? clientDoc.data() : null;
+          const client = clientDoc.exists() ? (clientDoc.data() as User) : null; // Cast to User type
           
           // Fetch tasker data if exists
           let tasker = null;
           if (taskData.taskerId) {
             const taskerDoc = await getDoc(doc(db, 'users', taskData.taskerId));
-            tasker = taskerDoc.exists() ? taskerDoc.data() : null;
+            tasker = taskerDoc.exists() ? (taskerDoc.data() as User) : null; // Cast to User type
           }
 
           tasksData.push({
             id: docSnap.id,
             ...taskData,
-            client: client as User,
-            tasker: tasker as User,
+            client: client,
+            tasker: tasker,
           } as Task);
         }
 
@@ -175,7 +175,7 @@ export default function RealTimeTaskList({
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 text-sm">
-                <User className="h-4 w-4" />
+                <UserIcon className="h-4 w-4" />
                 <span className="font-medium">{task.client?.name || 'N/A'}</span>
               </div>
               <div className="flex items-center gap-1 text-lg font-bold text-primary">
