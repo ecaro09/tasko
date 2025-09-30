@@ -12,17 +12,17 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { createTask } from '@/lib/data'; // Adjusted import path
+import { createTask } from '@/lib/data';
 import { getEnhancedTaskSuggestions } from '@/ai/flows/enhanced-suggestions';
-import type { Location, Task, TaskCategory as TaskCategoryType } from '@/lib/types'; // Renamed TaskCategory to TaskCategoryType to avoid conflict
+import type { TaskCategory, Location } from '@/lib/types';
 
 const categories = [
   'Cleaning', 'Repairs', 'Errands', 'Deliveries', 'Carpentry',
   'Plumbing', 'Electrical', 'IT Support', 'Home Improvement',
   'Gardening', 'Moving', 'Event Planning', 'Pet Care', 'Personal Care', 'Other'
-] as const; // Define as const tuple for z.enum
+] as const;
 
-type TaskCategory = typeof categories[number]; // Derive TaskCategory type from the const tuple
+type TaskCategoryType = typeof categories[number];
 
 const taskFormSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -47,12 +47,12 @@ const taskFormSchema = z.object({
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 export default function EnhancedCreateTaskForm() {
-  const { user, userData } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
-  const [selectedCategories, setSelectedCategories] = useState<TaskCategory[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<TaskCategoryType[]>([]);
 
   const {
     register,
@@ -69,14 +69,13 @@ export default function EnhancedCreateTaskForm() {
         city: '',
         province: '',
       },
-      category: 'Other', // Set a default category to avoid initial validation issues
+      category: 'Other',
     },
   });
 
   const watchTitle = watch('title');
   const watchDescription = watch('description');
 
-  // Auto-analyze task when title and description are sufficient
   useEffect(() => {
     const analyzeTask = async () => {
       if (watchTitle?.length >= 5 && watchDescription?.length >= 20) {
@@ -88,9 +87,7 @@ export default function EnhancedCreateTaskForm() {
           });
           setAiSuggestions(suggestions);
           
-          // Auto-fill suggestions
           if (suggestions.suggestedCategories.length > 0) {
-            // Ensure the suggested category is one of the valid TaskCategory types
             const validCategory = categories.find(cat => cat === suggestions.suggestedCategories[0]);
             if (validCategory) {
               setSelectedCategories([validCategory]);
@@ -124,19 +121,23 @@ export default function EnhancedCreateTaskForm() {
 
     setIsLoading(true);
     try {
-      const taskData: Omit<Task, 'id' | 'client' | 'tasker'> = {
+      const taskData = {
         title: data.title,
         description: data.description,
-        category: data.category as TaskCategoryType, // Cast to TaskCategoryType from lib/types.ts
+        category: data.category as TaskCategory,
         price: data.price,
-        location: data.location as Location, // Explicitly cast to Location
-        scheduleDate: new Date(data.scheduleDate),
+        location: { // Explicitly construct location to match Location interface
+          barangay: data.location.barangay,
+          city: data.location.city,
+          province: data.location.province,
+        } as Location, // Cast to Location
         clientId: user.uid,
-        status: 'posted',
-        serviceFee: 50, // Default service fee
+        status: 'posted' as const,
+        scheduleDate: new Date(data.scheduleDate),
+        serviceFee: 50,
         paymentMethod: 'gcash',
-        createdAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
-        updatedAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
+        createdAt: new Date(), // Added to satisfy TypeScript compiler
+        updatedAt: new Date(), // Added to satisfy TypeScript compiler
       };
 
       const result = await createTask(taskData);
@@ -146,8 +147,7 @@ export default function EnhancedCreateTaskForm() {
           title: 'Task Created!',
           description: 'Your task has been posted successfully.',
         });
-        // Redirect to task page or dashboard
-        // window.location.href = '/dashboard'; // Commented out as dashboard route is not yet defined
+        // window.location.href = '/dashboard'; 
       } else {
         throw new Error(result.error);
       }

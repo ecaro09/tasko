@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore'; // Added doc, getDoc, Timestamp
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Calendar, Wallet, User as UserIcon } from 'lucide-react'; // Renamed User to UserIcon to avoid conflict
-import { Link } from 'react-router-dom'; // Adjusted import
-import type { Task, User } from '@/lib/types'; // Imported User type
+import { MapPin, Calendar, Wallet, User as UserIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import type { Task, User } from '@/lib/types';
 
 interface RealTimeTaskListProps {
   filter?: 'all' | 'user' | 'category';
@@ -40,25 +40,20 @@ export default function RealTimeTaskList({
       q = query(q, where('category', '==', category));
     }
 
-    // Firestore doesn't support limit with real-time updates easily when combined with other filters.
-    // We'll apply the limit client-side for simplicity.
-
     const unsubscribe = onSnapshot(q, 
-      async (snapshot) => { // Made async to fetch client/tasker data
+      async (snapshot) => {
         const tasksData: Task[] = [];
         
         for (const docSnap of snapshot.docs) {
           const taskData = docSnap.data();
           
-          // Fetch client data
           const clientDoc = await getDoc(doc(db, 'users', taskData.clientId));
-          const client = clientDoc.exists() ? (clientDoc.data() as User) : null; // Cast to User type
+          const client = clientDoc.exists() ? (clientDoc.data() as User) : null;
           
-          // Fetch tasker data if exists
           let tasker = null;
           if (taskData.taskerId) {
             const taskerDoc = await getDoc(doc(db, 'users', taskData.taskerId));
-            tasker = taskerDoc.exists() ? (taskerDoc.data() as User) : null; // Cast to User type
+            tasker = taskerDoc.exists() ? (taskerDoc.data() as User) : null;
           }
 
           tasksData.push({
@@ -69,7 +64,6 @@ export default function RealTimeTaskList({
           } as Task);
         }
 
-        // Apply limit client-side
         const limitedTasks = limit ? tasksData.slice(0, limit) : tasksData;
         setTasks(limitedTasks);
         setLoading(false);
