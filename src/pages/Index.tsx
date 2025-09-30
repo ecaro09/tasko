@@ -17,8 +17,7 @@ import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import PostTaskModal from '@/components/PostTaskModal';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks } from '@/hooks/use-tasks';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useTasks } from '@/hooks/use-tasks'; // Import useTasks hook
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -36,8 +35,7 @@ const getCategoryName = (category: string) => {
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { user, isAuthenticated, loading: authLoading, signIn, signUp, logOut } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, addTask } = useTasks();
-  const navigate = useNavigate(); // Initialize useNavigate
+  const { tasks, loading: tasksLoading, error: tasksError, addTask } = useTasks(); // Use the useTasks hook
 
   const [showLoginModal, setShowLoginModal] = React.useState(false);
   const [showSignupModal, setShowSignupModal] = React.useState(false);
@@ -91,7 +89,10 @@ const Index = () => {
   };
 
   const handleViewTaskDetails = (taskId: string) => {
-    navigate(`/tasks/${taskId}`); // Navigate to the new TaskDetailPage
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      toast.info(`Viewing details for: ${task.title}`);
+    }
   };
 
   if (authLoading || tasksLoading) {
