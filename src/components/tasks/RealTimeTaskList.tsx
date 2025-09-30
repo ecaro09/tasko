@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Calendar, Wallet, User as UserIcon } from 'lucide-react'; // Renamed User to UserIcon to avoid conflict
 import { Link } from 'react-router-dom'; // Adjusted import
-import type { Task, User } from '@/lib/types'; // Imported User type
+import type * as types from '@/lib/types'; // Imported User type with alias
 
 interface RealTimeTaskListProps {
   filter?: 'all' | 'user' | 'category';
@@ -24,7 +24,7 @@ export default function RealTimeTaskList({
   limit 
 }: RealTimeTaskListProps) {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<types.Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,20 +45,20 @@ export default function RealTimeTaskList({
 
     const unsubscribe = onSnapshot(q, 
       async (snapshot) => { // Made async to fetch client/tasker data
-        const tasksData: Task[] = [];
+        const tasksData: types.Task[] = [];
         
         for (const docSnap of snapshot.docs) {
           const taskData = docSnap.data();
           
           // Fetch client data
           const clientDoc = await getDoc(doc(db, 'users', taskData.clientId));
-          const client = clientDoc.exists() ? (clientDoc.data() as User) : null; // Cast to User type
+          const client = clientDoc.exists() ? (clientDoc.data() as types.User) : null; // Cast to User type
           
           // Fetch tasker data if exists
           let tasker = null;
           if (taskData.taskerId) {
             const taskerDoc = await getDoc(doc(db, 'users', taskData.taskerId));
-            tasker = taskerDoc.exists() ? (taskerDoc.data() as User) : null; // Cast to User type
+            tasker = taskerDoc.exists() ? (taskerDoc.data() as types.User) : null; // Cast to User type
           }
 
           tasksData.push({
@@ -66,7 +66,7 @@ export default function RealTimeTaskList({
             ...taskData,
             client: client,
             tasker: tasker,
-          } as Task);
+          } as types.Task);
         }
 
         // Apply limit client-side

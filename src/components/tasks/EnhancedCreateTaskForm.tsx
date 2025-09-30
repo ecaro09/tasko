@@ -132,8 +132,7 @@ export default function EnhancedCreateTaskForm() {
         scheduleDate: new Date(data.scheduleDate),
         serviceFee: 50, // Default service fee
         paymentMethod: 'gcash',
-        createdAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
-        updatedAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
+        // createdAt and updatedAt are handled by serverTimestamp in createTask
       };
 
       const result = await createTask(taskData);
