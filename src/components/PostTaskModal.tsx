@@ -89,7 +89,7 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose, onPostTa
             <Textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
               className="col-span-3"
               placeholder="Provide details about the task..."
               required
