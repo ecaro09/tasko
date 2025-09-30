@@ -5,10 +5,10 @@ import CategoriesSection from "@/components/CategoriesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster, toast } from "sonner"; // Using sonner for toasts
+import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus } from 'lucide-react'; // Import Plus icon
+import { MapPin, Plus } from 'lucide-react';
 import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
@@ -16,6 +16,7 @@ import { usePWA } from '@/hooks/use-pwa';
 import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import PostTaskModal from '@/components/PostTaskModal';
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth hook
 
 // Placeholder for task data - will be replaced with Firebase later
 const sampleTasks = [
@@ -74,45 +75,45 @@ const getCategoryName = (category: string) => {
 
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
+  const { user, isAuthenticated, loading, signIn, signUp, logOut } = useAuth(); // Use the useAuth hook
 
-  // Placeholder state for UI, Firebase integration will come later
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [tasks, setTasks] = React.useState(sampleTasks); // Using sample tasks for now
 
   const [showLoginModal, setShowLoginModal] = React.useState(false);
   const [showSignupModal, setShowSignupModal] = React.useState(false);
   const [showPostTaskModal, setShowPostTaskModal] = React.useState(false);
 
-  const handleSignIn = () => {
+  const handleSignInClick = () => {
     setShowLoginModal(true);
   };
 
-  const handleSignUp = () => { // Added handleSignUp function
+  const handleSignUpClick = () => {
     setShowSignupModal(true);
   };
 
-  const handleLogin = (email: string, password: string) => {
-    console.log("Attempting login with:", email, password);
-    // Placeholder for Firebase auth logic
-    setIsAuthenticated(true);
-    setShowLoginModal(false);
-    toast.success("Logged in successfully!");
+  const handleLoginSubmit = async (email: string, password: string) => {
+    try {
+      await signIn(email, password);
+      setShowLoginModal(false);
+    } catch (error) {
+      // Error handled by useAuth and sonner toast
+    }
   };
 
-  const handleSignOut = () => {
-    console.log("Sign Out clicked (Firebase auth not yet active)");
-    // Placeholder for Firebase auth logic
-    setIsAuthenticated(false);
+  const handleSignOut = async () => {
+    await logOut();
     setTasks(sampleTasks); // Reset tasks on logout (or clear if user-specific)
-    toast.info("Logged out.");
   };
 
-  const handleSignup = (name: string, email: string, phone: string, password: string, userType: string) => {
-    console.log("Attempting signup with:", name, email, phone, userType);
-    // Placeholder for Firebase auth logic
-    setIsAuthenticated(true);
-    setShowSignupModal(false);
-    toast.success("Account created successfully!");
+  const handleSignupSubmit = async (name: string, email: string, phone: string, password: string, userType: string) => {
+    try {
+      await signUp(email, password);
+      // In a real app, you'd also save name, phone, userType to Firestore here
+      console.log("User signed up:", { name, email, phone, userType });
+      setShowSignupModal(false);
+    } catch (error) {
+      // Error handled by useAuth and sonner toast
+    }
   };
 
   const handlePostTask = (newTask: { title: string; category: string; description: string; location: string; budget: number }) => {
@@ -128,8 +129,8 @@ const Index = () => {
     const taskWithDefaults = {
       ...newTask,
       id: newTaskId,
-      posterName: "Current User", // Replace with actual user name from auth
-      posterAvatar: "https://randomuser.me/api/portraits/lego/1.jpg", // Replace with actual user avatar
+      posterName: user?.displayName || user?.email || "Current User", // Use actual user name/email
+      posterAvatar: "https://randomuser.me/api/portraits/lego/1.jpg", // Replace with actual user avatar or default
       datePosted: new Date().toISOString().split('T')[0],
       status: "open",
       imageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" // Default image
@@ -146,6 +147,11 @@ const Index = () => {
     }
   };
 
+  if (loading) {
+    // Optionally show a loading spinner or splash screen while auth state is being determined
+    return <SplashScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {showSplashScreen && <SplashScreen />}
@@ -153,9 +159,9 @@ const Index = () => {
 
       <Header
         isAuthenticated={isAuthenticated}
-        onSignIn={handleSignIn}
+        onSignIn={handleSignInClick}
         onSignOut={handleSignOut}
-        onSignUp={handleSignUp} // Pass handleSignUp to Header
+        onSignUp={handleSignUpClick}
       />
       <HeroSection />
       <main className="container mx-auto p-4">
@@ -207,18 +213,18 @@ const Index = () => {
       </main>
       <AppFooter />
       <MadeWithDyad />
-      <Toaster /> {/* Add Toaster for sonner notifications */}
+      <Toaster />
 
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        onLogin={handleLogin}
+        onLogin={handleLoginSubmit}
         onShowSignup={() => { setShowLoginModal(false); setShowSignupModal(true); }}
       />
       <SignupModal
         isOpen={showSignupModal}
         onClose={() => setShowSignupModal(false)}
-        onSignup={handleSignup}
+        onSignup={handleSignupSubmit}
         onShowLogin={() => { setShowSignupModal(false); setShowLoginModal(true); }}
       />
       <PostTaskModal
