@@ -183,6 +183,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTe
         posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
         datePosted: serverTimestamp(),
         status: 'open',
+        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
       });
       toast.success("Task posted successfully!");
     } catch (err: any) {
