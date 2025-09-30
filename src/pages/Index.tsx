@@ -36,12 +36,10 @@ const getCategoryName = (category: string) => {
 };
 
 const Index = () => {
-  // All hooks must be called unconditionally at the top level
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks(); // Moved this hook call here
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
@@ -84,6 +82,9 @@ const Index = () => {
   if (isSplashVisible) {
     return <SplashScreen />;
   }
+
+  // Use the useTasks hook without arguments to get all tasks
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
 
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
   const filteredTasks = React.useMemo(() => {
