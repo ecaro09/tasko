@@ -16,7 +16,6 @@ import { usePWA } from '@/hooks/use-pwa';
 import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import PostTaskModal from '@/components/PostTaskModal';
-import BottomNavigationBar from '@/components/BottomNavigationBar'; // Import the new component
 
 // Placeholder for task data - will be replaced with Firebase later
 const sampleTasks = [
@@ -148,7 +147,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 pb-16 md:pb-0"> {/* Added pb-16 for bottom nav spacing */}
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {showSplashScreen && <SplashScreen />}
       <OfflineIndicator isVisible={!isOnline} />
 
@@ -156,7 +155,7 @@ const Index = () => {
         isAuthenticated={isAuthenticated}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
-        onSignUp={handleSignUp}
+        onSignUp={handleSignUp} // Pass handleSignUp to Header
       />
       <HeroSection />
       <main className="container mx-auto p-4">
@@ -208,7 +207,7 @@ const Index = () => {
       </main>
       <AppFooter />
       <MadeWithDyad />
-      <Toaster />
+      <Toaster /> {/* Add Toaster for sonner notifications */}
 
       <LoginModal
         isOpen={showLoginModal}
@@ -233,7 +232,6 @@ const Index = () => {
         onInstall={installApp}
         onClose={closeInstallPrompt}
       />
-      <BottomNavigationBar /> {/* Add the BottomNavigationBar here */}
     </div>
   );
 };
