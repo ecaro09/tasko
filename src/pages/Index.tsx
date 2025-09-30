@@ -17,8 +17,7 @@ import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import PostTaskModal from '@/components/PostTaskModal';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks } from '@/hooks/use-tasks';
-import { Link } from 'react-router-dom'; // Import Link
+import { useTasks } from '@/hooks/use-tasks'; // Import useTasks hook
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -36,7 +35,7 @@ const getCategoryName = (category: string) => {
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { user, isAuthenticated, loading: authLoading, signIn, signUp, logOut } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, addTask } = useTasks();
+  const { tasks, loading: tasksLoading, error: tasksError, addTask } = useTasks(); // Use the useTasks hook
 
   const [showLoginModal, setShowLoginModal] = React.useState(false);
   const [showSignupModal, setShowSignupModal] = React.useState(false);
@@ -89,7 +88,12 @@ const Index = () => {
     }
   };
 
-  // Removed handleViewTaskDetails as it's now handled by Link component
+  const handleViewTaskDetails = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      toast.info(`Viewing details for: ${task.title}`);
+    }
+  };
 
   if (authLoading || tasksLoading) {
     return <SplashScreen />;
@@ -142,8 +146,8 @@ const Index = () => {
                         <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover" />
                         <span className="font-medium">{task.posterName}</span>
                       </div>
-                      <Button asChild variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
-                        <Link to={`/tasks/${task.id}`}>View Details</Link>
+                      <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
+                        View Details
                       </Button>
                     </div>
                   </CardContent>
