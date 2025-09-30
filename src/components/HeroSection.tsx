@@ -6,9 +6,7 @@ import { Search } from 'lucide-react';
 const HeroSection: React.FC = () => {
   return (
     <section className="relative bg-gradient-to-r from-green-500 to-green-700 text-white py-20 md:py-32 overflow-hidden mt-[60px]">
-      <div className="absolute inset-0 z-0 opacity-20">
-        <img src="/hero-bg.jpg" alt="Background" className="w-full h-full object-cover" />
-      </div>
+      {/* Removed the non-existent background image */}
       <div className="container mx-auto px-4 relative z-10 text-center">
         <h2 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 drop-shadow-lg">
           Your Everyday Tasks, Simplified.
