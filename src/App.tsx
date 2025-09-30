@@ -6,7 +6,8 @@ import NotFound from "./pages/NotFound";
 import TaskDetailPage from "./pages/TaskDetailPage";
 import MyTasksPage from "./pages/MyTasksPage";
 import FeaturesAndEarningsPage from "./pages/FeaturesAndEarningsPage";
-import { AuthProvider } from "./hooks/use-auth"; // Corrected import for AuthProvider
+import ProfilePage from "./pages/ProfilePage"; // Import the new ProfilePage
+import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
@@ -28,6 +29,7 @@ const App = () => {
                     <Route path="/tasks/:id" element={<TaskDetailPage />} />
                     <Route path="/my-tasks" element={<MyTasksPage />} />
                     <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
+                    <Route path="/profile" element={<ProfilePage />} /> {/* New route for ProfilePage */}
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

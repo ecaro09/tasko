@@ -72,13 +72,7 @@ const Index = () => {
     navigate(`/tasks/${taskId}`);
   };
 
-  const handleProfileClick = () => {
-    if (isAuthenticated) {
-      navigate('/my-tasks');
-    } else {
-      openLoginModal();
-    }
-  };
+  // Removed handleProfileClick as it's now handled internally by BottomNavigation
 
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
   const filteredTasks = React.useMemo(() => {
@@ -182,7 +176,7 @@ const Index = () => {
         onInstall={installApp}
         onClose={closeInstallPrompt}
       />
-      <BottomNavigation onProfileClick={handleProfileClick} />
+      <BottomNavigation />
     </div>
   );
 };

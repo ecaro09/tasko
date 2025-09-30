@@ -1,13 +1,27 @@
 import React from 'react';
 import { Home, LayoutGrid, ListTodo, User } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom'; // Import useNavigate
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { useModal } from './ModalProvider'; // Import useModal
 
 interface BottomNavigationProps {
-  onProfileClick: () => void;
+  // onProfileClick: () => void; // No longer needed as we'll handle navigation directly
 }
 
-const BottomNavigation: React.FC<BottomNavigationProps> = ({ onProfileClick }) => {
+const BottomNavigation: React.FC<BottomNavigationProps> = () => {
+  const { isAuthenticated } = useAuth();
+  const { openLoginModal } = useModal();
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    if (isAuthenticated) {
+      navigate('/profile'); // Navigate to the new ProfilePage
+    } else {
+      openLoginModal(); // Open login modal if not authenticated
+    }
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50 md:hidden pb-[var(--safe-area-bottom)]">
       <div className="flex justify-around py-2">
@@ -36,7 +50,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ onProfileClick }) =
           <span>Tasks</span>
         </a>
         <button
-          onClick={onProfileClick}
+          onClick={handleProfileClick}
           className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
         >
           <User size={20} className="mb-1" />
