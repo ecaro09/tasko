@@ -87,6 +87,10 @@ const Index = () => {
     setShowLoginModal(true);
   };
 
+  const handleSignUp = () => { // Added handleSignUp function
+    setShowSignupModal(true);
+  };
+
   const handleLogin = (email: string, password: string) => {
     console.log("Attempting login with:", email, password);
     // Placeholder for Firebase auth logic
@@ -151,6 +155,7 @@ const Index = () => {
         isAuthenticated={isAuthenticated}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
+        onSignUp={handleSignUp} // Pass handleSignUp to Header
       />
       <HeroSection />
       <main className="container mx-auto p-4">
