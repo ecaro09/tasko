@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin, Apple, Play } from 'lucide-react'; // Import Apple and Play icons
 
 const AppFooter: React.FC = () => {
   return (
@@ -37,10 +37,10 @@ const AppFooter: React.FC = () => {
           </ul>
         </div>
 
-        {/* Connect With Us */}
+        {/* Connect With Us & App Downloads */}
         <div>
           <h3 className="text-white text-lg font-semibold mb-4">Connect With Us</h3>
-          <div className="flex space-x-4">
+          <div className="flex space-x-4 mb-6">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
               <Facebook size={24} />
             </a>
@@ -54,6 +54,17 @@ const AppFooter: React.FC = () => {
               <Linkedin size={24} />
             </a>
           </div>
+
+          <h3 className="text-white text-lg font-semibold mb-4">Download Our App</h3>
+          <div className="flex space-x-4">
+            <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+              <Play size={32} /> {/* Google Play icon */}
+            </a>
+            <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+              <Apple size={32} /> {/* Apple App Store icon */}
+            </a>
+          </div>
+
           <p className="text-sm mt-6">&copy; {new Date().getFullYear()} Tasko. All rights reserved.</p>
         </div>
       </div>
