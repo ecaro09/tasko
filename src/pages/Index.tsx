@@ -16,50 +16,8 @@ import { usePWA } from '@/hooks/use-pwa';
 import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import PostTaskModal from '@/components/PostTaskModal';
-import { useAuth } from '@/hooks/use-auth'; // Import useAuth hook
-
-// Placeholder for task data - will be replaced with Firebase later
-const sampleTasks = [
-  {
-    id: "1",
-    title: "Furniture Assembly Needed",
-    category: "assembly",
-    description: "Need help assembling IKEA bed and wardrobe. All parts are available.",
-    location: "Quezon City, Metro Manila",
-    budget: 800,
-    posterName: "Maria Santos",
-    posterAvatar: "https://randomuser.me/api/portraits/women/32.jpg",
-    datePosted: "2023-06-15",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1581093458791-8a6b5d174d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-  },
-  {
-    id: "2",
-    title: "Apartment Cleaning",
-    category: "cleaning",
-    description: "General cleaning for 2-bedroom apartment. Includes sweeping, mopping, and bathroom cleaning.",
-    location: "Makati City, Metro Manila",
-    budget: 1200,
-    posterName: "Juan Dela Cruz",
-    posterAvatar: "https://randomuser.me/api/portraits/men/54.jpg",
-    datePosted: "2023-06-14",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-  },
-  {
-    id: "3",
-    title: "Help with Moving",
-    category: "moving",
-    description: "Need assistance moving furniture from 2nd floor to ground floor. No heavy lifting required.",
-    location: "Mandaluyong City, Metro Manila",
-    budget: 1500,
-    posterName: "Ana Reyes",
-    posterAvatar: "https://randomuser.me/api/portraits/women/65.jpg",
-    datePosted: "2023-06-13",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-  },
-];
+import { useAuth } from '@/hooks/use-auth';
+import { useTasks } from '@/hooks/use-tasks'; // Import useTasks hook
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -68,16 +26,16 @@ const getCategoryName = (category: string) => {
     assembly: 'Assembly',
     repairs: 'Repairs',
     delivery: 'Delivery',
-    mounting: 'Mounting'
+    mounting: 'Mounting',
+    other: 'Other'
   };
   return names[category] || 'Task';
 };
 
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
-  const { user, isAuthenticated, loading, signIn, signUp, logOut } = useAuth(); // Use the useAuth hook
-
-  const [tasks, setTasks] = React.useState(sampleTasks); // Using sample tasks for now
+  const { user, isAuthenticated, loading: authLoading, signIn, signUp, logOut } = useAuth();
+  const { tasks, loading: tasksLoading, error: tasksError, addTask } = useTasks(); // Use the useTasks hook
 
   const [showLoginModal, setShowLoginModal] = React.useState(false);
   const [showSignupModal, setShowSignupModal] = React.useState(false);
@@ -102,7 +60,6 @@ const Index = () => {
 
   const handleSignOut = async () => {
     await logOut();
-    setTasks(sampleTasks); // Reset tasks on logout (or clear if user-specific)
   };
 
   const handleSignupSubmit = async (name: string, email: string, phone: string, password: string, userType: string) => {
@@ -116,28 +73,19 @@ const Index = () => {
     }
   };
 
-  const handlePostTask = (newTask: { title: string; category: string; description: string; location: string; budget: number }) => {
+  const handlePostTask = async (newTaskData: { title: string; category: string; description: string; location: string; budget: number }) => {
     if (!isAuthenticated) {
       toast.error("Please log in to post a task.");
       setShowPostTaskModal(false);
       setShowLoginModal(true);
       return;
     }
-    console.log("Posting new task:", newTask);
-    // Placeholder for Firebase task posting logic
-    const newTaskId = String(tasks.length + 1);
-    const taskWithDefaults = {
-      ...newTask,
-      id: newTaskId,
-      posterName: user?.displayName || user?.email || "Current User", // Use actual user name/email
-      posterAvatar: "https://randomuser.me/api/portraits/lego/1.jpg", // Replace with actual user avatar or default
-      datePosted: new Date().toISOString().split('T')[0],
-      status: "open",
-      imageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" // Default image
-    };
-    setTasks((prevTasks) => [taskWithDefaults, ...prevTasks]);
-    setShowPostTaskModal(false);
-    toast.success("Task posted successfully!");
+    try {
+      await addTask(newTaskData);
+      setShowPostTaskModal(false);
+    } catch (error) {
+      // Error handled by useTasks and sonner toast
+    }
   };
 
   const handleViewTaskDetails = (taskId: string) => {
@@ -147,8 +95,7 @@ const Index = () => {
     }
   };
 
-  if (loading) {
-    // Optionally show a loading spinner or splash screen while auth state is being determined
+  if (authLoading || tasksLoading) {
     return <SplashScreen />;
   }
 
@@ -176,7 +123,10 @@ const Index = () => {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tasks.length > 0 ? (
+            {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
+            {!tasksLoading && tasks.length === 0 && !tasksError ? (
+              <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
+            ) : (
               tasks.map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                   <div className="h-40 overflow-hidden relative">
@@ -203,8 +153,6 @@ const Index = () => {
                   </CardContent>
                 </Card>
               ))
-            ) : (
-              <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Try a different search or category.</p>
             )}
           </div>
         </section>
