@@ -57,9 +57,8 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = "ChartContainer";
 
 // --- ChartTooltip ---
-// Fix for error #1: Add className to ChartTooltipProps
 interface ChartTooltipProps extends _RechartsTooltipProps<any, any> {
-  className?: string; // Explicitly add className for the wrapper
+  className?: string;
 }
 
 const ChartTooltip = React.forwardRef<
@@ -209,7 +208,6 @@ const ChartLegend = ({ className, payload, hideIcon = false, verticalAlign, ...p
 ChartLegend.displayName = "ChartLegend";
 
 // --- ChartLegendContent ---
-// Fix for error #2: Explicitly type props with _RechartsLegendProps<any, any>
 const ChartLegendContent = (props: _RechartsLegendProps<any, any>) => {
   return <_RechartsLegend content={ChartLegend} {...props} />;
 };
