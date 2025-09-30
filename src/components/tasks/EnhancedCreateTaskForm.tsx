@@ -12,17 +12,17 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { createTask } from '@/lib/data';
+import { createTask } from '@/lib/data'; // Adjusted import path
 import { getEnhancedTaskSuggestions } from '@/ai/flows/enhanced-suggestions';
-import type { Task, Location } from '@/lib/types'; // Import Task and Location types
+import type { Location, Task, TaskCategory as TaskCategoryType } from '@/lib/types'; // Renamed TaskCategory to TaskCategoryType to avoid conflict
 
 const categories = [
   'Cleaning', 'Repairs', 'Errands', 'Deliveries', 'Carpentry',
   'Plumbing', 'Electrical', 'IT Support', 'Home Improvement',
   'Gardening', 'Moving', 'Event Planning', 'Pet Care', 'Personal Care', 'Other'
-] as const;
+] as const; // Define as const tuple for z.enum
 
-type TaskCategory = typeof categories[number];
+type TaskCategory = typeof categories[number]; // Derive TaskCategory type from the const tuple
 
 const taskFormSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -45,9 +45,6 @@ const taskFormSchema = z.object({
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
-
-// Define the exact type expected by createTask
-type CreateTaskInput = Omit<Task, 'id' | 'client' | 'tasker' | 'createdAt' | 'updatedAt'>;
 
 export default function EnhancedCreateTaskForm() {
   const { user, userData } = useAuth();
@@ -72,13 +69,14 @@ export default function EnhancedCreateTaskForm() {
         city: '',
         province: '',
       },
-      category: 'Other',
+      category: 'Other', // Set a default category to avoid initial validation issues
     },
   });
 
   const watchTitle = watch('title');
   const watchDescription = watch('description');
 
+  // Auto-analyze task when title and description are sufficient
   useEffect(() => {
     const analyzeTask = async () => {
       if (watchTitle?.length >= 5 && watchDescription?.length >= 20) {
@@ -90,7 +88,9 @@ export default function EnhancedCreateTaskForm() {
           });
           setAiSuggestions(suggestions);
           
+          // Auto-fill suggestions
           if (suggestions.suggestedCategories.length > 0) {
+            // Ensure the suggested category is one of the valid TaskCategory types
             const validCategory = categories.find(cat => cat === suggestions.suggestedCategories[0]);
             if (validCategory) {
               setSelectedCategories([validCategory]);
@@ -124,18 +124,17 @@ export default function EnhancedCreateTaskForm() {
 
     setIsLoading(true);
     try {
-      // Explicitly construct the taskData object to match CreateTaskInput type
-      const taskData: CreateTaskInput = {
+      const taskData: Omit<Task, 'id' | 'client' | 'tasker' | 'createdAt' | 'updatedAt'> = {
         title: data.title,
         description: data.description,
-        category: data.category,
+        category: data.category as TaskCategoryType, // Cast to TaskCategoryType from lib/types.ts
         price: data.price,
-        location: data.location as Location, // Type assertion to resolve inference issue
-        scheduleDate: new Date(data.scheduleDate), // Convert string date to Date object
+        location: data.location as Location, // Explicitly cast to Location
+        scheduleDate: new Date(data.scheduleDate),
         clientId: user.uid,
-        status: 'posted', // Explicitly set status
+        status: 'posted',
         serviceFee: 50, // Default service fee
-        paymentMethod: 'gcash', // Default payment method
+        paymentMethod: 'gcash',
       };
 
       const result = await createTask(taskData);
@@ -145,7 +144,8 @@ export default function EnhancedCreateTaskForm() {
           title: 'Task Created!',
           description: 'Your task has been posted successfully.',
         });
-        // window.location.href = '/dashboard';
+        // Redirect to task page or dashboard
+        // window.location.href = '/dashboard'; // Commented out as dashboard route is not yet defined
       } else {
         throw new Error(result.error);
       }
