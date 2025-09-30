@@ -5,9 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from '@/hooks/use-auth'; // Corrected import for useAuth
+import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { toast } from 'sonner';
+import LoginModal from './LoginModal';
+import SignupModal from './SignupModal';
+import PostTaskModal from './PostTaskModal';
 
 interface ModalContextType {
   openLoginModal: () => void;
@@ -23,72 +26,29 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isPostTaskModalOpen, setIsPostTaskModalOpen] = useState(false);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDescription, setTaskDescription] = useState('');
-  const [taskLocation, setTaskLocation] = useState('');
-  const [taskBudget, setTaskBudget] = useState('');
-  const [taskCategory, setTaskCategory] = useState('');
+  const { isAuthenticated } = useAuth();
 
-  const { signInWithGoogle, logout, isAuthenticated } = useAuth();
-  const { addTask } = useTasks();
-
-  const openLoginModal = () => setIsLoginModalOpen(true);
-  const openSignupModal = () => setIsSignupModalOpen(true);
+  const openLoginModal = () => {
+    closeAllModals(); // Ensure other modals are closed
+    setIsLoginModalOpen(true);
+  };
+  const openSignupModal = () => {
+    closeAllModals(); // Ensure other modals are closed
+    setIsSignupModalOpen(true);
+  };
   const openPostTaskModal = () => {
     if (!isAuthenticated) {
       toast.error("Please log in to post a task.");
-      setIsLoginModalOpen(true);
+      openLoginModal(); // Open login modal if not authenticated
       return;
     }
+    closeAllModals(); // Ensure other modals are closed
     setIsPostTaskModalOpen(true);
   };
   const closeAllModals = () => {
     setIsLoginModalOpen(false);
     setIsSignupModalOpen(false);
     setIsPostTaskModalOpen(false);
-    // Clear form states
-    setEmail('');
-    setPassword('');
-    setTaskTitle('');
-    setTaskDescription('');
-    setTaskLocation('');
-    setTaskBudget('');
-    setTaskCategory('');
-  };
-
-  const handleLogin = async () => {
-    // In a real app, you'd have email/password login here.
-    // For now, we'll just use Google Sign-In.
-    await signInWithGoogle();
-    closeAllModals();
-  };
-
-  const handleSignup = async () => {
-    // In a real app, you'd have email/password signup here.
-    // For now, we'll just use Google Sign-In.
-    await signInWithGoogle();
-    closeAllModals();
-  };
-
-  const handlePostTask = async () => {
-    if (!taskTitle || !taskDescription || !taskLocation || !taskBudget || !taskCategory) {
-      toast.error("Please fill in all task details.");
-      return;
-    }
-    try {
-      await addTask({
-        title: taskTitle,
-        description: taskDescription,
-        location: taskLocation,
-        budget: parseFloat(taskBudget),
-        category: taskCategory,
-      });
-      closeAllModals();
-    } catch (error) {
-      // Error handled by useTasks hook
-    }
   };
 
   const value = {
@@ -99,7 +59,12 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   return (
-    <ModalContext.Provider value={value}>{children}</ModalContext.Provider>
+    <ModalContext.Provider value={value}>
+      {children}
+      <LoginModal isOpen={isLoginModalOpen} onClose={closeAllModals} />
+      <SignupModal isOpen={isSignupModalOpen} onClose={closeAllModals} />
+      <PostTaskModal isOpen={isPostTaskModalOpen} onClose={closeAllModals} />
+    </ModalContext.Provider>
   );
 };
 
