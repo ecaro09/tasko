@@ -12,6 +12,7 @@ import { MapPin, Plus } from 'lucide-react';
 import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import BottomNavigation from '@/components/BottomNavigation'; // Import BottomNavigation
 import { usePWA } from '@/hooks/use-pwa';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
@@ -20,12 +21,14 @@ import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
+    all: 'All Services',
     cleaning: 'Cleaning',
     moving: 'Moving',
     assembly: 'Assembly',
     repairs: 'Repairs',
     delivery: 'Delivery',
     mounting: 'Mounting',
+    painting: 'Painting', // Added painting
     other: 'Other'
   };
   return names[category] || 'Task';
@@ -34,16 +37,39 @@ const getCategoryName = (category: string) => {
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { isAuthenticated, loading: authLoading, logOut } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
-  const { openPostTaskModal } = useModal(); // Use openPostTaskModal from useModal
+  const { tasks, filteredTasks, loading: tasksLoading, error: tasksError } = useTasks(); // Use filteredTasks
+  const { openPostTaskModal, openLoginModal } = useModal(); // Use openPostTaskModal from useModal
   const navigate = useNavigate();
+
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState('all');
 
   const handleSignOut = async () => {
     await logOut();
   };
 
+  const handleSearchSubmit = () => {
+    // The filtering is now handled by the useTasks hook based on searchTerm and selectedCategory
+    // No explicit action needed here, as the hook will react to state changes.
+    console.log("Searching for:", searchTerm, "in category:", selectedCategory);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    // Optionally, clear search term when category changes
+    setSearchTerm('');
+  };
+
   const handleViewTaskDetails = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
+  };
+
+  const handleProfileClick = () => {
+    if (isAuthenticated) {
+      navigate('/my-tasks');
+    } else {
+      openLoginModal();
+    }
   };
 
   if (authLoading || tasksLoading) {
@@ -51,7 +77,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 pb-16 md:pb-0"> {/* Added padding-bottom for mobile nav */}
       {showSplashScreen && <SplashScreen />}
       <OfflineIndicator isVisible={!isOnline} />
 
@@ -59,9 +85,16 @@ const Index = () => {
         isAuthenticated={isAuthenticated}
         onSignOut={handleSignOut}
       />
-      <HeroSection />
+      <HeroSection
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+        onSearchSubmit={handleSearchSubmit}
+      />
       <main className="container mx-auto p-4 pt-[60px]"> {/* Added padding-top to account for fixed header */}
-        <CategoriesSection />
+        <CategoriesSection
+          activeCategory={selectedCategory}
+          onCategorySelect={handleCategorySelect}
+        />
 
         {/* Tasks Section */}
         <section id="tasks" className="py-8">
@@ -73,10 +106,10 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
-            {!tasksLoading && (tasks || []).length === 0 && !tasksError ? (
+            {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
             ) : (
-              (tasks || []).map((task) => (
+              (filteredTasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                   <div className="h-40 overflow-hidden relative">
                     <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
@@ -117,6 +150,7 @@ const Index = () => {
         onInstall={installApp}
         onClose={closeInstallPrompt}
       />
+      <BottomNavigation onProfileClick={handleProfileClick} /> {/* Render BottomNavigation */}
     </div>
   );
 };

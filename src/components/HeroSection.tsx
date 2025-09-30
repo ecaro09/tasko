@@ -3,7 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
 
-const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
+  onSearchSubmit: () => void;
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChange, onSearchSubmit }) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearchSubmit();
+    }
+  };
+
   return (
     <section className="relative bg-gradient-to-r from-green-500 to-green-700 text-white py-20 md:py-32 overflow-hidden mt-[60px]">
       <div className="absolute inset-0 z-0 opacity-20">
@@ -22,8 +34,11 @@ const HeroSection: React.FC = () => {
             type="text"
             placeholder="🔍 What task do you need help with? (e.g., 'house cleaning', 'furniture assembly')"
             className="w-full py-4 pl-12 pr-4 rounded-full border border-gray-300 bg-white text-gray-800 shadow-lg focus:ring-2 focus:ring-green-400"
+            value={searchTerm}
+            onChange={(e) => onSearchTermChange(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
-          <Button className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white rounded-full px-6 py-2 h-auto">
+          <Button onClick={onSearchSubmit} className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white rounded-full px-6 py-2 h-auto">
             Search
           </Button>
         </div>

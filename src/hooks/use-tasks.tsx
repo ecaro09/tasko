@@ -32,13 +32,21 @@ interface UseTasksContextType {
   loading: boolean;
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => Promise<void>;
+  filteredTasks: Task[]; // Add filteredTasks to the context type
 }
 
 const TasksContext = React.createContext<UseTasksContextType | undefined>(undefined);
 
-export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface TasksProviderProps {
+  children: React.ReactNode;
+  searchTerm?: string;
+  selectedCategory?: string;
+}
+
+export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTerm = '', selectedCategory = 'all' }) => {
   const { user, isAuthenticated } = useAuth();
-  const [tasks, setTasks] = React.useState<Task[]>([]);
+  const [allTasks, setAllTasks] = React.useState<Task[]>([]); // Store all tasks
+  const [filteredTasks, setFilteredTasks] = React.useState<Task[]>([]); // Store filtered tasks
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -67,7 +75,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image
         };
       });
-      setTasks(fetchedTasks);
+      setAllTasks(fetchedTasks); // Update all tasks
       setLoading(false);
     }, (err) => {
       console.error("Error fetching tasks:", err);
@@ -78,6 +86,29 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return () => unsubscribe();
   }, []);
+
+  // Effect to filter tasks whenever allTasks, searchTerm, or selectedCategory changes
+  React.useEffect(() => {
+    let currentFilteredTasks = allTasks;
+
+    // Filter by category
+    if (selectedCategory && selectedCategory !== 'all') {
+      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      currentFilteredTasks = currentFilteredTasks.filter(task =>
+        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.location.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+    }
+
+    setFilteredTasks(currentFilteredTasks);
+  }, [allTasks, searchTerm, selectedCategory]);
+
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => {
     if (!isAuthenticated || !user) {
@@ -103,7 +134,8 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const value = {
-    tasks,
+    tasks: allTasks, // Expose allTasks as 'tasks'
+    filteredTasks, // Expose filteredTasks
     loading,
     error,
     addTask,

@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
           )}
           <a href="#tasks" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Browse Tasks</a>
           <a href="#how-it-works" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">How It Works</a>
-          <a href="#become-tasker" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Become a Tasker</a>
+          <Link to="/features-earnings" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Become a Tasker</Link>
         </nav>
         <div className="flex gap-3 items-center">
           {isAuthenticated ? (
