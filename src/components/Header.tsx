@@ -1,15 +1,17 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useModal } from './ModalProvider'; // Import useModal
 
 interface HeaderProps {
   isAuthenticated: boolean;
-  onSignIn: () => void;
   onSignOut: () => void;
-  onSignUp: () => void; // Ensure this prop is defined
+  // Removed onSignIn and onSignUp props as they will be handled by useModal
 }
 
-const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignIn, onSignOut, onSignUp }) => {
+const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
+  const { openLoginModal, openSignupModal } = useModal(); // Use the useModal hook
+
   return (
     <header className="pwa-header bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center">
       <div className="container mx-auto px-4 flex justify-between items-center w-full">
@@ -30,10 +32,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignIn, onSignOut, o
             </Button>
           ) : (
             <>
-              <Button onClick={onSignIn} variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
+              <Button onClick={openLoginModal} variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                 Login
               </Button>
-              <Button onClick={onSignUp} className="bg-green-600 text-white hover:bg-green-700">
+              <Button onClick={openSignupModal} className="bg-green-600 text-white hover:bg-green-700">
                 Sign Up
               </Button>
             </>

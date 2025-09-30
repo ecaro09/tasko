@@ -5,7 +5,7 @@ import CategoriesSection from "@/components/CategoriesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner"; // Removed toast import as it's not directly used here anymore
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Plus } from 'lucide-react';
@@ -13,12 +13,10 @@ import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { usePWA } from '@/hooks/use-pwa';
-import LoginModal from '@/components/LoginModal';
-import SignupModal from '@/components/SignupModal';
-import PostTaskModal from '@/components/PostTaskModal';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
+import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -35,63 +33,17 @@ const getCategoryName = (category: string) => {
 
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
-  const { user, isAuthenticated, loading: authLoading, signIn, signUp, logOut } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, addTask } = useTasks();
-  const navigate = useNavigate(); // Initialize useNavigate
-
-  const [showLoginModal, setShowLoginModal] = React.useState(false);
-  const [showSignupModal, setShowSignupModal] = React.useState(false);
-  const [showPostTaskModal, setShowPostTaskModal] = React.useState(false);
-
-  const handleSignInClick = () => {
-    setShowLoginModal(true);
-  };
-
-  const handleSignUpClick = () => {
-    setShowSignupModal(true);
-  };
-
-  const handleLoginSubmit = async (email: string, password: string) => {
-    try {
-      await signIn(email, password);
-      setShowLoginModal(false);
-    } catch (error) {
-      // Error handled by useAuth and sonner toast
-    }
-  };
+  const { isAuthenticated, loading: authLoading, logOut } = useAuth();
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { openPostTaskModal } = useModal(); // Use openPostTaskModal from useModal
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await logOut();
   };
 
-  const handleSignupSubmit = async (name: string, email: string, phone: string, password: string, userType: string) => {
-    try {
-      await signUp(email, password);
-      // In a real app, you'd also save name, phone, userType to Firestore here
-      console.log("User signed up:", { name, email, phone, userType });
-      setShowSignupModal(false);
-    } catch (error) {
-      // Error handled by useAuth and sonner toast
-    }
-  };
-
-  const handlePostTask = async (newTaskData: { title: string; category: string; description: string; location: string; budget: number }) => {
-    if (!isAuthenticated) {
-      toast.error("Please log in to post a task.");
-      setShowPostTaskModal(false);
-      setShowLoginModal(true);
-      return;
-    }
-    try {
-      await addTask(newTaskData);
-      setShowPostTaskModal(false);
-    } catch (error) {
-      // Error handled by useTasks and sonner toast
-    }
-  };
-
   const handleViewTaskDetails = (taskId: string) => {
-    navigate(`/tasks/${taskId}`); // Navigate to the new TaskDetailPage
+    navigate(`/tasks/${taskId}`);
   };
 
   if (authLoading || tasksLoading) {
@@ -105,9 +57,7 @@ const Index = () => {
 
       <Header
         isAuthenticated={isAuthenticated}
-        onSignIn={handleSignInClick}
         onSignOut={handleSignOut}
-        onSignUp={handleSignUpClick}
       />
       <HeroSection />
       <main className="container mx-auto p-4">
@@ -117,7 +67,7 @@ const Index = () => {
         <section id="tasks" className="py-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-4xl font-bold text-green-600">📋 Available Tasks Near You</h2>
-            <Button onClick={() => setShowPostTaskModal(true)} className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-2">
+            <Button onClick={openPostTaskModal} className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-2">
               <Plus size={20} /> Post a Task
             </Button>
           </div>
@@ -161,24 +111,6 @@ const Index = () => {
       <AppFooter />
       <MadeWithDyad />
       <Toaster />
-
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onLogin={handleLoginSubmit}
-        onShowSignup={() => { setShowLoginModal(false); setShowSignupModal(true); }}
-      />
-      <SignupModal
-        isOpen={showSignupModal}
-        onClose={() => setShowSignupModal(false)}
-        onSignup={handleSignupSubmit}
-        onShowLogin={() => { setShowSignupModal(false); setShowLoginModal(true); }}
-      />
-      <PostTaskModal
-        isOpen={showPostTaskModal}
-        onClose={() => setShowPostTaskModal(false)}
-        onPostTask={handlePostTask}
-      />
 
       <InstallPrompt
         isVisible={showInstallPrompt}

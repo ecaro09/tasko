@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, CalendarDays, Tag, DollarSign, User } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -28,7 +29,8 @@ const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, logOut } = useAuth(); // Get logOut from useAuth
+  const { openLoginModal } = useModal(); // Use openLoginModal from useModal
 
   const task = tasks.find(t => t.id === id);
 
@@ -39,7 +41,7 @@ const TaskDetailPage: React.FC = () => {
   if (tasksError) {
     return (
       <div className="min-h-screen flex flex-col justify-between bg-gray-100 dark:bg-gray-900">
-        <Header isAuthenticated={isAuthenticated} onSignIn={() => {}} onSignOut={() => {}} onSignUp={() => {}} />
+        <Header isAuthenticated={isAuthenticated} onSignOut={logOut} /> {/* Pass logOut */}
         <div className="flex-grow container mx-auto p-8 text-center">
           <h2 className="text-2xl font-bold text-red-500">Error loading task details.</h2>
           <p className="text-gray-600">{tasksError}</p>
@@ -56,7 +58,7 @@ const TaskDetailPage: React.FC = () => {
   if (!task) {
     return (
       <div className="min-h-screen flex flex-col justify-between bg-gray-100 dark:bg-gray-900">
-        <Header isAuthenticated={isAuthenticated} onSignIn={() => {}} onSignOut={() => {}} onSignUp={() => {}} />
+        <Header isAuthenticated={isAuthenticated} onSignOut={logOut} /> {/* Pass logOut */}
         <div className="flex-grow container mx-auto p-8 text-center">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Task Not Found</h2>
           <p className="text-gray-600 dark:text-gray-300">The task you are looking for does not exist.</p>
@@ -73,7 +75,7 @@ const TaskDetailPage: React.FC = () => {
   const handleOfferClick = () => {
     if (!isAuthenticated) {
       toast.error("You must be logged in to make an offer.");
-      // Optionally redirect to login or open login modal
+      openLoginModal(); // Open login modal if not authenticated
       return;
     }
     toast.info(`You are about to make an offer for "${task.title}"`);
@@ -82,7 +84,7 @@ const TaskDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <Header isAuthenticated={isAuthenticated} onSignIn={() => {}} onSignOut={() => {}} onSignUp={() => {}} />
+      <Header isAuthenticated={isAuthenticated} onSignOut={logOut} /> {/* Pass logOut */}
       <main className="flex-grow container mx-auto p-4 pt-[80px]"> {/* Added padding-top to account for fixed header */}
         <Button variant="outline" onClick={() => navigate('/')} className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
           &larr; Back to Tasks
