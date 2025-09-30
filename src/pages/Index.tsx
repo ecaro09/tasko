@@ -1,45 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Header from "@/components/Header";
 import TaskList from "@/components/TaskList";
 import NotesSection from "@/components/NotesSection";
 import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster } from "@/components/ui/sonner";
-import { auth } from '../lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [tasks, setTasks] = useState<string[]>([]);
-  const [notes, setNotes] = useState<string[]>([]);
+  // Placeholder state for UI, Firebase integration will come later
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [tasks, setTasks] = React.useState<string[]>([]);
+  const [notes, setNotes] = React.useState<string[]>([]);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsAuthenticated(true);
-        setCurrentUser(user);
-        // In a real app, you'd fetch user-specific tasks and notes here
-        console.log("User signed in:", user.displayName || user.email);
-      } else {
-        setIsAuthenticated(false);
-        setCurrentUser(null);
-        setTasks([]); // Clear tasks on logout
-        setNotes([]); // Clear notes on logout
-        console.log("User signed out.");
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Placeholder functions for now, actual Firebase logic will be added later
   const handleSignIn = () => {
-    // This will be handled by the Header component's Google Sign-In
+    // This will be replaced with Firebase auth logic
+    console.log("Sign In clicked (Firebase auth not yet active)");
+    setIsAuthenticated(true); // Simulate sign-in for UI
   };
 
   const handleSignOut = () => {
-    // This will be handled by the Header component's Sign-Out
+    // This will be replaced with Firebase auth logic
+    console.log("Sign Out clicked (Firebase auth not yet active)");
+    setIsAuthenticated(false); // Simulate sign-out for UI
+    setTasks([]); // Clear tasks on logout
+    setNotes([]); // Clear notes on logout
   };
 
   const handleAddTask = (task: string) => {
@@ -58,9 +42,8 @@ const Index = () => {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Header
         isAuthenticated={isAuthenticated}
-        userDisplayName={currentUser?.displayName || currentUser?.email || null}
-        onSignIn={handleSignIn} // These are now mostly for triggering state updates in Index
-        onSignOut={handleSignOut} // The actual auth logic is in Header
+        onSignIn={handleSignIn}
+        onSignOut={handleSignOut}
       />
       <main className="container mx-auto p-4">
         <TaskList
@@ -79,7 +62,7 @@ const Index = () => {
         <p>&copy; 2025 DYAD Full Duplicate</p>
       </footer>
       <MadeWithDyad />
-      <Toaster />
+      <Toaster /> {/* Add Toaster for sonner notifications */}
     </div>
   );
 };
