@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser, updateProfile } from 'firebase/auth';
 import { toast } from 'sonner'; // Using sonner for toasts
 
 interface AuthState {
@@ -12,6 +12,7 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>; // Added updateProfile
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +56,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signInWithGoogle, logout };
+  const updateUserProfile = async (displayName: string, photoURL?: string) => {
+    if (!authState.user) {
+      toast.error("You must be logged in to update your profile.");
+      return;
+    }
+    try {
+      await updateProfile(authState.user, { displayName, photoURL });
+      // Force a re-fetch of the user to update the state with new profile info
+      setAuthState(prev => ({
+        ...prev,
+        user: auth.currentUser, // auth.currentUser will have the updated info
+      }));
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast.error(`Failed to update profile: ${error.message}`);
+      throw error; // Re-throw to allow calling component to handle loading state
+    }
+  };
+
+  const value = { ...authState, signInWithGoogle, logout, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
