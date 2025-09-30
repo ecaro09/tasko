@@ -4,55 +4,50 @@
 
 @layer base {
   :root {
-    --primary-color: #00a82d;
-    --secondary-color: #ff6b00;
-    --accent-color: #ffd100;
-    --text-dark: #1a1a1a;
-    --text-light: #666;
-    --bg-light: #f8f9fa;
-    --border-color: #e0e0e0;
-    --shadow: 0 2px 10px rgba(0,0,0,0.1);
-    --border-radius: 8px;
-    --safe-area-top: env(safe-area-inset-top);
-    --safe-area-bottom: env(safe-area-inset-bottom);
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --background: var(--bg-light);
-    --foreground: var(--text-dark);
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --card: white;
-    --card-foreground: var(--text-dark);
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --popover: white;
-    --popover-foreground: var(--text-dark);
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-    --primary: var(--primary-color);
-    --primary-foreground: white;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: var(--secondary-color);
-    --secondary-foreground: white;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --muted: #f0f0f0;
-    --muted-foreground: var(--text-light);
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --accent: var(--accent-color);
-    --accent-foreground: var(--text-dark);
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --destructive: #dc2626; /* Tailwind red-600 */
-    --destructive-foreground: white;
-
-    --border: var(--border-color);
-    --input: var(--border-color);
-    --ring: var(--primary-color);
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
+
     --sidebar-foreground: 240 5.3% 26.1%;
+
     --sidebar-primary: 240 5.9% 10%;
+
     --sidebar-primary-foreground: 0 0% 98%;
+
     --sidebar-accent: 240 4.8% 95.9%;
+
     --sidebar-accent-foreground: 240 5.9% 10%;
+
     --sidebar-border: 220 13% 91%;
+
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -102,78 +97,5 @@
 
   body {
     @apply bg-background text-foreground;
-    padding-top: var(--safe-area-top);
-    padding-bottom: var(--safe-area-bottom);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Added from HTML */
-    line-height: 1.6; /* Added from HTML */
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-  }
-
-  /* PWA Header */
-  .pwa-header {
-      @apply bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center;
-      top: var(--safe-area-top);
-  }
-
-  .header-content {
-      @apply flex justify-between items-center w-full;
-  }
-
-  .logo {
-      @apply flex items-center gap-2;
-  }
-
-  .logo h1 {
-      @apply text-xl text-primary font-bold;
-  }
-
-  .nav-links {
-      @apply hidden md:flex gap-6; /* Hidden on mobile, flex on md and up */
-  }
-
-  .nav-links a {
-      @apply no-underline text-text-dark font-semibold px-2 py-1 rounded-md transition-all text-sm;
-  }
-
-  .nav-links a:hover, .nav-links a.active {
-      @apply bg-primary text-white;
-  }
-
-  .header-actions {
-      @apply flex gap-3 items-center;
-  }
-
-  /* Main Content with PWA spacing */
-  .main-content {
-      padding-top: 70px; /* Adjust for fixed header height */
-      padding-bottom: 70px; /* Adjust for fixed bottom nav height */
-      min-height: 100vh;
-  }
-
-  /* Animations */
-  @keyframes spin {
-      to { transform: rotate(360deg); }
-  }
-
-  @keyframes slideUp {
-      from { transform: translateY(100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-  }
-
-  @keyframes slideDown {
-      from { transform: translateY(-100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .nav-links {
-      display: none;
   }
 }
