@@ -4,65 +4,43 @@ import TaskList from "@/components/TaskList";
 import NotesSection from "@/components/NotesSection";
 import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
+import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from '@/hooks/use-auth';
+import { useFirestoreData } from '@/hooks/use-firestore-data';
 
 const Index = () => {
-  // Placeholder state for UI, Firebase integration will come later
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [tasks, setTasks] = React.useState<string[]>([]);
-  const [notes, setNotes] = React.useState<string[]>([]);
-
-  const handleSignIn = () => {
-    // This will be replaced with Firebase auth logic
-    console.log("Sign In clicked (Firebase auth not yet active)");
-    setIsAuthenticated(true); // Simulate sign-in for UI
-  };
-
-  const handleSignOut = () => {
-    // This will be replaced with Firebase auth logic
-    console.log("Sign Out clicked (Firebase auth not yet active)");
-    setIsAuthenticated(false); // Simulate sign-out for UI
-    setTasks([]); // Clear tasks on logout
-    setNotes([]); // Clear notes on logout
-  };
-
-  const handleAddTask = (task: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Task clicked (Firebase firestore not yet active):", task);
-    setTasks((prev) => [...prev, task]);
-  };
-
-  const handleAddNote = (note: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Note clicked (Firebase firestore not yet active):", note);
-    setNotes((prev) => [...prev, note]);
-  };
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { data: tasks, addItem: addTask, loading: tasksLoading } = useFirestoreData<{ id: string; text: string; createdAt: any; userId: string }>('tasks', user?.uid);
+  const { data: notes, addItem: addNote, loading: notesLoading } = useFirestoreData<{ id: string; text: string; createdAt: any; userId: string }>('notes', user?.uid);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <Header
-        isAuthenticated={isAuthenticated}
-        onSignIn={handleSignIn}
-        onSignOut={handleSignOut}
-      />
-      <main className="container mx-auto p-4">
-        <TaskList
-          tasks={tasks}
-          onAddTask={handleAddTask}
-          isAuthenticated={isAuthenticated}
-        />
-        <NotesSection
-          notes={notes}
-          onAddNote={handleAddNote}
-          isAuthenticated={isAuthenticated}
-        />
-        <ImageGallery />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col">
+      <Header />
+      <main className="container mx-auto p-4 flex-grow">
+        <h2 className="text-3xl font-bold text-center mb-8">
+          {isAuthenticated ? `Welcome, ${user?.displayName || user?.email}!` : "Sign in to get started"}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TaskList
+            tasks={tasks}
+            onAddTask={addTask}
+            isAuthenticated={isAuthenticated}
+            loading={authLoading || tasksLoading}
+          />
+          <NotesSection
+            notes={notes}
+            onAddNote={addNote}
+            isAuthenticated={isAuthenticated}
+            loading={authLoading || notesLoading}
+          />
+          <ImageGallery />
+        </div>
       </main>
-      <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+      <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 mt-8">
         <p>&copy; 2025 DYAD Full Duplicate</p>
       </footer>
       <MadeWithDyad />
-      <Toaster /> {/* Add Toaster for sonner notifications */}
+      <Toaster />
     </div>
   );
 };
