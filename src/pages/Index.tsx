@@ -1,20 +1,41 @@
 import React from 'react';
 import Header from "@/components/Header";
+import TaskList from "@/components/TaskList";
+import NotesSection from "@/components/NotesSection";
+import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
 
 const Index = () => {
   // Placeholder state for UI, Firebase integration will come later
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [tasks, setTasks] = React.useState<string[]>([]);
+  const [notes, setNotes] = React.useState<string[]>([]);
 
   const handleSignIn = () => {
+    // This will be replaced with Firebase auth logic
     console.log("Sign In clicked (Firebase auth not yet active)");
     setIsAuthenticated(true); // Simulate sign-in for UI
   };
 
   const handleSignOut = () => {
+    // This will be replaced with Firebase auth logic
     console.log("Sign Out clicked (Firebase auth not yet active)");
     setIsAuthenticated(false); // Simulate sign-out for UI
+    setTasks([]); // Clear tasks on logout
+    setNotes([]); // Clear notes on logout
+  };
+
+  const handleAddTask = (task: string) => {
+    // This will be replaced with Firebase firestore logic
+    console.log("Add Task clicked (Firebase firestore not yet active):", task);
+    setTasks((prev) => [...prev, task]);
+  };
+
+  const handleAddNote = (note: string) => {
+    // This will be replaced with Firebase firestore logic
+    console.log("Add Note clicked (Firebase firestore not yet active):", note);
+    setNotes((prev) => [...prev, note]);
   };
 
   return (
@@ -24,18 +45,24 @@ const Index = () => {
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
       />
-      <main className="container mx-auto p-4 text-center">
-        <h2 className="text-2xl font-bold mb-4">Integrating new blueprint...</h2>
-        <p className="text-lg text-gray-700 dark:text-gray-300">
-          The new HTML blueprint is being integrated into this page. Please refresh the preview to see the updated content.
-        </p>
-        {/* The actual content from the new HTML blueprint will be added here in subsequent steps */}
+      <main className="container mx-auto p-4">
+        <TaskList
+          tasks={tasks}
+          onAddTask={handleAddTask}
+          isAuthenticated={isAuthenticated}
+        />
+        <NotesSection
+          notes={notes}
+          onAddNote={handleAddNote}
+          isAuthenticated={isAuthenticated}
+        />
+        <ImageGallery />
       </main>
       <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
         <p>&copy; 2025 DYAD Full Duplicate</p>
       </footer>
       <MadeWithDyad />
-      <Toaster />
+      <Toaster /> {/* Add Toaster for sonner notifications */}
     </div>
   );
 };
