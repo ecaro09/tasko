@@ -1,156 +1,68 @@
 import React from 'react';
 import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import CategoriesSection from "@/components/CategoriesSection";
-import HowItWorksSection from "@/components/HowItWorksSection";
-import AppFooter from "@/components/AppFooter";
+import TaskList from "@/components/TaskList";
+import NotesSection from "@/components/NotesSection";
+import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus } from 'lucide-react';
-import SplashScreen from '@/components/SplashScreen';
-import InstallPrompt from '@/components/InstallPrompt';
-import OfflineIndicator from '@/components/OfflineIndicator';
-import BottomNavigation from '@/components/BottomNavigation'; // Import BottomNavigation
-import { usePWA } from '@/hooks/use-pwa';
-import { useAuth } from '@/hooks/use-auth';
-import { useTasks } from '@/hooks/use-tasks';
-import { useNavigate } from 'react-router-dom';
-import { useModal } from '@/components/ModalProvider'; // Import useModal
-
-const getCategoryName = (category: string) => {
-  const names: { [key: string]: string } = {
-    all: 'All Services',
-    cleaning: 'Cleaning',
-    moving: 'Moving',
-    assembly: 'Assembly',
-    repairs: 'Repairs',
-    delivery: 'Delivery',
-    mounting: 'Mounting',
-    painting: 'Painting', // Added painting
-    other: 'Other'
-  };
-  return names[category] || 'Task';
-};
+import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
 
 const Index = () => {
-  const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
-  const { isAuthenticated, loading: authLoading, logOut } = useAuth();
-  const { tasks, filteredTasks, loading: tasksLoading, error: tasksError } = useTasks(); // Use filteredTasks
-  const { openPostTaskModal, openLoginModal } = useModal(); // Use openPostTaskModal from useModal
-  const navigate = useNavigate();
+  // Placeholder state for UI, Firebase integration will come later
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [tasks, setTasks] = React.useState<string[]>([]);
+  const [notes, setNotes] = React.useState<string[]>([]);
 
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [selectedCategory, setSelectedCategory] = React.useState('all');
-
-  const handleSignOut = async () => {
-    await logOut();
+  const handleSignIn = () => {
+    // This will be replaced with Firebase auth logic
+    console.log("Sign In clicked (Firebase auth not yet active)");
+    setIsAuthenticated(true); // Simulate sign-in for UI
   };
 
-  const handleSearchSubmit = () => {
-    // The filtering is now handled by the useTasks hook based on searchTerm and selectedCategory
-    // No explicit action needed here, as the hook will react to state changes.
-    console.log("Searching for:", searchTerm, "in category:", selectedCategory);
+  const handleSignOut = () => {
+    // This will be replaced with Firebase auth logic
+    console.log("Sign Out clicked (Firebase auth not yet active)");
+    setIsAuthenticated(false); // Simulate sign-out for UI
+    setTasks([]); // Clear tasks on logout
+    setNotes([]); // Clear notes on logout
   };
 
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-    // Optionally, clear search term when category changes
-    setSearchTerm('');
+  const handleAddTask = (task: string) => {
+    // This will be replaced with Firebase firestore logic
+    console.log("Add Task clicked (Firebase firestore not yet active):", task);
+    setTasks((prev) => [...prev, task]);
   };
 
-  const handleViewTaskDetails = (taskId: string) => {
-    navigate(`/tasks/${taskId}`);
+  const handleAddNote = (note: string) => {
+    // This will be replaced with Firebase firestore logic
+    console.log("Add Note clicked (Firebase firestore not yet active):", note);
+    setNotes((prev) => [...prev, note]);
   };
-
-  const handleProfileClick = () => {
-    if (isAuthenticated) {
-      navigate('/my-tasks');
-    } else {
-      openLoginModal();
-    }
-  };
-
-  if (authLoading || tasksLoading) {
-    return <SplashScreen />;
-  }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 pb-16 md:pb-0"> {/* Added padding-bottom for mobile nav */}
-      {showSplashScreen && <SplashScreen />}
-      <OfflineIndicator isVisible={!isOnline} />
-
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Header
         isAuthenticated={isAuthenticated}
+        onSignIn={handleSignIn}
         onSignOut={handleSignOut}
       />
-      <HeroSection
-        searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
-        onSearchSubmit={handleSearchSubmit}
-      />
-      <main className="container mx-auto p-4 pt-[60px]"> {/* Added padding-top to account for fixed header */}
-        <CategoriesSection
-          activeCategory={selectedCategory}
-          onCategorySelect={handleCategorySelect}
+      <main className="container mx-auto p-4">
+        <TaskList
+          tasks={tasks}
+          onAddTask={handleAddTask}
+          isAuthenticated={isAuthenticated}
         />
-
-        {/* Tasks Section */}
-        <section id="tasks" className="py-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-4xl font-bold text-green-600">📋 Available Tasks Near You</h2>
-            <Button onClick={openPostTaskModal} className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-2">
-              <Plus size={20} /> Post a Task
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
-            {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
-              <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
-            ) : (
-              (filteredTasks || []).map((task) => (
-                <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                  <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
-                    <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      {getCategoryName(task.category)}
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="text-xl font-semibold mb-2">{task.title}</h3>
-                    <p className="text-gray-600 flex items-center mb-2">
-                      <MapPin size={16} className="mr-2" /> {task.location}
-                    </p>
-                    <p className="text-2xl font-bold text-green-600 mb-4">₱{task.budget.toLocaleString()}</p>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover" />
-                        <span className="font-medium">{task.posterName}</span>
-                      </div>
-                      <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </section>
-
-        <HowItWorksSection />
+        <NotesSection
+          notes={notes}
+          onAddNote={handleAddNote}
+          isAuthenticated={isAuthenticated}
+        />
+        <ImageGallery />
       </main>
-      <AppFooter />
+      <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+        <p>&copy; 2025 DYAD Full Duplicate</p>
+      </footer>
       <MadeWithDyad />
-      <Toaster />
-
-      <InstallPrompt
-        isVisible={showInstallPrompt}
-        onInstall={installApp}
-        onClose={closeInstallPrompt}
-      />
-      <BottomNavigation onProfileClick={handleProfileClick} /> {/* Render BottomNavigation */}
+      <Toaster /> {/* Add Toaster for sonner notifications */}
     </div>
   );
 };

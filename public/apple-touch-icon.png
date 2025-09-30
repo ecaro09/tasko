@@ -1,5 +1,0 @@
-<!-- This is a placeholder image. In a real application, you would replace this with an actual image file. -->
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100%" height="100%" fill="#00a82d"/>
-  <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="60" fill="#FFFFFF" text-anchor="middle" alignment-baseline="middle">🛠️</text>
-</svg>
