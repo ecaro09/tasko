@@ -4,9 +4,11 @@ const urlsToCache = [
     '/index.html',
     '/src/main.tsx',
     '/src/globals.css',
-    '/public/hero-bg.jpg', // Ensure this is cached
+    '/public/hero-bg.jpg',
     '/favicon.ico',
     '/apple-touch-icon.png',
+    '/google-play.png', // New asset
+    '/app-store.png',   // New asset
     // Add other critical assets your app needs offline
     'https://randomuser.me/api/portraits/women/32.jpg',
     'https://randomuser.me/api/portraits/men/54.jpg',

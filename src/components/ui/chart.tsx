@@ -210,9 +210,9 @@ ChartLegend.displayName = "ChartLegend";
 // --- ChartLegendContent ---
 const ChartLegendContent = React.forwardRef<
   React.ElementRef<typeof _RechartsLegend>,
-  _RechartsLegendProps<any, any>
+  React.ComponentPropsWithRef<typeof _RechartsLegend>
 >((props, ref) => {
-  return <_RechartsLegend content={ChartLegend} ref={ref} {...props} />;
+  return <_RechartsLegend content={ChartLegend} ref={ref as any} {...props} />;
 });
 ChartLegendContent.displayName = "ChartLegendContent";
 
