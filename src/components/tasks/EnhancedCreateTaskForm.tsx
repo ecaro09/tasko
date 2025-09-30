@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createTask } from '@/lib/data'; // Adjusted import path
 import { getEnhancedTaskSuggestions } from '@/ai/flows/enhanced-suggestions';
-import type { Location } from '@/lib/types'; // Removed TaskCategory import as it's redefined locally
+import type { Location, Task, TaskCategory as TaskCategoryType } from '@/lib/types'; // Renamed TaskCategory to TaskCategoryType to avoid conflict
 
 const categories = [
   'Cleaning', 'Repairs', 'Errands', 'Deliveries', 'Carpentry',
@@ -124,15 +124,19 @@ export default function EnhancedCreateTaskForm() {
 
     setIsLoading(true);
     try {
-      const taskData = {
-        ...data,
-        clientId: user.uid,
-        // client and tasker are omitted as they are populated by the server-side logic
-        status: 'posted' as const,
+      const taskData: Omit<Task, 'id' | 'client' | 'tasker'> = {
+        title: data.title,
+        description: data.description,
+        category: data.category as TaskCategoryType, // Cast to TaskCategoryType from lib/types.ts
+        price: data.price,
+        location: data.location as Location, // Explicitly cast to Location
         scheduleDate: new Date(data.scheduleDate),
+        clientId: user.uid,
+        status: 'posted',
         serviceFee: 50, // Default service fee
         paymentMethod: 'gcash',
-        // createdAt and updatedAt are handled by serverTimestamp in createTask
+        createdAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
+        updatedAt: new Date(), // Placeholder, will be overwritten by serverTimestamp
       };
 
       const result = await createTask(taskData);

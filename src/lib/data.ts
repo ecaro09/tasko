@@ -98,7 +98,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
   } as Task;
 }
 
-export async function createTask(taskData: Omit<Task, 'id' | 'client' | 'tasker' | 'createdAt' | 'updatedAt'>): Promise<{ success: boolean; error?: string; taskId?: string }> {
+export async function createTask(taskData: Omit<Task, 'id' | 'client' | 'tasker'>): Promise<{ success: boolean; error?: string; taskId?: string }> {
   try {
     const docRef = await addDoc(collection(db, 'tasks'), {
       ...taskData,
