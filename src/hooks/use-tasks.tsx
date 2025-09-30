@@ -19,7 +19,7 @@ export interface Task {
   description: string;
   location: string;
   budget: number;
-  posterId: string; // This property is required
+  posterId: string;
   posterName: string;
   posterAvatar: string;
   datePosted: string;
@@ -42,81 +42,6 @@ interface TasksProviderProps {
   searchTerm?: string;
   selectedCategory?: string;
 }
-
-// Sample Task Data (for initial load if Firestore is empty or for demonstration)
-const sampleTasks: Task[] = [
-  {
-    id: "1",
-    title: "Furniture Assembly Needed",
-    category: "assembly",
-    description: "Need help assembling IKEA bed and wardrobe. All parts are available.",
-    location: "Quezon City, Metro Manila",
-    budget: 800,
-    posterId: "sample-poster-1", // Added posterId
-    posterName: "Maria Santos",
-    posterAvatar: "https://randomuser.me/api/portraits/women/32.jpg",
-    datePosted: "2023-06-15",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1581093458791-8a6b5d174d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    id: "2",
-    title: "Apartment Cleaning",
-    category: "cleaning",
-    description: "General cleaning for 2-bedroom apartment. Includes sweeping, mopping, and bathroom cleaning.",
-    location: "Makati City, Metro Manila",
-    budget: 1200,
-    posterId: "sample-poster-2", // Added posterId
-    posterName: "Juan Dela Cruz",
-    posterAvatar: "https://randomuser.me/api/portraits/men/54.jpg",
-    datePosted: "2023-06-14",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    id: "3",
-    title: "Help with Moving",
-    category: "moving",
-    description: "Need assistance moving furniture from 2nd floor to ground floor.",
-    location: "Mandaluyong City, Metro Manila",
-    budget: 1500,
-    posterId: "sample-poster-3", // Added posterId
-    posterName: "Ana Reyes",
-    posterAvatar: "https://randomuser.me/api/portraits/women/65.jpg",
-    datePosted: "2023-06-13",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-  },
-  // New marketing-focused tasks
-  {
-    id: "4",
-    title: "Delicious Pinoy Food Delivery",
-    category: "delivery",
-    description: "Craving authentic Filipino dishes? Get your favorite adobo, sinigang, or lechon delivered fresh to your door by a reliable Pinoy tasker!",
-    location: "Taguig City, Metro Manila",
-    budget: 300,
-    posterId: "sample-poster-4", // Added posterId
-    posterName: "Aling Nena",
-    posterAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    datePosted: "2023-06-16",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1563612116625-30123f730e5b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Food delivery image
-  },
-  {
-    id: "5",
-    title: "Home Garden Maintenance by a Pinay Expert",
-    category: "repairs", // Using repairs for general home services, could be 'other'
-    description: "Need a green thumb for your garden? A skilled Pinay gardener is ready to help with planting, pruning, and general upkeep to make your home beautiful.",
-    location: "Cebu City, Cebu",
-    budget: 1000,
-    posterId: "sample-poster-5", // Added posterId
-    posterName: "Mang Tonyo",
-    posterAvatar: "https://randomuser.me/api/portraits/men/77.jpg",
-    datePosted: "2023-06-16",
-    status: "open",
-    imageUrl: "https://images.unsplash.com/photo-1518568779000-729784601159?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Gardening image
-  },
-];
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTerm = '', selectedCategory = 'all' }) => {
   const { user, isAuthenticated } = useAuth();
@@ -150,16 +75,13 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTe
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
         };
       });
-      // If Firestore has no tasks, use sample tasks. Otherwise, use fetched tasks.
-      setAllTasks(fetchedTasks.length > 0 ? fetchedTasks : sampleTasks);
+      setAllTasks(fetchedTasks);
       setLoading(false);
     }, (err) => {
       console.error("Error fetching tasks:", err);
       setError("Failed to fetch tasks.");
       setLoading(false);
       toast.error("Failed to load tasks.");
-      // Fallback to sample tasks on error
-      setAllTasks(sampleTasks);
     });
 
     return () => unsubscribe();
