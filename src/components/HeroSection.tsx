@@ -7,7 +7,7 @@ const HeroSection: React.FC = () => {
   return (
     <section className="relative bg-gradient-to-r from-green-500 to-green-700 text-white py-20 md:py-32 overflow-hidden mt-[60px]">
       <div className="absolute inset-0 z-0 opacity-20">
-        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06f2e0?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Background" className="w-full h-full object-cover" />
+        <img src="/hero-bg.jpg" alt="Background" className="w-full h-full object-cover" />
       </div>
       <div className="container mx-auto px-4 relative z-10 text-center">
         <h2 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 drop-shadow-lg">

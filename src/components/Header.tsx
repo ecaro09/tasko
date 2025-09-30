@@ -6,10 +6,9 @@ interface HeaderProps {
   isAuthenticated: boolean;
   onSignIn: () => void;
   onSignOut: () => void;
-  onShowSignup: () => void; // Added prop
 }
 
-const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignIn, onSignOut, onShowSignup }) => {
+const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignIn, onSignOut }) => {
   return (
     <header className="pwa-header bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center">
       <div className="container mx-auto px-4 flex justify-between items-center w-full">
@@ -33,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignIn, onSignOut, o
               <Button onClick={onSignIn} variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                 Login
               </Button>
-              <Button onClick={onShowSignup} className="bg-green-600 text-white hover:bg-green-700">
+              <Button className="bg-green-600 text-white hover:bg-green-700">
                 Sign Up
               </Button>
             </>
