@@ -14,7 +14,7 @@ import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import BottomNavigation from '@/components/BottomNavigation';
 import { usePWA, PWAPROVIDER_SPLASH_SCREEN_DELAY } from '@/hooks/use-pwa';
-import { useAuth } from '@/hooks/use-auth'; // Corrected import for useAuth
+import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
@@ -82,7 +82,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 pb-16 md:pb-0">
+    <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
       <OfflineIndicator isVisible={!isOnline} />
 
       <Header
@@ -103,8 +103,8 @@ const Index = () => {
         {/* Tasks Section */}
         <section id="tasks" className="py-8">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-4xl font-bold text-green-600">📋 Available Tasks Near You</h2>
-            <Button onClick={openPostTaskModal} className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-2">
+            <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))]">📋 Available Tasks Near You</h2>
+            <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-2">
               <Plus size={20} /> Post a Task
             </Button>
           </div>
@@ -114,25 +114,25 @@ const Index = () => {
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
             ) : (
               (filteredTasks || []).map((task) => (
-                <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
                     <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
-                    <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
                       {getCategoryName(task.category)}
                     </div>
                   </div>
                   <CardContent className="p-4">
                     <h3 className="text-xl font-semibold mb-2">{task.title}</h3>
-                    <p className="text-gray-600 flex items-center mb-2">
+                    <p className="text-[hsl(var(--text-light))] flex items-center mb-2">
                       <MapPin size={16} className="mr-2" /> {task.location}
                     </p>
-                    <p className="text-2xl font-bold text-green-600 mb-4">₱{task.budget.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover" />
+                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
                         <span className="font-medium">{task.posterName}</span>
                       </div>
-                      <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
+                      <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
                         View Details
                       </Button>
                     </div>
