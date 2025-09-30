@@ -2,173 +2,159 @@
 
 import * as React from "react";
 import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  Bar,
-  BarChart,
-  Area,
-  AreaChart,
   ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  type TooltipProps,
-  type LegendProps,
+  Tooltip as _RechartsTooltip,
+  TooltipProps as _RechartsTooltipProps,
+  Legend as _RechartsLegend,
+  LegendProps as _RechartsLegendProps,
+  ValueType,
+  NameType,
 } from "recharts";
-import {
-  ChartContainer as RechartsChartContainer,
-  ChartTooltip as RechartsChartTooltip,
-  ChartTooltipContent as RechartsChartTooltipContent,
-  type ChartConfig as RechartsChartConfig,
-} from "@/components/ui/chart"; // This import is causing circular dependency. We will define them here.
 import { cn } from "@/lib/utils";
 
-// Define ChartConfig locally to avoid circular dependency
-export type ChartConfig = {
-  [key: string]: {
+// --- ChartConfig Type ---
+type ChartConfig = {
+  [k: string]: {
     label?: string;
     color?: string;
     icon?: React.ComponentType<{ className?: string }>;
-    theme?: Record<string, string>;
   };
 };
 
-const THEMES = {
-  light: "",
-  dark: ".dark",
-} as const;
-
+// --- ChartContext ---
 type ChartContextProps = {
   config: ChartConfig;
-  theme: keyof typeof THEMES;
 };
 
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
 function useChart() {
   const context = React.useContext(ChartContext);
-
   if (!context) {
-    throw new Error("useChart must be used within a <ChartContainer />");
+    throw new Error("useChart must be used within a ChartProvider");
   }
-
   return context;
 }
 
-export function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
-  const colorConfig = Object.entries(config).filter(
-    ([_, itemConfig]) => (itemConfig as ChartConfig[string]).theme || (itemConfig as ChartConfig[string]).color,
-  );
+// --- ChartContainer ---
+interface ChartContainerProps extends React.ComponentPropsWithoutRef<typeof ResponsiveContainer> {
+  config: ChartConfig;
+  children?: React.ReactNode;
+}
 
-  if (!colorConfig.length) {
+const ChartContainer = React.forwardRef<
+  React.ElementRef<typeof ResponsiveContainer>,
+  ChartContainerProps
+>(({ config, className, children, ...props }, ref) => (
+  <ChartContext.Provider value={{ config }}>
+    <ResponsiveContainer
+      ref={ref}
+      className={cn("h-[300px] w-full", className)}
+      {...props}
+    >
+      {children}
+    </ResponsiveContainer>
+  </ChartContext.Provider>
+));
+ChartContainer.displayName = "ChartContainer";
+
+// --- ChartTooltip ---
+interface ChartTooltipProps extends _RechartsTooltipProps<ValueType, NameType> {
+  // Add any custom props if needed
+}
+
+const ChartTooltip = React.forwardRef<
+  React.ElementRef<typeof _RechartsTooltip>,
+  ChartTooltipProps
+>(({ className, ...props }, ref) => (
+  <_RechartsTooltip
+    ref={ref}
+    wrapperClassName={cn("!bg-card !text-card-foreground", className)}
+    {...props}
+  />
+));
+ChartTooltip.displayName = "ChartTooltip";
+
+
+// --- ChartTooltipContent ---
+interface ChartTooltipContentProps extends _RechartsTooltipProps<ValueType, NameType> {
+  hideLabel?: boolean;
+  hideIndicator?: boolean;
+}
+
+const ChartTooltipContent = React.forwardRef<
+  HTMLDivElement, // Ref for the div element
+  ChartTooltipContentProps
+>(({ active, payload, className, formatter, hideLabel = false, hideIndicator = false, ...props }, ref) => {
+  const { config } = useChart();
+
+  if (!active || !payload || payload.length === 0) {
     return null;
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-  ${colorConfig
-    .map(([key, itemConfig]) => {
-      const typedItemConfig = itemConfig as ChartConfig[string];
-      const color = typedItemConfig.theme?.[theme as keyof typeof typedItemConfig.theme] || typedItemConfig.color;
-      return color ? `--color-${key}: ${color};` : null;
-    })
-    .filter(Boolean)
-    .join("\n")}
-}
-`,
-          )
-          .join("\n"),
-      }}
-    />
-  );
-}
-
-type ChartContainerProps = React.ComponentProps<typeof RechartsChartContainer> & {
-  config: ChartConfig;
-};
-
-const ChartContainer = React.forwardRef<
-  HTMLDivElement,
-  ChartContainerProps
->(({ id, className, children, config, ...props }, ref) => {
-  const uniqueId = React.useId();
-  const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+  const defaultFormatter = (value: any, name: string, item: any) => {
+    const unit = item?.unit;
+    if (unit) {
+      return `${value} ${unit}`;
+    }
+    return value;
+  };
 
   return (
-    <ChartContext.Provider value={{ config, theme: "light" }}> {/* Default theme to light */}
-      <RechartsChartContainer
-        ref={ref}
-        id={chartId}
-        className={cn(
-          "flex h-[300px] w-full flex-col items-center justify-center",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </RechartsChartContainer>
-    </ChartContext.Provider>
-  );
-});
-ChartContainer.displayName = "ChartContainer";
-
-type ChartTooltipProps = TooltipProps<any, any> & {
-  content?: React.ComponentProps<typeof RechartsChartTooltipContent>["content"];
-};
-
-const ChartTooltip = ({ content, ...props }: ChartTooltipProps) => {
-  const { config } = useChart();
-  return (
-    <Tooltip
-      cursor={false}
-      content={({ active, payload, label }) => (
-        <RechartsChartTooltipContent
-          active={active}
-          payload={payload}
-          label={label}
-          config={config}
-          content={content}
-        />
+    <div
+      ref={ref} // Ref is for the div here
+      className={cn(
+        "grid min-w-[130px] items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs shadow-xl",
+        className
       )}
       {...props}
-    />
+    >
+      {!hideLabel && payload[0]?.name && (
+        <div className="text-muted-foreground">{payload[0].name}</div>
+      )}
+      {payload.map((item, index) => {
+        const key = item.dataKey || item.name;
+        const itemConfig = key ? config[key] : undefined;
+        const indicatorColor = itemConfig?.color || item.color;
+
+        return (
+          <div
+            key={item.dataKey || `item-${index}`}
+            className="flex w-full items-stretch gap-2"
+          >
+            {!hideIndicator && (
+              <div
+                className="h-2.5 w-2.5 rounded-full"
+                style={{
+                  backgroundColor: indicatorColor,
+                }}
+              />
+            )}
+            <div className="flex flex-1 justify-between">
+              <div className="text-muted-foreground">
+                {itemConfig?.label || item.name}
+              </div>
+              <div className="font-mono font-medium tabular-nums text-foreground">
+                {(formatter || defaultFormatter)(item.value, item.name!, item)}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
-};
-ChartTooltip.displayName = "ChartTooltip";
-
-type ChartTooltipContentProps = React.ComponentProps<typeof RechartsChartTooltipContent>;
-
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  ChartTooltipContentProps
->(({ className, ...props }, ref) => {
-  return <RechartsChartTooltipContent ref={ref} className={cn(className)} {...props} />;
 });
 ChartTooltipContent.displayName = "ChartTooltipContent";
 
+// --- ChartLegend ---
+interface ChartLegendProps extends _RechartsLegendProps<ValueType, NameType> {
+  hideIcon?: boolean;
+}
 
-type ChartLegendProps = React.ComponentProps<"div"> &
-  Pick<LegendProps, "payload" | "verticalAlign"> & {
-    hideIcon?: boolean;
-  };
+const ChartLegend = ({ className, payload, hideIcon = false, verticalAlign, ...props }: ChartLegendProps) => {
+  const { config } = useChart();
 
-const ChartLegend = ({
-  className,
-  payload,
-  hideIcon = false,
-  verticalAlign = "bottom",
-  ...props
-}: ChartLegendProps) => {
-  const { config } = useChart(); // Access config from context
-
-  if (!payload?.length) {
+  if (!payload || payload.length === 0) {
     return null;
   }
 
@@ -176,53 +162,55 @@ const ChartLegend = ({
     <div
       className={cn(
         "flex items-center justify-center gap-4",
-        verticalAlign === "top" ? "pb-3" : "pt-3",
-        className,
+        verticalAlign === "top" && "pb-3",
+        verticalAlign === "bottom" && "pt-3",
+        className
       )}
       {...props}
     >
-      {payload.map((item: any) => {
-        const activeColor = item.color || config[item.dataKey]?.color;
+      {payload.map((item) => {
+        const key = item.dataKey || item.value;
+        const itemConfig = key ? config[key] : undefined;
+        const indicatorColor = itemConfig?.color || item.color;
+
+        if (!item || hideIcon) {
+          return null;
+        }
+
         return (
           <div
             key={item.value}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground"
+            className="flex items-center gap-1.5"
           >
-            {!hideIcon && (
-              <span
-                className="h-3 w-3 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: `hsl(${activeColor})`,
-                }}
-              />
-            )}
-            {item.value}
+            <div
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor: indicatorColor,
+              }}
+            />
+            <div className="text-xs text-muted-foreground">
+              {itemConfig?.label || item.value}
+            </div>
           </div>
         );
       })}
     </div>
   );
 };
+ChartLegend.displayName = "ChartLegend";
 
-const ChartLegendContent = (props: LegendProps) => {
-  return <Legend content={ChartLegend} {...props} />; // Pass ChartLegend as component reference
+// --- ChartLegendContent ---
+const ChartLegendContent = (props: _RechartsLegendProps<ValueType, NameType>) => {
+  return <_RechartsLegend content={ChartLegend} {...props} />;
 };
+ChartLegendContent.displayName = "ChartLegendContent";
 
+
+// --- Exports ---
 export {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-  // Re-export Recharts components for convenience
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Line,
-  LineChart,
-  Bar,
-  BarChart,
-  Area,
-  AreaChart,
 };

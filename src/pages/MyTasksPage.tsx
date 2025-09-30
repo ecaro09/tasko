@@ -53,7 +53,9 @@ const MyTasksPage: React.FC = () => {
     return <SplashScreen />; // Show splash screen while redirecting
   }
 
-  const userTasks = tasks.filter(task => task.posterId === user.uid);
+  // Ensure tasks is an array before filtering
+  const safeTasks = tasks || [];
+  const userTasks = safeTasks.filter(task => task.posterId === user.uid);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">

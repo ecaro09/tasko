@@ -73,10 +73,10 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
-            {!tasksLoading && tasks.length === 0 && !tasksError ? (
+            {!tasksLoading && (tasks || []).length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
             ) : (
-              tasks.map((task) => (
+              (tasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                   <div className="h-40 overflow-hidden relative">
                     <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
