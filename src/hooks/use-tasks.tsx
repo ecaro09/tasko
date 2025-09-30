@@ -9,6 +9,8 @@ import {
   serverTimestamp,
   DocumentData,
   getDocs,
+  deleteDoc, // Import deleteDoc
+  doc, // Import doc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -33,6 +35,7 @@ interface UseTasksContextType {
   loading: boolean;
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -43,7 +46,8 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]
+);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,7 +83,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
           datePosted: serverTimestamp(),
           status: "open",
-          imageUrl: "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          imageUrl: "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
         },
         {
           title: "Online Content Creator for Pinoy Food Blog",
@@ -125,7 +129,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
         };
       });
       setAllTasks(fetchedTasks);
@@ -169,11 +173,29 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
+  const deleteTask = async (taskId: string) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to delete a task.");
+      return;
+    }
+
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+      await deleteDoc(taskRef);
+      toast.success("Task deleted successfully!");
+    } catch (err: any) {
+      console.error("Error deleting task:", err);
+      toast.error(`Failed to delete task: ${err.message}`);
+      throw err;
+    }
+  };
+
   const value = {
     tasks: allTasks, // Expose all tasks
     loading,
     error,
     addTask,
+    deleteTask,
   };
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;

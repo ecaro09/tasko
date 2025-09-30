@@ -1,15 +1,28 @@
-import React from 'react';
-import { useAuth } from '@/hooks/use-auth'; // Corrected import for useAuth
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign } from 'lucide-react';
+import { MapPin, Tag, DollarSign, Trash2 } from 'lucide-react'; // Import Trash2 icon
 import { useNavigate } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"; // Import AlertDialog components
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
   const navigate = useNavigate();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
   if (authLoading || tasksLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks...</div>;
@@ -28,6 +41,24 @@ const MyTasksPage: React.FC = () => {
   }
 
   const userTasks = tasks.filter(task => task.posterId === user.uid);
+
+  const handleDeleteClick = (taskId: string) => {
+    setTaskToDelete(taskId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (taskToDelete) {
+      try {
+        await deleteTask(taskToDelete);
+      } catch (error) {
+        // Error handled by useTasks hook, toast already shown
+      } finally {
+        setTaskToDelete(null);
+        setIsDeleteDialogOpen(false);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
@@ -70,7 +101,14 @@ const MyTasksPage: React.FC = () => {
                     <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                       View Details
                     </Button>
-                    {/* Add more actions like Edit/Delete/Mark Complete based on task status */}
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDeleteClick(task.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      <Trash2 size={20} />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -78,6 +116,24 @@ const MyTasksPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your task.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
