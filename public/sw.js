@@ -2,12 +2,18 @@ const CACHE_NAME = 'tasko-pwa-v1';
 const urlsToCache = [
     '/',
     '/index.html',
-    '/src/globals.css', // Assuming this will be the main CSS file
-    // Add other critical assets here, e.g., JS bundles, images
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    'https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    'https://images.unsplash.com/photo-1581093458791-8a6b5d174d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+    '/src/main.tsx', // Main entry point for React app
+    '/src/globals.css', // Global CSS
+    '/logo.jpg', // Your logo image
+    '/favicon.jpg', // Your favicon image
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', // Font Awesome
+    // Add other critical assets and images used in the initial load
+    'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80', // Sample task image
+    'https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80', // Sample task image
+    'https://images.unsplash.com/photo-1581093458791-8a6b5d174d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80', // Sample task image
+    'https://randomuser.me/api/portraits/women/32.jpg', // Sample avatar
+    'https://randomuser.me/api/portraits/men/54.jpg', // Sample avatar
+    'https://randomuser.me/api/portraits/women/65.jpg', // Sample avatar
 ];
 
 self.addEventListener('install', event => {
@@ -24,8 +30,31 @@ self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
             .then(response => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request);
+                // Cache hit - return response
+                if (response) {
+                    return response;
+                }
+                // No cache hit - fetch from network
+                return fetch(event.request).then(
+                    function(response) {
+                        // Check if we received a valid response
+                        if(!response || response.status !== 200 || response.type !== 'basic') {
+                            return response;
+                        }
+
+                        // IMPORTANT: Clone the response. A response is a stream
+                        // and can only be consumed once. We need to consume it once
+                        // to cache it and once for the browser to fetch it.
+                        var responseToCache = response.clone();
+
+                        caches.open(CACHE_NAME)
+                            .then(function(cache) {
+                                cache.put(event.request, responseToCache);
+                            });
+
+                        return response;
+                    }
+                );
             })
     );
 });
