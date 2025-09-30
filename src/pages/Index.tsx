@@ -60,7 +60,7 @@ const Index = () => {
         onSignOut={handleSignOut}
       />
       <HeroSection />
-      <main className="container mx-auto p-4">
+      <main className="container mx-auto p-4 pt-[60px]"> {/* Added padding-top to account for fixed header */}
         <CategoriesSection />
 
         {/* Tasks Section */}
