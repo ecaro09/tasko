@@ -41,7 +41,7 @@ const Index = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks(); // This hook call must be here
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
@@ -54,39 +54,8 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSignOut = async () => {
-    await logout();
-  };
-
-  const handleSearchSubmit = () => {
-    // Filtering is now handled by the local useMemo below
-    console.log("Searching for:", searchTerm, "in category:", selectedCategory);
-  };
-
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-    // When category changes, clear search term to avoid conflicting filters
-    setSearchTerm('');
-  };
-
-  const handleViewTaskDetails = (taskId: string) => {
-    navigate(`/tasks/${taskId}`);
-  };
-
-  const handleProfileClick = () => {
-    if (isAuthenticated) {
-      navigate('/my-tasks');
-    } else {
-      openLoginModal();
-    }
-  };
-
-  // Conditional rendering happens AFTER all hooks are called
-  if (isSplashVisible) {
-    return <SplashScreen />;
-  }
-
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
+  // This must be called unconditionally before any early returns
   const filteredTasks = React.useMemo(() => {
     let currentFilteredTasks = tasks;
 
@@ -105,6 +74,35 @@ const Index = () => {
     return currentFilteredTasks;
   }, [tasks, searchTerm, selectedCategory]);
 
+  const handleSignOut = async () => {
+    await logout();
+  };
+
+  const handleSearchSubmit = () => {
+    console.log("Searching for:", searchTerm, "in category:", selectedCategory);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    setSearchTerm(''); // Clear search term to avoid conflicting filters
+  };
+
+  const handleViewTaskDetails = (taskId: string) => {
+    navigate(`/tasks/${taskId}`);
+  };
+
+  const handleProfileClick = () => {
+    if (isAuthenticated) {
+      navigate('/my-tasks');
+    } else {
+      openLoginModal();
+    }
+  };
+
+  // Conditional rendering happens AFTER all hooks are called
+  if (isSplashVisible) {
+    return <SplashScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
