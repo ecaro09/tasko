@@ -151,6 +151,7 @@ const Index = () => {
         isAuthenticated={isAuthenticated}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
+        onShowSignup={() => setShowSignupModal(true)} // Pass the handler here
       />
       <HeroSection />
       <main className="container mx-auto p-4">
