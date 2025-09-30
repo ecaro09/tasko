@@ -41,7 +41,7 @@ const Index = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks(); // This hook call must be here
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
@@ -54,37 +54,19 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
-  // This must be called unconditionally before any early returns
-  const filteredTasks = React.useMemo(() => {
-    let currentFilteredTasks = tasks;
-
-    if (selectedCategory && selectedCategory !== 'all') {
-      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
-    }
-
-    if (searchTerm) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      currentFilteredTasks = currentFilteredTasks.filter(task =>
-        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.location.toLowerCase().includes(lowerCaseSearchTerm)
-      );
-    }
-    return currentFilteredTasks;
-  }, [tasks, searchTerm, selectedCategory]);
-
   const handleSignOut = async () => {
     await logout();
   };
 
   const handleSearchSubmit = () => {
+    // Filtering is now handled by the local useMemo below
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
   };
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
-    setSearchTerm(''); // Clear search term to avoid conflicting filters
+    // When category changes, clear search term to avoid conflicting filters
+    setSearchTerm('');
   };
 
   const handleViewTaskDetails = (taskId: string) => {
@@ -103,6 +85,26 @@ const Index = () => {
   if (isSplashVisible) {
     return <SplashScreen />;
   }
+
+  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
+  const filteredTasks = React.useMemo(() => {
+    let currentFilteredTasks = tasks;
+
+    if (selectedCategory && selectedCategory !== 'all') {
+      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
+    }
+
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      currentFilteredTasks = currentFilteredTasks.filter(task =>
+        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.location.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+    }
+    return currentFilteredTasks;
+  }, [tasks, searchTerm, selectedCategory]);
+
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
