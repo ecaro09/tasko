@@ -4,7 +4,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import TaskDetailPage from "./pages/TaskDetailPage";
-import MyTasksPage from "./pages/MyTasksPage"; // Import MyTasksPage
+import MyTasksPage from "./pages/MyTasksPage";
+import FeaturesAndEarningsPage from "./pages/FeaturesAndEarningsPage"; // Import the new page
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -21,7 +22,8 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                <Route path="/my-tasks" element={<MyTasksPage />} /> {/* New route for MyTasksPage */}
+                <Route path="/my-tasks" element={<MyTasksPage />} />
+                <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} /> {/* New route */}
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
