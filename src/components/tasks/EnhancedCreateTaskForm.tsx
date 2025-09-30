@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createTask } from '@/lib/data';
 import { getEnhancedTaskSuggestions } from '@/ai/flows/enhanced-suggestions';
-import type { TaskCategory, Location } from '@/lib/types';
+import type * as types from '@/lib/types'; // Import all types from lib/types
 
 const categories = [
   'Cleaning', 'Repairs', 'Errands', 'Deliveries', 'Carpentry',
@@ -22,7 +22,7 @@ const categories = [
   'Gardening', 'Moving', 'Event Planning', 'Pet Care', 'Personal Care', 'Other'
 ] as const;
 
-type TaskCategoryType = typeof categories[number];
+type TaskCategory = typeof categories[number];
 
 const taskFormSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -47,12 +47,12 @@ const taskFormSchema = z.object({
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 export default function EnhancedCreateTaskForm() {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any>(null);
-  const [selectedCategories, setSelectedCategories] = useState<TaskCategoryType[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<TaskCategory[]>([]);
 
   const {
     register,
@@ -121,33 +121,28 @@ export default function EnhancedCreateTaskForm() {
 
     setIsLoading(true);
     try {
-      const taskData = {
+      // Construct the task data explicitly to ensure all required fields are present and typed correctly
+      const taskDataForCreation: Omit<types.Task, 'id' | 'client' | 'tasker' | 'createdAt' | 'updatedAt'> = {
         title: data.title,
         description: data.description,
-        category: data.category as TaskCategory,
+        category: data.category,
         price: data.price,
-        location: { // Explicitly construct location to match Location interface
-          barangay: data.location.barangay,
-          city: data.location.city,
-          province: data.location.province,
-        } as Location, // Cast to Location
-        clientId: user.uid,
-        status: 'posted' as const,
+        location: data.location as types.Location, // Explicitly cast to types.Location
         scheduleDate: new Date(data.scheduleDate),
-        serviceFee: 50,
+        clientId: user.uid,
+        status: 'posted',
+        serviceFee: 50, // Default service fee
         paymentMethod: 'gcash',
-        createdAt: new Date(), // Added to satisfy TypeScript compiler
-        updatedAt: new Date(), // Added to satisfy TypeScript compiler
       };
 
-      const result = await createTask(taskData);
+      const result = await createTask(taskDataForCreation);
       
       if (result.success) {
         toast({
           title: 'Task Created!',
           description: 'Your task has been posted successfully.',
         });
-        // window.location.href = '/dashboard'; 
+        // window.location.href = '/dashboard';
       } else {
         throw new Error(result.error);
       }
