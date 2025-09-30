@@ -208,9 +208,12 @@ const ChartLegend = ({ className, payload, hideIcon = false, verticalAlign, ...p
 ChartLegend.displayName = "ChartLegend";
 
 // --- ChartLegendContent ---
-const ChartLegendContent = (props: _RechartsLegendProps<any, any>) => {
-  return <_RechartsLegend content={ChartLegend} {...props} />;
-};
+const ChartLegendContent = React.forwardRef<
+  React.ElementRef<typeof _RechartsLegend>,
+  _RechartsLegendProps<any, any>
+>((props, ref) => {
+  return <_RechartsLegend content={ChartLegend} ref={ref} {...props} />;
+});
 ChartLegendContent.displayName = "ChartLegendContent";
 
 
