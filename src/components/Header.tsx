@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useModal } from './ModalProvider'; // Import useModal
+import { useModal } from './ModalProvider';
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth to check authentication status
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -9,7 +10,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
-  const { openLoginModal, openSignupModal } = useModal(); // Use the useModal hook
+  const { openLoginModal, openSignupModal } = useModal();
+  const { user } = useAuth(); // Get user from useAuth
 
   return (
     <header className="pwa-header bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center">
@@ -20,7 +22,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
         <nav className="hidden md:flex gap-8">
           <Link to="/" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Home</Link>
           <a href="#categories" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Services</a>
-          <a href="#tasks" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Tasks</a>
+          {isAuthenticated && (
+            <Link to="/my-tasks" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">My Tasks</Link>
+          )}
+          <a href="#tasks" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Browse Tasks</a>
           <a href="#how-it-works" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">How It Works</a>
           <a href="#become-tasker" className="text-gray-700 hover:text-green-600 font-semibold transition-colors">Become a Tasker</a>
         </nav>
