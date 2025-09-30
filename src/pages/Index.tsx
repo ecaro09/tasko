@@ -38,7 +38,6 @@ const getCategoryName = (category: string) => {
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
-  const { tasks, filteredTasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
 
@@ -58,11 +57,13 @@ const Index = () => {
   };
 
   const handleSearchSubmit = () => {
+    // Filtering is now handled by the local useMemo below
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
   };
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
+    // When category changes, clear search term to avoid conflicting filters
     setSearchTerm('');
   };
 
@@ -81,6 +82,29 @@ const Index = () => {
   if (isSplashVisible) {
     return <SplashScreen />;
   }
+
+  // Use the useTasks hook without arguments to get all tasks
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+
+  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
+  const filteredTasks = React.useMemo(() => {
+    let currentFilteredTasks = tasks;
+
+    if (selectedCategory && selectedCategory !== 'all') {
+      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
+    }
+
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      currentFilteredTasks = currentFilteredTasks.filter(task =>
+        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.location.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+    }
+    return currentFilteredTasks;
+  }, [tasks, searchTerm, selectedCategory]);
+
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
@@ -111,6 +135,7 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
+            {tasksLoading && <p className="col-span-full text-center text-gray-500 italic py-8">Loading tasks...</p>}
             {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
             ) : (

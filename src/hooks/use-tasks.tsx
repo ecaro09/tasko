@@ -8,7 +8,7 @@ import {
   onSnapshot,
   serverTimestamp,
   DocumentData,
-  getDocs, // Import getDocs to check if collection is empty
+  getDocs,
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -29,25 +29,21 @@ export interface Task {
 }
 
 interface UseTasksContextType {
-  tasks: Task[];
+  tasks: Task[]; // This will now be all tasks
   loading: boolean;
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => Promise<void>;
-  filteredTasks: Task[];
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
 
 interface TasksProviderProps {
   children: ReactNode;
-  searchTerm?: string;
-  selectedCategory?: string;
 }
 
-export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTerm = '', selectedCategory = 'all' }) => {
+export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const [allTasks, setAllTasks] = useState<Task[]>([]);
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -149,26 +145,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTe
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  useEffect(() => {
-    let currentFilteredTasks = allTasks;
-
-    if (selectedCategory && selectedCategory !== 'all') {
-      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
-    }
-
-    if (searchTerm) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      currentFilteredTasks = currentFilteredTasks.filter(task =>
-        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.location.toLowerCase().includes(lowerCaseSearchTerm)
-      );
-    }
-
-    setFilteredTasks(currentFilteredTasks);
-  }, [allTasks, searchTerm, selectedCategory]);
-
-
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
@@ -194,8 +170,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTe
   };
 
   const value = {
-    tasks: allTasks,
-    filteredTasks,
+    tasks: allTasks, // Expose all tasks
     loading,
     error,
     addTask,
