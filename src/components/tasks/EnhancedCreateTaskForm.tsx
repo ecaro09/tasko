@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createTask } from '@/lib/data';
 import { getEnhancedTaskSuggestions } from '@/ai/flows/enhanced-suggestions';
-import type * as types from '@/lib/types'; // Import all types from lib/types
+import type { Task, Location } from '@/lib/types'; // Import Task and Location types
 
 const categories = [
   'Cleaning', 'Repairs', 'Errands', 'Deliveries', 'Carpentry',
@@ -45,6 +45,9 @@ const taskFormSchema = z.object({
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
+
+// Define the exact type expected by createTask
+type CreateTaskInput = Omit<Task, 'id' | 'client' | 'tasker' | 'createdAt' | 'updatedAt'>;
 
 export default function EnhancedCreateTaskForm() {
   const { user, userData } = useAuth();
@@ -121,21 +124,21 @@ export default function EnhancedCreateTaskForm() {
 
     setIsLoading(true);
     try {
-      // Construct the task data explicitly to ensure all required fields are present and typed correctly
-      const taskDataForCreation: Omit<types.Task, 'id' | 'client' | 'tasker' | 'createdAt' | 'updatedAt'> = {
+      // Explicitly construct the taskData object to match CreateTaskInput type
+      const taskData: CreateTaskInput = {
         title: data.title,
         description: data.description,
         category: data.category,
         price: data.price,
-        location: data.location as types.Location, // Explicitly cast to types.Location
-        scheduleDate: new Date(data.scheduleDate),
+        location: data.location as Location, // Type assertion to resolve inference issue
+        scheduleDate: new Date(data.scheduleDate), // Convert string date to Date object
         clientId: user.uid,
-        status: 'posted',
+        status: 'posted', // Explicitly set status
         serviceFee: 50, // Default service fee
-        paymentMethod: 'gcash',
+        paymentMethod: 'gcash', // Default payment method
       };
 
-      const result = await createTask(taskDataForCreation);
+      const result = await createTask(taskData);
       
       if (result.success) {
         toast({
