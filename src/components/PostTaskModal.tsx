@@ -125,6 +125,7 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
                 <SelectItem value="delivery">Delivery & Errands</SelectItem>
                 <SelectItem value="painting">Painting Services</SelectItem>
                 <SelectItem value="assembly">Assembly Services</SelectItem>
+                <SelectItem value="marketing">Marketing Services</SelectItem> {/* Added Marketing */}
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>

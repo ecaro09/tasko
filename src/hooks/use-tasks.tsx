@@ -8,9 +8,10 @@ import {
   onSnapshot,
   serverTimestamp,
   DocumentData,
+  getDocs, // Import getDocs to check if collection is empty
 } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { useAuth } from './use-auth'; // Corrected import for useAuth
+import { useAuth } from './use-auth';
 
 export interface Task {
   id: string;
@@ -50,6 +51,62 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Function to seed initial tasks
+  const seedInitialTasks = async () => {
+    const tasksCollectionRef = collection(db, 'tasks');
+    const snapshot = await getDocs(tasksCollectionRef);
+
+    if (snapshot.empty) {
+      console.log("Database is empty, seeding initial marketing tasks...");
+      const initialTasks = [
+        {
+          title: "Social Media Manager for Local Business",
+          category: "marketing",
+          description: "Looking for a Pinoy/Pinay social media expert to manage our Facebook and Instagram pages. Must be familiar with local trends and audience engagement. Experience with Canva is a plus!",
+          location: "Metro Manila",
+          budget: 5000,
+          posterId: "seed-user-1",
+          posterName: "Maria Santos",
+          posterAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
+          datePosted: serverTimestamp(),
+          status: "open",
+          imageUrl: "https://images.unsplash.com/photo-1557804506-669a67965da0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        },
+        {
+          title: "Flyer Distribution for Sari-Sari Store",
+          category: "marketing",
+          description: "Need help distributing flyers for our new sari-sari store opening in Cebu. Must be reliable and know the local neighborhoods well. Target areas: Lapu-Lapu City, Mandaue City.",
+          location: "Cebu City",
+          budget: 1200,
+          posterId: "seed-user-2",
+          posterName: "Juan Dela Cruz",
+          posterAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
+          datePosted: serverTimestamp(),
+          status: "open",
+          imageUrl: "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        },
+        {
+          title: "Online Content Creator for Pinoy Food Blog",
+          category: "marketing",
+          description: "Seeking a creative Pinay content creator to produce engaging short videos and articles for our Filipino food blog. Knowledge of popular Filipino dishes and food styling is a must!",
+          location: "Remote (Philippines)",
+          budget: 3500,
+          posterId: "seed-user-3",
+          posterName: "Aling Nena",
+          posterAvatar: "https://randomuser.me/api/portraits/women/68.jpg",
+          datePosted: serverTimestamp(),
+          status: "open",
+          imageUrl: "https://images.unsplash.com/photo-1504711432028-ee2611f5817a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        },
+      ];
+
+      for (const task of initialTasks) {
+        await addDoc(tasksCollectionRef, task);
+      }
+      toast.info("Initial marketing tasks added!");
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -77,6 +134,11 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTe
       });
       setAllTasks(fetchedTasks);
       setLoading(false);
+
+      // Only seed if no tasks are present after initial fetch
+      if (fetchedTasks.length === 0) {
+        seedInitialTasks();
+      }
     }, (err) => {
       console.error("Error fetching tasks:", err);
       setError("Failed to fetch tasks.");
@@ -85,7 +147,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children, searchTe
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Empty dependency array to run once on mount
 
   useEffect(() => {
     let currentFilteredTasks = allTasks;

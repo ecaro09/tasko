@@ -29,6 +29,7 @@ const getCategoryName = (category: string) => {
     delivery: 'Delivery',
     mounting: 'Mounting',
     painting: 'Painting',
+    marketing: 'Marketing', // Added marketing category
     other: 'Other'
   };
   return names[category] || 'Task';
