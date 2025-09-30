@@ -5,7 +5,7 @@ import CategoriesSection from "@/components/CategoriesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster } from "sonner"; // Removed toast import as it's not directly used here anymore
+import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Plus } from 'lucide-react';

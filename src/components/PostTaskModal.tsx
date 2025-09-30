@@ -22,7 +22,7 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose, onPostTa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !category || !description || !location || !budget) {
-      alert('Please fill in all fields.');
+      window.alert('Please fill in all fields.');
       return;
     }
     onPostTask({
@@ -30,7 +30,7 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose, onPostTa
       category,
       description,
       location,
-      budget: parseFloat(budget),
+      budget: window.parseFloat(budget),
     });
     // Reset form
     setTitle('');

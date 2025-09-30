@@ -6,7 +6,6 @@ import { useModal } from './ModalProvider'; // Import useModal
 interface HeaderProps {
   isAuthenticated: boolean;
   onSignOut: () => void;
-  // Removed onSignIn and onSignUp props as they will be handled by useModal
 }
 
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
