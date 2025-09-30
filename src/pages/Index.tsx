@@ -59,7 +59,7 @@ const Index = () => {
         <ImageGallery />
       </main>
       <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-        <p>&copy; 2025 DYAD Full Duplicate</p>
+        <p>&copy; 2025 Tasko</p>
       </footer>
       <MadeWithDyad />
       <Toaster /> {/* Add Toaster for sonner notifications */}
