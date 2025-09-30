@@ -7,8 +7,7 @@ import {
   TooltipProps as _RechartsTooltipProps,
   Legend as _RechartsLegend,
   LegendProps as _RechartsLegendProps,
-  ValueType,
-  NameType,
+  // Removed direct imports of ValueType and NameType as they are not exported directly
 } from "recharts";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +38,8 @@ function useChart() {
 // --- ChartContainer ---
 interface ChartContainerProps extends React.ComponentPropsWithoutRef<typeof ResponsiveContainer> {
   config: ChartConfig;
-  children?: React.ReactNode;
+  // Fix for error #3 and #4: ResponsiveContainer expects a single ReactElement child
+  children: React.ReactElement;
 }
 
 const ChartContainer = React.forwardRef<
@@ -59,7 +59,8 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = "ChartContainer";
 
 // --- ChartTooltip ---
-interface ChartTooltipProps extends _RechartsTooltipProps<ValueType, NameType> {
+// Fix for error #5: className is correctly part of _RechartsTooltipProps
+interface ChartTooltipProps extends _RechartsTooltipProps<any, any> { // Use any for generics as ValueType/NameType are not directly imported
   // Add any custom props if needed
 }
 
@@ -77,9 +78,16 @@ ChartTooltip.displayName = "ChartTooltip";
 
 
 // --- ChartTooltipContent ---
-interface ChartTooltipContentProps extends _RechartsTooltipProps<ValueType, NameType> {
+// Fix for error #6: This component is a custom content renderer,
+// it receives specific props from Recharts, not all _RechartsTooltipProps.
+interface ChartTooltipContentProps {
+  active?: boolean;
+  payload?: _RechartsTooltipProps<any, any>["payload"]; // Use any for generics
+  label?: _RechartsTooltipProps<any, any>["label"]; // Use any for generics
+  formatter?: _RechartsTooltipProps<any, any>["formatter"]; // Use any for generics
   hideLabel?: boolean;
   hideIndicator?: boolean;
+  className?: string; // Explicitly add className for the wrapper div
 }
 
 const ChartTooltipContent = React.forwardRef<
@@ -92,7 +100,8 @@ const ChartTooltipContent = React.forwardRef<
     return null;
   }
 
-  const defaultFormatter = (value: any, name: string, item: any) => {
+  // Fix for error #6: Adjust defaultFormatter signature to match Recharts' expected formatter (4 arguments)
+  const defaultFormatter = (value: any, name: any, item: any, index: number) => {
     const unit = item?.unit;
     if (unit) {
       return `${value} ${unit}`;
@@ -105,9 +114,9 @@ const ChartTooltipContent = React.forwardRef<
       ref={ref} // Ref is for the div here
       className={cn(
         "grid min-w-[130px] items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs shadow-xl",
-        className
+        className // Use the className passed to ChartTooltipContentProps
       )}
-      {...props}
+      {...props} // Pass any other div-specific props
     >
       {!hideLabel && payload[0]?.name && (
         <div className="text-muted-foreground">{payload[0].name}</div>
@@ -135,7 +144,7 @@ const ChartTooltipContent = React.forwardRef<
                 {itemConfig?.label || item.name}
               </div>
               <div className="font-mono font-medium tabular-nums text-foreground">
-                {(formatter || defaultFormatter)(item.value, item.name!, item)}
+                {(formatter || defaultFormatter)(item.value, item.name!, item, index)} {/* Pass all expected arguments */}
               </div>
             </div>
           </div>
@@ -147,8 +156,15 @@ const ChartTooltipContent = React.forwardRef<
 ChartTooltipContent.displayName = "ChartTooltipContent";
 
 // --- ChartLegend ---
-interface ChartLegendProps extends _RechartsLegendProps<ValueType, NameType> {
+// Fix for error #7, #8, #9, #10: This component is a custom content renderer,
+// it receives specific props from Recharts, not all _RechartsLegendProps.
+interface ChartLegendProps {
+  payload?: _RechartsLegendProps<any, any>["payload"]; // Use any for generics
+  layout?: _RechartsLegendProps<any, any>["layout"]; // Use any for generics
+  align?: _RechartsLegendProps<any, any>["align"]; // Use any for generics
+  verticalAlign?: _RechartsLegendProps<any, any>["verticalAlign"]; // Use any for generics
   hideIcon?: boolean;
+  className?: string; // Explicitly add className for the wrapper div
 }
 
 const ChartLegend = ({ className, payload, hideIcon = false, verticalAlign, ...props }: ChartLegendProps) => {
@@ -164,9 +180,9 @@ const ChartLegend = ({ className, payload, hideIcon = false, verticalAlign, ...p
         "flex items-center justify-center gap-4",
         verticalAlign === "top" && "pb-3",
         verticalAlign === "bottom" && "pt-3",
-        className
+        className // Use the className passed to ChartLegendProps
       )}
-      {...props}
+      {...props} // Pass any other div-specific props
     >
       {payload.map((item) => {
         const key = item.dataKey || item.value;
@@ -200,7 +216,8 @@ const ChartLegend = ({ className, payload, hideIcon = false, verticalAlign, ...p
 ChartLegend.displayName = "ChartLegend";
 
 // --- ChartLegendContent ---
-const ChartLegendContent = (props: _RechartsLegendProps<ValueType, NameType>) => {
+// Fix for error #11: _RechartsLegendProps is generic. Use any for generics.
+const ChartLegendContent = (props: _RechartsLegendProps<any, any>) => {
   return <_RechartsLegend content={ChartLegend} {...props} />;
 };
 ChartLegendContent.displayName = "ChartLegendContent";
