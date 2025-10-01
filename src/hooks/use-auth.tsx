@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase'; // Import db
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -9,6 +9,7 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'; // Import doc, setDoc, serverTimestamp
 import { showSuccess, showError } from '@/utils/toast';
 
 interface AuthContextType {
@@ -27,10 +28,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
       setLoading(false);
+
+      // If a user is logged in, ensure their profile exists in Firestore
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userRef, {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName,
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+          lastLogin: serverTimestamp(),
+        }, { merge: true }); // Use merge to update existing fields or add new ones
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -39,7 +52,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const currentUser = result.user;
+
+      // Save user data to Firestore after successful sign-in
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userRef, {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName,
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+          lastLogin: serverTimestamp(),
+        }, { merge: true });
+      }
+
       showSuccess("Signed in successfully!");
     } catch (error: any) {
       console.error("Error signing in with Google:", error);
