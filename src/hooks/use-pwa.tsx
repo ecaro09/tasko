@@ -42,11 +42,9 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show install prompt after a delay, only if not already installed
+      // Show install prompt immediately if not already installed
       if (!isAppInstalled()) {
-        setTimeout(() => {
-          setShowInstallPromptState(true);
-        }, 3000); // Delay showing the prompt
+        setShowInstallPromptState(true);
       }
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
