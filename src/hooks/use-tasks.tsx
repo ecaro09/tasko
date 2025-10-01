@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
+import { getTaskImageUrl } from '@/utils/task-images'; // Import the new utility
 
 export interface Task {
   id: string;
@@ -72,7 +73,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
           datePosted: serverTimestamp(),
           status: "open",
-          imageUrl: "https://images.unsplash.com/photo-1557804506-669a67965da0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          imageUrl: getTaskImageUrl("marketing"), // Use utility
         },
         {
           title: "Flyer Distribution for Sari-Sari Store",
@@ -85,7 +86,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
           datePosted: serverTimestamp(),
           status: "open",
-          imageUrl: "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          imageUrl: getTaskImageUrl("marketing"), // Use utility
         },
         {
           title: "Online Content Creator for Pinoy Food Blog",
@@ -98,7 +99,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: "https://randomuser.me/api/portraits/women/68.jpg",
           datePosted: serverTimestamp(),
           status: "open",
-          imageUrl: "https://images.unsplash.com/photo-1504711432028-ee2611f5817a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          imageUrl: getTaskImageUrl("marketing"), // Use utility
         },
       ];
 
@@ -131,7 +132,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          imageUrl: getTaskImageUrl(data.category, data.imageUrl), // Use utility here
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
         };
@@ -167,7 +168,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
         datePosted: serverTimestamp(),
         status: 'open',
-        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+        imageUrl: getTaskImageUrl(newTaskData.category, newTaskData.imageUrl), // Use utility here
       });
       toast.success("Task posted successfully!");
     } catch (err: any) {
