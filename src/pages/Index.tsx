@@ -10,7 +10,7 @@ import { useFirestoreData } from '@/hooks/use-firestore-data'; // Import useFire
 import { Loader2 } from 'lucide-react'; // Import Loader2 for spinner
 
 const Index = () => {
-  const { isAuthenticated, signInWithGoogle, signOutUser } = useAuth();
+  const { isAuthenticated } = useAuth(); // Only need isAuthenticated for conditional rendering
   const {
     tasks,
     notes,
@@ -33,11 +33,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <Header
-        isAuthenticated={isAuthenticated}
-        onSignIn={signInWithGoogle}
-        onSignOut={signOutUser}
-      />
+      <Header /> {/* Header now manages its own auth state */}
       <main className="container mx-auto p-4">
         {loadingTasks || loadingNotes ? (
           <div className="flex justify-center items-center h-48">

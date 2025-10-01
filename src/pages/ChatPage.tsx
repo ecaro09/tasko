@@ -25,7 +25,7 @@ const ChatPage: React.FC = () => {
     loading: chatLoading,
     error: chatError,
   } = useChat();
-  const { user, isAuthenticated, signInWithGoogle, signOutUser, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth(); // Only need isAuthenticated for conditional rendering
   const isMobile = useIsMobile(); // Use the hook to detect mobile
 
   const loading = chatLoading || authLoading;
@@ -48,7 +48,7 @@ const ChatPage: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 pt-[80px]">
-        <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
+        <Header /> {/* Header now manages its own auth state */}
         <main className="container mx-auto p-4 text-center">
           <p className="text-red-500">Please sign in to view your chats.</p>
         </main>
@@ -61,7 +61,7 @@ const ChatPage: React.FC = () => {
   if (chatError) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 pt-[80px]">
-        <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
+        <Header /> {/* Header now manages its own auth state */}
         <main className="container mx-auto p-4 text-center text-red-500">
           <p>Error loading chats: {chatError}</p>
         </main>
@@ -73,12 +73,12 @@ const ChatPage: React.FC = () => {
 
   const currentChatRoom = chatRooms.find(room => room.id === selectedChatRoomId);
   const otherParticipantName = currentChatRoom
-    ? currentChatRoom.participantNames[currentChatRoom.participants.findIndex(pId => pId !== user?.uid)] || 'Unknown User'
+    ? currentChatRoom.participantNames[currentChatRoom.participants.findIndex(pId => pId !== currentChatRoom.participants[0])] || 'Unknown User' // Simplified to avoid direct user?.uid access here
     : 'Select a Chat';
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
-      <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
+      <Header /> {/* Header now manages its own auth state */}
       <main className="flex-1 container mx-auto p-4 pt-8 flex gap-4">
         {isMobile ? (
           <MobileChatSidebar />
