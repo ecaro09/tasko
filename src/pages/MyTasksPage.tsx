@@ -30,23 +30,17 @@ const MyTasksPage: React.FC = () => {
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
   if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
-    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Loading your tasks and offers...</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 pt-[60px] px-4 pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
-        <Card className="w-full max-w-md text-center shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Please log in to view your tasks.</p>
-            <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700 text-white">
-              Go to Home
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto p-4 text-center pt-[80px]">
+        <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+        <p className="text-gray-600 mb-6">Please log in to view your tasks.</p>
+        <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700 text-white">
+          Go to Home
+        </Button>
       </div>
     );
   }
@@ -103,7 +97,7 @@ const MyTasksPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">My Posted Tasks</h1>
 

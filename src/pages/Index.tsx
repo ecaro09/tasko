@@ -84,7 +84,7 @@ const Index = () => {
 
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-0">
+    <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
       {/* SplashScreen is now always rendered, but its visibility is controlled by CSS */}
       <div className={cn(
         "fixed inset-0 z-[9999] transition-opacity duration-500",

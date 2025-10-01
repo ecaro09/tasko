@@ -24,7 +24,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50 md:hidden pb-[var(--safe-area-bottom)]">
-      <div className="flex justify-around py-2 h-[var(--bottom-navigation-height)]">
+      <div className="flex justify-around py-2">
         <NavLink
           to="/"
           className={({ isActive }) => cn(

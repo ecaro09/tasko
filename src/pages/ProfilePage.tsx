@@ -15,12 +15,12 @@ const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   if (authLoading || taskerProfileLoading) {
-    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Loading profile...</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 pt-[60px] px-4 pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 pt-[60px] px-4">
         <Card className="w-full max-w-md text-center shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Access Denied</CardTitle>
@@ -37,7 +37,7 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4 pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
       <div className="container mx-auto max-w-3xl">
         <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">My Profile</h1>
 

@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
   const { user } = useAuth(); // Get user object from useAuth
 
   return (
-    <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center">
+    <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center pt-[var(--safe-area-top)]">
       <div className="container mx-auto px-4 flex justify-between items-center w-full">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl text-[hsl(var(--primary-color))] font-bold">Tasko</h1>

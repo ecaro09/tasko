@@ -13,15 +13,15 @@ const BrowseTaskersPage: React.FC = () => {
   const { allTaskerProfiles, loading, error } = useTaskerProfile();
 
   if (loading) {
-    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Loading taskers...</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading taskers...</div>;
   }
 
   if (error) {
-    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Error: {error}</div>;
+    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px]">Error: {error}</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
       <div className="container mx-auto px-4">
         <Button onClick={() => navigate(-1)} variant="outline" className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
           &larr; Back
