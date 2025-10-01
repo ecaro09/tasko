@@ -64,9 +64,7 @@ const TaskerProfileViewPage: React.FC = () => {
               </AvatarFallback>
             </Avatar>
             <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{tasker.displayName}</h1>
-            <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
-              <Mail size={18} /> {tasker.userId} {/* Using userId as a placeholder for email/contact */}
-            </p>
+            {/* Removed the placeholder for tasker.userId */}
 
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
               {tasker.bio}
