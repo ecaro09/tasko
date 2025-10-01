@@ -63,13 +63,26 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <MessageSquare size={20} className="mb-1" />
           <span>Chat</span>
         </NavLink>
-        <button
-          onClick={handleProfileClick}
-          className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
-        >
-          <User size={20} className="mb-1" />
-          <span>Profile</span>
-        </button>
+        {isAuthenticated ? (
+          <NavLink
+            to="/profile"
+            className={({ isActive }) => cn(
+              "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+              isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+            )}
+          >
+            <User size={20} className="mb-1" />
+            <span>Profile</span>
+          </NavLink>
+        ) : (
+          <button
+            onClick={openLoginModal}
+            className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          >
+            <User size={20} className="mb-1" />
+            <span>Profile</span>
+          </button>
+        )}
       </div>
     </nav>
   );
