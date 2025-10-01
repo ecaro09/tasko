@@ -41,7 +41,7 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ChatProvider> {/* Wrap with ChatProvider */}
+                      <ChatProvider> {/* Wrap ModalProvider with ChatProvider */}
                         <ModalProvider>
                           <Routes>
                             <Route path="/" element={<Index />} />
@@ -58,8 +58,7 @@ const App = () => {
                             <Route path="/terms" element={<TermsOfServicePage />} />
                             <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
                             <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                            <Route path="/chat" element={<ChatPage />} /> {/* Route for chat list */}
-                            <Route path="/chat/:chatRoomId" element={<ChatPage />} /> {/* New route for specific chat room */}
+                            <Route path="/chat/:recipientId" element={<ChatPage />} /> {/* Updated Chat Route */}
                             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                             <Route path="*" element={<NotFound />} />
                           </Routes>

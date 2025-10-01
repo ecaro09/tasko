@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom'; // Import Link
 import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
@@ -18,10 +18,10 @@ const TaskDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { isTasker, loading: taskerProfileLoading, fetchTaskerProfileById } = useTaskerProfile(); // Added fetchTaskerProfileById
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Removed fetchTaskerProfileById as it's not used here
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { createChatRoom, getChatRoomIdForParticipants } = useChat(); // New from useChat
+  const { createChatRoom } = useChat(); // Corrected destructuring from useChat
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -101,7 +101,7 @@ const TaskDetailPage: React.FC = () => {
     
     const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
     if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`);
+      navigate(`/chat/${task.posterId}`); // Navigate to chat with the poster's ID
     }
   };
 
@@ -120,7 +120,7 @@ const TaskDetailPage: React.FC = () => {
 
     const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
     if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`);
+      navigate(`/chat/${taskerId}`); // Navigate to chat with the tasker's ID
     }
   };
 
@@ -207,20 +207,20 @@ const TaskDetailPage: React.FC = () => {
                   {taskOffers.map(offer => (
                     <Card key={offer.id} className="p-4 shadow-sm">
                       <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-12 h-12 border-2 border-blue-500">
+                        <Link to={`/taskers/${offer.taskerId}`} className="flex items-center gap-3 group"> {/* Added Link */}
+                          <Avatar className="w-12 h-12 border-2 border-blue-500 group-hover:border-green-500 transition-colors">
                             <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
                             <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
                               {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={20} />}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
+                            <p className="font-semibold text-lg text-gray-800 dark:text-gray-100 group-hover:text-green-600 transition-colors">{offer.taskerName}</p>
                             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                              <MessageSquare size={14} className="mr-1" /> {offer.message}
+                              <MessageSquare size={14} /> {offer.message}
                             </p>
                           </div>
-                        </div>
+                        </Link>
                         <div className="flex flex-col items-end sm:items-center gap-2">
                           <p className="text-2xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
                           {getOfferStatusBadge(offer.status)}

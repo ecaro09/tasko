@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, MessageSquare, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { toast } from 'sonner'; // Import toast
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth(); // Get current user info
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
   const [tasker, setTasker] = useState<TaskerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +38,19 @@ const TaskerProfileViewPage: React.FC = () => {
 
     loadTasker();
   }, [id, fetchTaskerProfileById]);
+
+  const handleContactTasker = () => {
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to contact a tasker.");
+      navigate('/profile'); // Or open login modal
+      return;
+    }
+    if (user.uid === id) {
+      toast.info("You cannot chat with yourself.");
+      return;
+    }
+    navigate(`/chat/${id}`);
+  };
 
   if (loading || globalLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading tasker profile...</div>;
@@ -96,7 +112,7 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             </div>
 
-            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+            <Button onClick={handleContactTasker} className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2">
               <MessageSquare size={20} /> Contact Tasker
             </Button>
           </CardContent>

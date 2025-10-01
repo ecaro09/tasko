@@ -52,9 +52,9 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <ListTodo size={20} className="mb-1" />
           <span>My Tasks</span>
         </NavLink>
-        {/* New NavLink for Chat */}
+        {/* New NavLink for Chat, now pointing to a default support chat */}
         <NavLink
-          to="/chat"
+          to="/chat/support-team"
           className={({ isActive }) => cn(
             "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
             isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
