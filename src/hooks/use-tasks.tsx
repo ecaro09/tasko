@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, DocumentData } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { useAuth } from './use-auth'; // Assuming useAuth exists
+import { useAuth } from './use-auth';
+import { DEMO_TASKS } from '@/utils/demo-tasks'; // Import demo tasks
 
 export interface Task {
   id: string;
@@ -19,6 +20,7 @@ export interface Task {
   status: 'open' | 'assigned' | 'completed' | 'cancelled';
   assignedTaskerId?: string;
   assignedOfferId?: string;
+  isDemo?: boolean; // Added to distinguish demo tasks
 }
 
 interface TasksContextType {
@@ -69,19 +71,31 @@ export const TasksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           status: data.status || 'open',
           assignedTaskerId: data.assignedTaskerId,
           assignedOfferId: data.assignedOfferId,
+          isDemo: false, // Real tasks are not demo
         };
       });
-      setTasks(fetchedTasks);
+
+      if (fetchedTasks.length === 0) {
+        // If no real tasks, show demo tasks
+        setTasks(DEMO_TASKS.map(task => ({ ...task, isDemo: true })));
+      } else {
+        // Otherwise, show real tasks
+        setTasks(fetchedTasks);
+      }
       setLoading(false);
     }, (err) => {
       console.error("Error fetching tasks:", err);
       setError("Failed to fetch tasks.");
       setLoading(false);
       toast.error("Failed to load tasks.");
+      // Fallback to demo tasks on error if no real tasks loaded
+      if (tasks.length === 0) {
+        setTasks(DEMO_TASKS.map(task => ({ ...task, isDemo: true })));
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Removed tasks from dependency array to prevent infinite loop
 
   const addTask = async (
     title: string,
@@ -126,6 +140,11 @@ export const TasksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       toast.error("You must be logged in to update a task.");
       return;
     }
+    // Prevent updating demo tasks
+    if (tasks.find(t => t.id === taskId)?.isDemo) {
+      toast.error("Cannot update demo tasks.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -148,6 +167,11 @@ export const TasksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const deleteTask = async (taskId: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to delete a task.");
+      return;
+    }
+    // Prevent deleting demo tasks
+    if (tasks.find(t => t.id === taskId)?.isDemo) {
+      toast.error("Cannot delete demo tasks.");
       return;
     }
 
