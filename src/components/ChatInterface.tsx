@@ -17,7 +17,7 @@ interface ChatInterfaceProps {
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId, otherParticipantName }) => {
-  const { messages, sendMessage, loading: chatLoading } = useChat();
+  const { messages, sendMessage } = useChat(); // Removed chatLoading from here
   const { user, isAuthenticated } = useAuth();
   const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false); // New state for sending message
@@ -44,9 +44,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId, otherParticip
     }
   };
 
-  if (chatLoading) {
-    return <div className="p-4 text-center text-gray-500">Loading messages...</div>;
-  }
+  // The overall loading state is now handled by the parent ChatPage component.
+  // ChatInterface will only render if the parent determines it's not loading.
 
   if (!isAuthenticated) {
     return <div className="p-4 text-center text-red-500">You must be logged in to view chat.</div>;
@@ -119,9 +118,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId, otherParticip
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           className="flex-1"
-          disabled={!isAuthenticated || chatLoading || isSendingMessage}
+          disabled={!isAuthenticated || isSendingMessage}
         />
-        <Button onClick={handleSendMessage} disabled={!isAuthenticated || chatLoading || isSendingMessage}>
+        <Button onClick={handleSendMessage} disabled={!isAuthenticated || isSendingMessage}>
           {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send size={20} />}
         </Button>
       </div>

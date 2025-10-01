@@ -50,7 +50,6 @@ const ChatPage: React.FC = () => {
         <Toaster />
       </div>
     );
-  );
   }
 
   if (chatError) {
