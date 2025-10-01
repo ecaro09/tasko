@@ -5,13 +5,15 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
-import TaskList from '@/components/TaskList'; // Corrected import
+import TaskList from '@/components/TaskList';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
+import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const Index = () => {
   const { isAuthenticated, signInWithGoogle, signOutUser, loading: authLoading } = useAuth();
   const { loading: tasksLoading, error: tasksError } = useTasks();
+  const { openCreateTaskModal } = useModal(); // Use the new hook
 
   const loading = authLoading || tasksLoading;
 
@@ -46,10 +48,9 @@ const Index = () => {
       <main className="container mx-auto p-4 pt-8">
         <h2 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">Available Tasks</h2>
         
-        {/* Optional: Add a button to post a new task */}
         {isAuthenticated && (
           <div className="flex justify-center mb-8">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+            <Button onClick={openCreateTaskModal} className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
               <PlusCircle size={20} /> Post a New Task
             </Button>
           </div>

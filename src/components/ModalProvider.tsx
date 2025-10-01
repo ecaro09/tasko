@@ -6,10 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
 import { useOffers } from '@/hooks/use-offers';
-import { Task } from '@/hooks/use-tasks'; // Assuming Task interface is available
+import { Task } from '@/hooks/use-tasks';
+import CreateTaskModal from './CreateTaskModal'; // Import the new modal component
 
 interface ModalContextType {
   openMakeOfferModal: (task: Task) => void;
+  openCreateTaskModal: () => void; // New function to open CreateTaskModal
   closeModal: () => void;
 }
 
@@ -18,6 +20,7 @@ const ModalContext = createContext<ModalContextType | undefined>(undefined);
 export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { makeOffer, loading: offersLoading } = useOffers();
   const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = useState(false);
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false); // New state for CreateTaskModal
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [offerAmount, setOfferAmount] = useState<string>('');
   const [offerMessage, setOfferMessage] = useState<string>('');
@@ -29,8 +32,13 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsMakeOfferModalOpen(true);
   };
 
+  const openCreateTaskModal = () => { // New function implementation
+    setIsCreateTaskModalOpen(true);
+  };
+
   const closeModal = () => {
     setIsMakeOfferModalOpen(false);
+    setIsCreateTaskModalOpen(false); // Close CreateTaskModal as well
     setCurrentTask(null);
   };
 
@@ -58,7 +66,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   return (
-    <ModalContext.Provider value={{ openMakeOfferModal, closeModal }}>
+    <ModalContext.Provider value={{ openMakeOfferModal, openCreateTaskModal, closeModal }}>
       {children}
 
       {/* Make Offer Modal */}
@@ -107,6 +115,9 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Task Modal */}
+      <CreateTaskModal isOpen={isCreateTaskModalOpen} onClose={closeModal} />
     </ModalContext.Provider>
   );
 };
