@@ -16,13 +16,7 @@ const ImageGallery: React.FC = () => {
       <CardContent>
         <div className="flex flex-wrap justify-center gap-2">
           {images.map((src, index) => (
-            <img
-              key={index}
-              src={src}
-              alt={`Sample ${index + 1}`}
-              className="w-24 h-24 object-cover rounded-md shadow-sm"
-              loading="lazy" // Added lazy loading
-            />
+            <img key={index} src={src} alt={`Sample ${index + 1}`} className="w-24 h-24 object-cover rounded-md shadow-sm" />
           ))}
         </div>
       </CardContent>
