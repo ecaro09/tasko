@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --port 8080",
+    "start": "vite preview --port 8080",
+    "analyze": "npm run build && npx lighthouse http://localhost:8080 --output=json --output-path=./lighthouse-report.json --serve-dir dist --port 8080"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
