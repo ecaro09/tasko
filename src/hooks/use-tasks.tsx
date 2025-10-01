@@ -131,7 +131,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+          imageUrl: data.imageUrl || "https://via.placeholder.com/500x300?text=Task+Image", // Updated default image URL
           assignedTaskerId: data.assignedTaskerId || undefined, // Map new field
           assignedOfferId: data.assignedOfferId || undefined, // Map new field
         };
@@ -167,7 +167,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
         datePosted: serverTimestamp(),
         status: 'open',
-        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+        imageUrl: newTaskData.imageUrl || "https://via.placeholder.com/500x300?text=Task+Image", // Updated default image URL
       });
       toast.success("Task posted successfully!");
     } catch (err: any) {

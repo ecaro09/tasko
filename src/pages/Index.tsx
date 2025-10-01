@@ -19,6 +19,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { useFilteredTasks } from '@/hooks/use-filtered-tasks'; // Import the new hook
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -42,11 +43,14 @@ const Index = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { loading: tasksLoading, error: tasksError } = useTasks(); // Keep useTasks for overall loading/error
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
+
+  // Use the new filtered tasks hook
+  const { filteredTasks } = useFilteredTasks(searchTerm, selectedCategory);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -71,28 +75,6 @@ const Index = () => {
   const handleViewTaskDetails = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
   };
-
-  // Removed handleProfileClick as it's now handled internally by BottomNavigation
-
-  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
-  const filteredTasks = React.useMemo(() => {
-    let currentFilteredTasks = tasks;
-
-    if (selectedCategory && selectedCategory !== 'all') {
-      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
-    }
-
-    if (searchTerm) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      currentFilteredTasks = currentFilteredTasks.filter(task =>
-        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.location.toLowerCase().includes(lowerCaseSearchTerm)
-      );
-    }
-    return currentFilteredTasks;
-  }, [tasks, searchTerm, selectedCategory]);
-
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
@@ -132,10 +114,10 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
             {tasksLoading && <p className="col-span-full text-center text-gray-500 italic py-8">Loading tasks...</p>}
-            {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
+            {!tasksLoading && filteredTasks.length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
             ) : (
-              (filteredTasks || []).map((task) => (
+              filteredTasks.map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
                     <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
