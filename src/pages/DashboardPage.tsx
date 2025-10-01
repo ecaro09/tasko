@@ -1,19 +1,20 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LayoutDashboard, ListTodo, Briefcase, DollarSign } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, ListTodo, Briefcase, DollarSign, Clock, Tag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from '@/components/ui/badge'; // Import Badge
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
-import { useTasks } from '@/hooks/use-tasks'; // Import useTasks
-import { useOffers } from '@/hooks/use-offers'; // Import useOffers
+import { useTasks } from '@/hooks/use-tasks';
+import { useOffers, Offer } from '@/hooks/use-offers';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
-  const { tasks, loading: tasksLoading } = useTasks(); // Fetch all tasks
-  const { offers, loading: offersLoading } = useOffers(); // Fetch all offers
+  const { tasks, loading: tasksLoading } = useTasks();
+  const { offers, loading: offersLoading } = useOffers();
 
   const isLoading = authLoading || taskerProfileLoading || tasksLoading || offersLoading;
 
@@ -53,6 +54,26 @@ const DashboardPage: React.FC = () => {
   const offersReceivedForUserTasks = offers.filter(offer => userPostedTasks.some(task => task.id === offer.taskId));
   const pendingOffersReceivedCount = offersReceivedForUserTasks.filter(offer => offer.status === 'pending').length;
 
+  // Get recent posted tasks (latest 3)
+  const recentPostedTasks = userPostedTasks.sort((a, b) => new Date(b.datePosted).getTime() - new Date(a.datePosted).getTime()).slice(0, 3);
+
+  // Get recent offers made (latest 3)
+  const recentOffersMade = userMadeOffers.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()).slice(0, 3);
+
+  const getOfferStatusBadge = (status: Offer['status']) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200">Pending</Badge>;
+      case 'accepted':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Rejected</Badge>;
+      case 'withdrawn':
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Withdrawn</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
@@ -139,6 +160,90 @@ const DashboardPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Activity Section */}
+        <section className="mt-12">
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Recent Activity</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Recent Posted Tasks */}
+            <Card className="shadow-lg p-6">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                  <ListTodo size={24} /> Recent Posted Tasks
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 space-y-4">
+                {recentPostedTasks.length === 0 ? (
+                  <p className="text-gray-600 dark:text-gray-400">No tasks posted recently.</p>
+                ) : (
+                  recentPostedTasks.map(task => (
+                    <div key={task.id} className="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
+                      <Link to={`/tasks/${task.id}`} className="block hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-md transition-colors">
+                        <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-100">{task.title}</h4>
+                        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <span className="flex items-center gap-1">
+                            <DollarSign size={14} /> ₱{task.budget.toLocaleString()}
+                          </span>
+                          <Badge className={`text-xs ${
+                            task.status === 'open' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200' :
+                            task.status === 'assigned' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200' :
+                            'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200'
+                          }`}>
+                            {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                          </Badge>
+                        </div>
+                      </Link>
+                    </div>
+                  ))
+                )}
+                {userPostedTasks.length > 3 && (
+                  <Link to="/my-tasks" className="block text-center mt-4">
+                    <Button variant="link" className="text-green-600 hover:text-green-700">View All Posted Tasks</Button>
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recent Offers Made */}
+            <Card className="shadow-lg p-6">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                  <Briefcase size={24} /> Recent Offers Made
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 space-y-4">
+                {!isTasker ? (
+                  <p className="text-gray-600 dark:text-gray-400">Register as a tasker to make offers.</p>
+                ) : recentOffersMade.length === 0 ? (
+                  <p className="text-gray-600 dark:text-gray-400">No offers made recently.</p>
+                ) : (
+                  recentOffersMade.map(offer => {
+                    const task = tasks.find(t => t.id === offer.taskId);
+                    if (!task) return null;
+                    return (
+                      <div key={offer.id} className="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
+                        <Link to={`/tasks/${task.id}`} className="block hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-md transition-colors">
+                          <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-100">{task.title}</h4>
+                          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <span className="flex items-center gap-1">
+                              <DollarSign size={14} /> ₱{offer.offerAmount.toLocaleString()}
+                            </span>
+                            {getOfferStatusBadge(offer.status)}
+                          </div>
+                        </Link>
+                      </div>
+                    );
+                  })
+                )}
+                {isTasker && userMadeOffers.length > 3 && (
+                  <Link to="/my-offers" className="block text-center mt-4">
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700">View All My Offers</Button>
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       </div>
     </div>
   );
