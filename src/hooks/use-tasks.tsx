@@ -11,7 +11,6 @@ import {
   getDocs,
   deleteDoc, // Import deleteDoc
   doc, // Import doc
-  updateDoc, // Import updateDoc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -32,16 +31,14 @@ export interface Task {
   imageUrl?: string;
   assignedTaskerId?: string; // New field for the assigned tasker's ID
   assignedOfferId?: string; // New field for the accepted offer's ID
-  dateCompleted?: string; // New field for completion date
 }
 
 interface UseTasksContextType {
   tasks: Task[]; // This will now be all tasks
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'dateCompleted'>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
-  markTaskAsCompleted: (taskId: string) => Promise<void>; // New function to mark task as completed
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -138,7 +135,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           imageUrl: getTaskImageUrl(data.category, data.imageUrl), // Use utility here
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
-          dateCompleted: data.dateCompleted?.toDate().toISOString().split('T')[0] || undefined, // Include dateCompleted
         };
       });
       setAllTasks(fetchedTasks);
@@ -158,7 +154,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'dateCompleted'>) => {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -199,33 +195,12 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
-  const markTaskAsCompleted = async (taskId: string) => {
-    if (!isAuthenticated || !user) {
-      toast.error("You must be logged in to mark a task as completed.");
-      return;
-    }
-
-    try {
-      const taskRef = doc(db, 'tasks', taskId);
-      await updateDoc(taskRef, {
-        status: 'completed',
-        dateCompleted: serverTimestamp(),
-      });
-      toast.success("Task marked as completed!");
-    } catch (err: any) {
-      console.error("Error marking task as completed:", err);
-      toast.error(`Failed to mark task as completed: ${err.message}`);
-      throw err;
-    }
-  };
-
   const value = {
     tasks: allTasks, // Expose all tasks
     loading,
     error,
     addTask,
     deleteTask,
-    markTaskAsCompleted, // Expose the new function
   };
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;

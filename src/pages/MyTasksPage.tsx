@@ -4,7 +4,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useOffers, Offer } from '@/hooks/use-offers'; // New import for offers
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Flag } from 'lucide-react'; // Added Flag icon
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle } from 'lucide-react'; // Added icons
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -18,18 +18,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
-import { Badge } from "@/components/ui/badge"; // New import
+import { Badge } from '@/components/ui/badge'; // New import
 import { toast } from 'sonner'; // New import
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, deleteTask, markTaskAsCompleted } = useTasks(); // Added markTaskAsCompleted
+  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
-  const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false); // New state for completion dialog
-  const [taskToComplete, setTaskToComplete] = useState<string | null>(null); // New state for task to complete
 
   if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
@@ -63,24 +61,6 @@ const MyTasksPage: React.FC = () => {
       } finally {
         setTaskToDelete(null);
         setIsDeleteDialogOpen(false);
-      }
-    }
-  };
-
-  const handleCompleteClick = (taskId: string) => { // New handler for completion
-    setTaskToComplete(taskId);
-    setIsCompletionDialogOpen(true);
-  };
-
-  const handleConfirmComplete = async () => { // New handler for confirming completion
-    if (taskToComplete) {
-      try {
-        await markTaskAsCompleted(taskToComplete);
-      } catch (error) {
-        // Error handled by useTasks hook, toast already shown
-      } finally {
-        setTaskToComplete(null);
-        setIsCompletionDialogOpen(false);
       }
     }
   };
@@ -159,25 +139,14 @@ const MyTasksPage: React.FC = () => {
                       <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                         View Details
                       </Button>
-                      {task.status === 'assigned' && (
-                        <Button
-                          variant="default"
-                          onClick={() => handleCompleteClick(task.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
-                        >
-                          <Flag size={16} /> Mark as Completed
-                        </Button>
-                      )}
-                      {task.status !== 'completed' && ( // Allow deletion if not completed
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => handleDeleteClick(task.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          <Trash2 size={20} />
-                        </Button>
-                      )}
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => handleDeleteClick(task.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        <Trash2 size={20} />
+                      </Button>
                     </div>
 
                     {/* Offers for this task */}
@@ -254,24 +223,6 @@ const MyTasksPage: React.FC = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Task Completion Confirmation Dialog */}
-      <AlertDialog open={isCompletionDialogOpen} onOpenChange={setIsCompletionDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark Task as Completed?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to mark this task as completed? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmComplete} className="bg-green-600 hover:bg-green-700 text-white">
-              Confirm Completion
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
