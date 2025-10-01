@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser, updateProfile } from 'firebase/auth';
+import {
+  GoogleAuthProvider, // Keep import for now, but will remove usage
+  signInWithPopup, // Keep import for now, but will remove usage
+  signOut,
+  User as FirebaseUser,
+  updateProfile,
+  createUserWithEmailAndPassword, // New import
+  signInWithEmailAndPassword, // New import
+} from 'firebase/auth';
 import { toast } from 'sonner'; // Using sonner for toasts
 
 interface AuthState {
@@ -10,9 +18,10 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signInWithGoogle: () => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string) => Promise<void>; // New function
+  loginWithEmailPassword: (email: string, password: string) => Promise<void>; // New function
   logout: () => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>; // Added updateProfile
+  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,14 +44,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+  const signupWithEmailPassword = async (email: string, password: string) => {
     try {
-      await signInWithPopup(auth, provider);
-      toast.success("Signed in successfully!");
+      await createUserWithEmailAndPassword(auth, email, password);
+      toast.success("Account created successfully! You are now logged in.");
     } catch (error: any) {
-      console.error("Error signing in with Google:", error);
-      toast.error(`Failed to sign in: ${error.message}`);
+      console.error("Error signing up with email and password:", error);
+      let errorMessage = "Failed to create account.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already in use.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password should be at least 6 characters.";
+      }
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  const loginWithEmailPassword = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success("Logged in successfully!");
+    } catch (error: any) {
+      console.error("Error logging in with email and password:", error);
+      let errorMessage = "Failed to log in.";
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "No user found with this email.";
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = "Incorrect password.";
+      }
+      toast.error(errorMessage);
+      throw error;
     }
   };
 
@@ -76,7 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signInWithGoogle, logout, updateUserProfile };
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
