@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/lib/firebase'; // Import Firebase db
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy, doc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy, doc, getDocs, updateDoc } from 'firebase/firestore'; // Import updateDoc
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 
@@ -31,6 +31,7 @@ interface ChatContextType {
   getMessagesForConversation: (conversationId: string) => Message[];
   sendMessage: (conversationId: string, text: string) => Promise<void>;
   startNewConversation: (participantIds: string[], participantNames: string[], initialMessage: string) => Promise<string>;
+  markConversationAsRead: (conversationId: string) => Promise<void>; // New function
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -149,8 +150,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         });
 
-        await addDoc(collection(db, 'conversations'), {
-          ...currentConversation,
+        await updateDoc(conversationRef, {
           lastMessage: text.trim(),
           lastMessageTimestamp: serverTimestamp(),
           unreadCount: newUnreadCount,
@@ -221,6 +221,29 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const markConversationAsRead = async (conversationId: string) => {
+    if (!isAuthenticated || !user) {
+      console.warn("Not authenticated to mark conversation as read.");
+      return;
+    }
+
+    try {
+      const conversationRef = doc(db, 'conversations', conversationId);
+      const currentConversation = conversations.find(conv => conv.id === conversationId);
+
+      if (currentConversation && currentConversation.unreadCount && currentConversation.unreadCount[user.uid] > 0) {
+        const newUnreadCount = { ...currentConversation.unreadCount, [user.uid]: 0 };
+        await updateDoc(conversationRef, {
+          unreadCount: newUnreadCount,
+        });
+        console.log(`Conversation ${conversationId} marked as read for user ${user.uid}`);
+      }
+    } catch (err: any) {
+      console.error("Error marking conversation as read:", err);
+      toast.error(`Failed to mark conversation as read: ${err.message}`);
+    }
+  };
+
   const value = {
     conversations,
     messages: allMessages,
@@ -229,6 +252,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     getMessagesForConversation,
     sendMessage,
     startNewConversation,
+    markConversationAsRead, // Expose the new function
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

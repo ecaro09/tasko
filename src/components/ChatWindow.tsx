@@ -13,7 +13,7 @@ const ChatWindow: React.FC = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { conversations, getMessagesForConversation, sendMessage, loading: chatLoading, error: chatError } = useChat();
+  const { conversations, getMessagesForConversation, sendMessage, markConversationAsRead, loading: chatLoading, error: chatError } = useChat(); // Destructure markConversationAsRead
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -27,6 +27,12 @@ const ChatWindow: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (conversationId && isAuthenticated && user) {
+      markConversationAsRead(conversationId);
+    }
+  }, [conversationId, isAuthenticated, user, markConversationAsRead]); // Mark as read when conversationId changes or user logs in
 
   if (!isAuthenticated || !user) {
     return (
