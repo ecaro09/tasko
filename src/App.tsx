@@ -4,11 +4,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import TaskDetailPage from "./pages/TaskDetailPage";
-import MyTasksPage from "./pages/MyTasksPage";
+import MyTasksPage from "./pages/MyTasksPage"; // New import
 import FeaturesAndEarningsPage from "./pages/FeaturesAndEarningsPage";
-import ProfilePage from "./pages/ProfilePage"; // New import
-import BrowseTaskersPage from "./pages/BrowseTaskersPage"; // New import
-import ChatPage from "./pages/ChatPage"; // New import
+import ProfilePage from "./pages/ProfilePage";
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -29,11 +27,9 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                    <Route path="/my-tasks" element={<MyTasksPage />} />
+                    <Route path="/my-tasks" element={<MyTasksPage />} /> {/* New Route */}
                     <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
-                    <Route path="/profile" element={<ProfilePage />} /> {/* New Route */}
-                    <Route path="/browse-taskers" element={<BrowseTaskersPage />} /> {/* New Route */}
-                    <Route path="/chat" element={<ChatPage />} /> {/* New Route */}
+                    <Route path="/profile" element={<ProfilePage />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
+import { cn } from '@/lib/utils'; // Import cn for conditional class names
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -36,10 +37,12 @@ const getCategoryName = (category: string) => {
 };
 
 const Index = () => {
+  // All hooks must be called unconditionally at the top level
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
@@ -57,13 +60,11 @@ const Index = () => {
   };
 
   const handleSearchSubmit = () => {
-    // Filtering is now handled by the local useMemo below
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
   };
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
-    // When category changes, clear search term to avoid conflicting filters
     setSearchTerm('');
   };
 
@@ -71,20 +72,7 @@ const Index = () => {
     navigate(`/tasks/${taskId}`);
   };
 
-  const handleProfileClick = () => {
-    if (isAuthenticated) {
-      navigate('/profile'); // Navigate to the ProfilePage
-    } else {
-      openLoginModal();
-    }
-  };
-
-  if (isSplashVisible) {
-    return <SplashScreen />;
-  }
-
-  // Use the useTasks hook without arguments to get all tasks
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  // Removed handleProfileClick as it's now handled internally by BottomNavigation
 
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
   const filteredTasks = React.useMemo(() => {
@@ -108,6 +96,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
+      {/* SplashScreen is now always rendered, but its visibility is controlled by CSS */}
+      <div className={cn(
+        "fixed inset-0 z-[9999] transition-opacity duration-500",
+        isSplashVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}>
+        <SplashScreen />
+      </div>
+
       <OfflineIndicator isVisible={!isOnline} />
 
       <Header
@@ -180,7 +176,7 @@ const Index = () => {
         onInstall={installApp}
         onClose={closeInstallPrompt}
       />
-      <BottomNavigation onProfileClick={handleProfileClick} />
+      <BottomNavigation />
     </div>
   );
 };
