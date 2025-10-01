@@ -6,10 +6,10 @@ import {
   updateProfile,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
+  GoogleAuthProvider, // Import GoogleAuthProvider
+  signInWithPopup, // Import signInWithPopup
 } from 'firebase/auth';
-import { toast } from 'sonner';
+import { toast } from 'sonner'; // Using sonner for toasts
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -22,7 +22,7 @@ interface AuthContextType extends AuthState {
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>; // Add Google Sign-In function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,12 +50,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await createUserWithEmailAndPassword(auth, email, password);
       toast.success("Account created successfully! You are now logged in.");
     } catch (error: any) {
+      console.error("Auth error caught during signup:", error); // Added console log
       let errorMessage = "Failed to create account.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email is already in use.";
       } else if (error.code === 'auth/weak-password') {
         errorMessage = "Password should be at least 6 characters.";
-      } else if (error.message) {
+      } else if (error.message) { // Catch any other error messages
         errorMessage = error.message;
       }
       toast.error(errorMessage);
@@ -68,6 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await signInWithEmailAndPassword(auth, email, password);
       toast.success("Logged in successfully!");
     } catch (error: any) {
+      console.error("Auth error caught during login:", error); // Added console log
       let errorMessage = "Failed to log in.";
       if (error.code === 'auth/invalid-credential') {
         errorMessage = "Invalid email or password.";
@@ -75,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         errorMessage = "No user found with this email.";
       } else if (error.code === 'auth/wrong-password') {
         errorMessage = "Incorrect password.";
-      } else if (error.message) {
+      } else if (error.message) { // Catch any other error messages
         errorMessage = error.message;
       }
       toast.error(errorMessage);
@@ -88,7 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await signOut(auth);
       toast.success("Logged out successfully!");
     } catch (error: any) {
-      console.error("Error signing out:", error); // Keeping this for potential debugging of unexpected sign-out issues
+      console.error("Error signing out:", error);
       toast.error(`Failed to log out: ${error.message}`);
     }
   };
@@ -100,15 +102,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     try {
       await updateProfile(authState.user, { displayName, photoURL });
+      // Force a re-fetch of the user to update the state with new profile info
       setAuthState(prev => ({
         ...prev,
-        user: auth.currentUser,
+        user: auth.currentUser, // auth.currentUser will have the updated info
       }));
       toast.success("Profile updated successfully!");
     } catch (error: any) {
-      console.error("Error updating profile:", error); // Keeping this for potential debugging of unexpected profile update issues
+      console.error("Error updating profile:", error);
       toast.error(`Failed to update profile: ${error.message}`);
-      throw error;
+      throw error; // Re-throw to allow calling component to handle loading state
     }
   };
 
@@ -118,6 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await signInWithPopup(auth, provider);
       toast.success("Logged in with Google successfully!");
     } catch (error: any) {
+      console.error("Auth error caught during Google sign-in:", error);
       let errorMessage = "Failed to sign in with Google.";
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = "Google sign-in popup closed.";

@@ -17,12 +17,12 @@ export interface TaskerProfile {
 
 interface TaskerProfileContextType {
   taskerProfile: TaskerProfile | null;
-  allTaskerProfiles: TaskerProfile[];
+  allTaskerProfiles: TaskerProfile[]; // Added to store all tasker profiles
   loading: boolean;
   error: string | null;
   createOrUpdateTaskerProfile: (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined'>) => Promise<void>;
   isTasker: boolean;
-  fetchTaskerProfileById: (id: string) => Promise<TaskerProfile | null>;
+  fetchTaskerProfileById: (id: string) => Promise<TaskerProfile | null>; // Added for fetching specific tasker
 }
 
 const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>(undefined);
@@ -30,11 +30,12 @@ const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>
 export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [taskerProfile, setTaskerProfile] = useState<TaskerProfile | null>(null);
-  const [allTaskerProfiles, setAllTaskerProfiles] = useState<TaskerProfile[]>([]);
+  const [allTaskerProfiles, setAllTaskerProfiles] = useState<TaskerProfile[]>([]); // New state for all taskers
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTasker, setIsTasker] = useState(false);
 
+  // Function to fetch a single tasker profile by ID (can be used outside the hook context)
   const fetchTaskerProfileById = async (id: string): Promise<TaskerProfile | null> => {
     try {
       const docRef = doc(db, 'taskerProfiles', id);
@@ -44,7 +45,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       }
       return null;
     } catch (err: any) {
-      // console.error("Error fetching tasker profile by ID:", err); // Removed
+      console.error("Error fetching tasker profile by ID:", err);
       toast.error(`Failed to load tasker profile: ${err.message}`);
       return null;
     }
@@ -55,6 +56,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       setLoading(true);
       setError(null);
 
+      // Fetch current user's tasker profile
       if (isAuthenticated && user) {
         try {
           const profile = await fetchTaskerProfileById(user.uid);
@@ -68,12 +70,13 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         setIsTasker(false);
       }
 
+      // Fetch all tasker profiles
       try {
         const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
         const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
         setAllTaskerProfiles(profiles);
       } catch (err: any) {
-        // console.error("Error fetching all tasker profiles:", err); // Removed
+        console.error("Error fetching all tasker profiles:", err);
         setError("Failed to load all tasker profiles.");
         toast.error("Failed to load all tasker profiles.");
       } finally {
@@ -82,7 +85,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     };
 
     loadProfiles();
-  }, [isAuthenticated, user, authLoading]);
+  }, [isAuthenticated, user, authLoading]); // Re-run when auth state changes
 
   const createOrUpdateTaskerProfile = async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined'>) => {
     if (!isAuthenticated || !user) {
@@ -102,15 +105,16 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         ...data,
       };
 
-      await setDoc(docRef, profileData, { merge: true });
+      await setDoc(docRef, profileData, { merge: true }); // Use merge to update existing fields or create new doc
       setTaskerProfile(profileData);
       setIsTasker(true);
       toast.success("Tasker profile saved successfully!");
+      // Re-fetch all profiles to update the list
       const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
       const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
       setAllTaskerProfiles(profiles);
     } catch (err: any) {
-      // console.error("Error saving tasker profile:", err); // Removed
+      console.error("Error saving tasker profile:", err);
       setError(`Failed to save tasker profile: ${err.message}`);
       toast.error(`Failed to save tasker profile: ${err.message}`);
       throw err;
@@ -121,12 +125,12 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const value = {
     taskerProfile,
-    allTaskerProfiles,
+    allTaskerProfiles, // Expose all tasker profiles
     loading,
     error,
     createOrUpdateTaskerProfile,
     isTasker,
-    fetchTaskerProfileById,
+    fetchTaskerProfileById, // Expose the utility function
   };
 
   return <TaskerProfileContext.Provider value={value}>{children}</TaskerProfileContext.Provider>;
