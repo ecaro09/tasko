@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/components/ui/drawer"; // Import Drawer components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { useModal } from './ModalProvider';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile hook
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile(); // Determine if on mobile
 
   const handleEmailPasswordSignup = async () => {
     if (!email || !password) {
@@ -40,48 +43,104 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
     openLoginModal();
   };
 
+  const ModalContent = (
+    <>
+      <DialogHeader>
+        <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Sign Up for Tasko</DialogTitle>
+        <DialogDescription className="text-[hsl(var(--text-light))]">
+          Join our community and start getting tasks done or earning money.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="grid gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="m@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+        <Button
+          onClick={handleEmailPasswordSignup}
+          disabled={isLoading}
+          className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
+        >
+          {isLoading ? 'Signing Up...' : 'Sign Up with Email'}
+        </Button>
+      </div>
+      <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
+        Already have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]" onClick={handleSwitchToLogin}>Login</Button>
+      </DialogFooter>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={onClose}>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Sign Up for Tasko</DrawerTitle>
+            <DrawerDescription className="text-[hsl(var(--text-light))]">
+              Join our community and start getting tasks done or earning money.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4">
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <Button
+                onClick={handleEmailPasswordSignup}
+                disabled={isLoading}
+                className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
+              >
+                {isLoading ? 'Signing Up...' : 'Sign Up with Email'}
+              </Button>
+            </div>
+          </div>
+          <DrawerFooter className="text-sm text-center text-[hsl(var(--text-light))]">
+            Already have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]" onClick={handleSwitchToLogin}>Login</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Sign Up for Tasko</DialogTitle>
-          <DialogDescription className="text-[hsl(var(--text-light))]">
-            Join our community and start getting tasks done or earning money.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="m@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <Button
-            onClick={handleEmailPasswordSignup}
-            disabled={isLoading}
-            className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
-          >
-            {isLoading ? 'Signing Up...' : 'Sign Up with Email'}
-          </Button>
-        </div>
-        <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
-          Already have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]" onClick={handleSwitchToLogin}>Login</Button>
-        </DialogFooter>
+        {ModalContent}
       </DialogContent>
     </Dialog>
   );
