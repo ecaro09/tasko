@@ -13,12 +13,13 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
-import ChatPage from "./pages/ChatPage"; // New import
+import ChatPage from "./pages/ChatPage";
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
 import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
+import { OffersProvider } from "./hooks/use-offers"; // New import
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -32,24 +33,26 @@ const App = () => {
             <PWAProvider>
               <TasksProvider>
                 <TaskerProfileProvider>
-                  <ModalProvider>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                      <Route path="/my-tasks" element={<MyTasksPage />} />
-                      <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
-                      <Route path="/profile" element={<ProfilePage />} />
-                      <Route path="/faq" element={<FAQPage />} />
-                      <Route path="/contact" element={<ContactPage />} />
-                      <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                      <Route path="/terms" element={<TermsOfServicePage />} />
-                      <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
-                      <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                      <Route path="/chat" element={<ChatPage />} /> {/* New Route */}
-                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </ModalProvider>
+                  <OffersProvider> {/* New Provider */}
+                    <ModalProvider>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                        <Route path="/my-tasks" element={<MyTasksPage />} />
+                        <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/faq" element={<FAQPage />} />
+                        <Route path="/contact" element={<ContactPage />} />
+                        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                        <Route path="/terms" element={<TermsOfServicePage />} />
+                        <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
+                        <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
+                        <Route path="/chat" element={<ChatPage />} />
+                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </ModalProvider>
+                  </OffersProvider>
                 </TaskerProfileProvider>
               </TasksProvider>
             </PWAProvider>
