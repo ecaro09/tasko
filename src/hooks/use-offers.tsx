@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, DocumentData } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, DocumentData, getDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // To check if user is a tasker
@@ -127,16 +127,24 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setLoading(true);
     try {
       const offerRef = doc(db, 'offers', offerId);
+      const offerSnap = await getDoc(offerRef); // Fetch the offer to get taskerId
+      if (!offerSnap.exists()) {
+        toast.error("Offer not found.");
+        setLoading(false);
+        return;
+      }
+      const offerData = offerSnap.data() as Offer;
+
       await updateDoc(offerRef, {
         status: 'accepted',
         dateUpdated: serverTimestamp(),
       });
 
-      // Optionally, update the task status to 'assigned'
+      // Update the task status to 'assigned' and set the correct assignedTaskerId
       const taskRef = doc(db, 'tasks', taskId);
       await updateDoc(taskRef, {
         status: 'assigned',
-        assignedTaskerId: user.uid, // Assuming the current user is the client accepting
+        assignedTaskerId: offerData.taskerId, // Correctly assign the tasker's ID
         assignedOfferId: offerId,
       });
 
