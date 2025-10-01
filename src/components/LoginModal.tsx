@@ -55,7 +55,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-full max-w-full sm:max-w-[425px] min-h-[50vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Login to Tasko</DialogTitle>
           <DialogDescription className="text-[hsl(var(--text-light))]">
