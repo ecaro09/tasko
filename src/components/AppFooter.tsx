@@ -20,8 +20,8 @@ const AppFooter: React.FC = () => {
           <ul className="space-y-2">
             <li><Link to="/" className="text-sm hover:text-green-400 transition-colors">Home</Link></li>
             <li><a href="#categories" className="text-sm hover:text-green-400 transition-colors">Services</a></li>
-            <li><Link to="/browse-taskers" className="text-sm hover:text-green-400 transition-colors">Browse Taskers</Link></li> {/* Updated link */}
-            <li><Link to="/my-tasks" className="text-sm hover:text-green-400 transition-colors">My Tasks</Link></li> {/* Updated link */}
+            <li><Link to="/browse-taskers" className="text-sm hover:text-green-400 transition-colors">Browse Taskers</Link></li>
+            <li><Link to="/my-tasks" className="text-sm hover:text-green-400 transition-colors">My Tasks</Link></li>
             <li><Link to="/features-earnings" className="text-sm hover:text-green-400 transition-colors">Become a Tasker</Link></li>
             <li><a href="#how-it-works" className="text-sm hover:text-green-400 transition-colors">How It Works</a></li>
           </ul>
