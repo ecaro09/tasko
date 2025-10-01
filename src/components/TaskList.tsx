@@ -2,11 +2,9 @@ import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import TaskCard from './TaskCard'; // Import the new TaskCard component
-import { Task } from '@/hooks/use-tasks'; // Import Task interface
 
 interface TaskListProps {
-  tasks: Task[]; // Use the Task interface
+  tasks: string[];
   onAddTask: (task: string) => void;
   isAuthenticated: boolean;
 }
@@ -16,8 +14,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, isAuthenticated }
 
   const handleAddTask = () => {
     if (taskInput.trim() && isAuthenticated) {
-      // For now, onAddTask only takes a string.
-      // In a real scenario, you'd likely open a modal for full task details.
       onAddTask(taskInput);
       setTaskInput('');
     }
@@ -26,22 +22,24 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, isAuthenticated }
   return (
     <Card className="mb-8">
       <CardHeader>
-        <CardTitle>Available Tasks</CardTitle>
+        <CardTitle>Task List</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <ul className="mb-4 space-y-2">
           {tasks.length > 0 ? (
-            tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+            tasks.map((task, index) => (
+              <li key={index} className="bg-gray-100 p-2 rounded-md text-gray-800">
+                {task}
+              </li>
             ))
           ) : (
-            <p className="text-gray-500 col-span-full text-center">No tasks available. Sign in to add tasks.</p>
+            <li className="text-gray-500">No tasks yet. Sign in to add tasks.</li>
           )}
-        </div>
-        <div className="flex space-x-2 mt-4">
+        </ul>
+        <div className="flex space-x-2">
           <Input
             type="text"
-            placeholder="Add a new task (e.g., 'Fix a leaky faucet')"
+            placeholder="Add a new task"
             value={taskInput}
             onChange={(e) => setTaskInput(e.target.value)}
             disabled={!isAuthenticated}
