@@ -1,8 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth'; // New import
+import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
 
 const AppFooter: React.FC = () => {
+  const { isAuthenticated } = useAuth(); // Use auth hook
+  const { isTasker } = useTaskerProfile(); // Use tasker profile hook
+
   return (
     <footer className="bg-gray-800 text-gray-300 py-10 mt-12">
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -22,9 +27,12 @@ const AppFooter: React.FC = () => {
             <li><a href="#categories" className="text-sm hover:text-green-400 transition-colors">Services</a></li>
             <li><Link to="/browse-taskers" className="text-sm hover:text-green-400 transition-colors">Browse Taskers</Link></li>
             <li><Link to="/my-tasks" className="text-sm hover:text-green-400 transition-colors">My Tasks</Link></li>
+            {isAuthenticated && isTasker && ( // New: My Offers link for authenticated taskers
+              <li><Link to="/my-offers" className="text-sm hover:text-green-400 transition-colors">My Offers</Link></li>
+            )}
             <li><Link to="/features-earnings" className="text-sm hover:text-green-400 transition-colors">Become a Tasker</Link></li>
             <li><a href="#how-it-works" className="text-sm hover:text-green-400 transition-colors">How It Works</a></li>
-            <li><a href="#testimonials" className="text-sm hover:text-green-400 transition-colors">Testimonials</a></li>{/* New Link */}
+            <li><a href="#testimonials" className="text-sm hover:text-green-400 transition-colors">Testimonials</a></li>
           </ul>
         </div>
 
