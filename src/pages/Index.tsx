@@ -4,7 +4,6 @@ import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import AppFooter from "@/components/AppFooter";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Plus } from 'lucide-react';
@@ -157,7 +156,7 @@ const Index = () => {
         <HowItWorksSection />
       </main>
       <AppFooter />
-      <MadeWithDyad />
+      
 
       <InstallPrompt
         isVisible={showInstallPrompt}
