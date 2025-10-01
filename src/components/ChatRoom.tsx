@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card"; // Added import for Card
 import { MessageSquare, Send, User as UserIcon } from 'lucide-react';
 import { useChat, Message } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Card } from "@/components/ui/card"; // Added Card import
 
 interface ChatRoomProps {
   chatRoomId: string;

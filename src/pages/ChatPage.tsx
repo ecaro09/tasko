@@ -21,11 +21,13 @@ interface ChatRoomWithParticipantInfo extends ChatRoomType {
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const { chatRoomId } = useParams<{ chatRoomId?: string }>();
+  const { userId } = useParams<{ userId?: string }>(); // Changed from chatRoomId to userId
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { chatRooms, loadingChatRooms, error } = useChat();
+  const { chatRooms, loadingChatRooms, error, createChatRoom, getChatRoomIdForParticipants } = useChat();
   const { fetchTaskerProfileById } = useTaskerProfile();
   const [resolvedChatRooms, setResolvedChatRooms] = useState<ChatRoomWithParticipantInfo[]>([]);
+  const [activeChatRoomId, setActiveChatRoomId] = useState<string | null>(null);
+  const [activeOtherParticipantInfo, setActiveOtherParticipantInfo] = useState<{ name: string; avatar?: string } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated && !authLoading) {
@@ -35,7 +37,53 @@ const ChatPage: React.FC = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Resolve participant info for each chat room
+  // Effect to handle dynamic chat room selection/creation based on userId param
+  useEffect(() => {
+    const handleChatInitiation = async () => {
+      if (!user || !isAuthenticated || !userId) {
+        setActiveChatRoomId(null);
+        setActiveOtherParticipantInfo(null);
+        return;
+      }
+
+      // Prevent chatting with self
+      if (user.uid === userId) {
+        toast.info("You cannot chat with yourself.");
+        navigate('/chat'); // Redirect to general chat list
+        return;
+      }
+
+      // Try to find or create a chat room
+      const participantIds = [user.uid, userId].sort();
+      let chatRoomIdToUse = await getChatRoomIdForParticipants(participantIds);
+
+      let otherParticipantName = "Unknown User";
+      let otherParticipantAvatar: string | undefined;
+
+      // Fetch other participant's profile for display name and avatar
+      const otherUserProfile = await fetchTaskerProfileById(userId); // Assuming tasker profiles store display names/avatars
+      if (otherUserProfile) {
+        otherParticipantName = otherUserProfile.displayName;
+        otherParticipantAvatar = otherUserProfile.photoURL;
+      } else {
+        // Fallback if not a tasker, try to get from auth user if available (less likely for other users)
+        // For now, we'll rely on tasker profiles or default to "Unknown User"
+      }
+
+      if (!chatRoomIdToUse) {
+        // If no existing chat room, create one
+        chatRoomIdToUse = await createChatRoom(participantIds, [user.displayName || "You", otherParticipantName]);
+      }
+
+      setActiveChatRoomId(chatRoomIdToUse);
+      setActiveOtherParticipantInfo({ name: otherParticipantName, avatar: otherParticipantAvatar });
+    };
+
+    handleChatInitiation();
+  }, [userId, user, isAuthenticated, createChatRoom, getChatRoomIdForParticipants, fetchTaskerProfileById, navigate]);
+
+
+  // Resolve participant info for each chat room in the list view
   useEffect(() => {
     const resolveParticipants = async () => {
       if (!user || chatRooms.length === 0) {
@@ -82,30 +130,28 @@ const ChatPage: React.FC = () => {
     return null; // Should be redirected by useEffect
   }
 
-  const currentChatRoomWithInfo = chatRoomId ? resolvedChatRooms.find(room => room.id === chatRoomId) : null;
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col">
       <div className="container mx-auto px-4 flex-grow flex flex-col max-w-3xl">
         <div className="flex items-center justify-between mb-6">
-          {chatRoomId ? (
+          {userId ? ( // If userId is present, show back button to chat list
             <Button onClick={() => navigate('/chat')} variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
               <ArrowLeft size={20} className="mr-2" /> Back to Chats
             </Button>
           ) : (
-            <div className="w-10"></div> // Spacer
+            <div className="w-10"></div> // Spacer for list view
           )}
           <h1 className="text-3xl font-bold text-green-600 text-center flex-grow">
-            {chatRoomId ? currentChatRoomWithInfo?.otherParticipantName || "Chat" : "My Chats"}
+            {userId ? activeOtherParticipantInfo?.name || "Chat" : "My Chats"}
           </h1>
           <div className="w-10"></div> {/* Spacer to balance the back button */}
         </div>
 
-        {chatRoomId && currentChatRoomWithInfo ? (
+        {userId && activeChatRoomId && activeOtherParticipantInfo ? (
           <ChatRoom
-            chatRoomId={chatRoomId}
-            otherParticipantName={currentChatRoomWithInfo.otherParticipantName}
-            otherParticipantAvatar={currentChatRoomWithInfo.otherParticipantAvatar}
+            chatRoomId={activeChatRoomId}
+            otherParticipantName={activeOtherParticipantInfo.name}
+            otherParticipantAvatar={activeOtherParticipantInfo.avatar}
           />
         ) : (
           <Card className="flex-grow flex flex-col shadow-lg rounded-lg overflow-hidden">
@@ -124,7 +170,7 @@ const ChatPage: React.FC = () => {
                         <div
                           key={room.id}
                           className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                          onClick={() => navigate(`/chat/${room.id}`)}
+                          onClick={() => navigate(`/chat/${room.otherParticipantId}`)} // Navigate to chat with other participant's ID
                         >
                           <Avatar className="w-12 h-12">
                             <AvatarImage src={room.otherParticipantAvatar || undefined} alt={room.otherParticipantName} />

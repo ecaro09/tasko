@@ -1,11 +1,11 @@
 import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom'; // Import Link
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
-import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
+import { useOffers, Offer } from '@/hooks/use-offers';
 import { useModal } from '@/components/ModalProvider';
-import { useChat } from '@/hooks/use-chat'; // New import for useChat
+import { useChat } from '@/hooks/use-chat';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
@@ -18,10 +18,10 @@ const TaskDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Removed fetchTaskerProfileById as it's not used here
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { createChatRoom } = useChat(); // Corrected destructuring from useChat
+  const { createChatRoom } = useChat();
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -96,13 +96,8 @@ const TaskDetailPage: React.FC = () => {
       return;
     }
 
-    const participantIds = [user.uid, task.posterId];
-    const participantNames = [user.displayName || user.email || "You", task.posterName];
-    
-    const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
-    if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`); // Navigate to the specific chat room ID
-    }
+    // Navigate to the chat page with the poster's ID
+    navigate(`/chat/${task.posterId}`);
   };
 
   const handleChatWithTasker = async (taskerId: string, taskerName: string) => {
@@ -115,13 +110,8 @@ const TaskDetailPage: React.FC = () => {
       return;
     }
 
-    const participantIds = [user.uid, taskerId];
-    const participantNames = [user.displayName || user.email || "You", taskerName];
-
-    const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
-    if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`); // Navigate to the specific chat room ID
-    }
+    // Navigate to the chat page with the tasker's ID
+    navigate(`/chat/${taskerId}`);
   };
 
   const getOfferStatusBadge = (status: Offer['status']) => {
@@ -207,7 +197,7 @@ const TaskDetailPage: React.FC = () => {
                   {taskOffers.map(offer => (
                     <Card key={offer.id} className="p-4 shadow-sm">
                       <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <Link to={`/taskers/${offer.taskerId}`} className="flex items-center gap-3 group"> {/* Added Link */}
+                        <Link to={`/taskers/${offer.taskerId}`} className="flex items-center gap-3 group">
                           <Avatar className="w-12 h-12 border-2 border-blue-500 group-hover:border-green-500 transition-colors">
                             <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
                             <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">

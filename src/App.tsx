@@ -16,14 +16,14 @@ import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
-import DashboardPage from "./pages/DashboardPage"; // New import for DashboardPage
+import DashboardPage from "./pages/DashboardPage";
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
 import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
 import { OffersProvider } from "./hooks/use-offers";
-import { ChatProvider } from "./hooks/use-chat"; // New import for ChatProvider
+import { ChatProvider } from "./hooks/use-chat";
 import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
@@ -41,7 +41,7 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ChatProvider> {/* Wrap ModalProvider with ChatProvider */}
+                      <ChatProvider>
                         <ModalProvider>
                           <Routes>
                             <Route path="/" element={<Index />} />
@@ -58,7 +58,7 @@ const App = () => {
                             <Route path="/terms" element={<TermsOfServicePage />} />
                             <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
                             <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                            <Route path="/chat/:recipientId" element={<ChatPage />} /> {/* Updated Chat Route */}
+                            <Route path="/chat/:userId?" element={<ChatPage />} /> {/* Updated Chat Route to accept optional userId */}
                             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                             <Route path="*" element={<NotFound />} />
                           </Routes>
