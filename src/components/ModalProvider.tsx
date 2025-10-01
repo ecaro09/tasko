@@ -7,11 +7,14 @@ import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
 import { useOffers } from '@/hooks/use-offers';
 import { Task } from '@/hooks/use-tasks';
-import CreateTaskModal from './CreateTaskModal'; // Import the new modal component
+import { TaskerProfile } from '@/hooks/use-tasker-profile'; // Import TaskerProfile type
+import CreateTaskModal from './CreateTaskModal';
+import TaskerProfileFormModal from './TaskerProfileFormModal'; // Import the new modal component
 
 interface ModalContextType {
   openMakeOfferModal: (task: Task) => void;
-  openCreateTaskModal: () => void; // New function to open CreateTaskModal
+  openCreateTaskModal: () => void;
+  openTaskerProfileFormModal: (initialData?: TaskerProfile | null) => void; // New function for tasker profile modal
   closeModal: () => void;
 }
 
@@ -20,8 +23,10 @@ const ModalContext = createContext<ModalContextType | undefined>(undefined);
 export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { makeOffer, loading: offersLoading } = useOffers();
   const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = useState(false);
-  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false); // New state for CreateTaskModal
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [isTaskerProfileFormModalOpen, setIsTaskerProfileFormModalOpen] = useState(false); // New state for TaskerProfileFormModal
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  const [currentTaskerProfileData, setCurrentTaskerProfileData] = useState<TaskerProfile | null>(null); // State for initial data
   const [offerAmount, setOfferAmount] = useState<string>('');
   const [offerMessage, setOfferMessage] = useState<string>('');
 
@@ -32,14 +37,21 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsMakeOfferModalOpen(true);
   };
 
-  const openCreateTaskModal = () => { // New function implementation
+  const openCreateTaskModal = () => {
     setIsCreateTaskModalOpen(true);
+  };
+
+  const openTaskerProfileFormModal = (initialData?: TaskerProfile | null) => {
+    setCurrentTaskerProfileData(initialData || null);
+    setIsTaskerProfileFormModalOpen(true);
   };
 
   const closeModal = () => {
     setIsMakeOfferModalOpen(false);
-    setIsCreateTaskModalOpen(false); // Close CreateTaskModal as well
+    setIsCreateTaskModalOpen(false);
+    setIsTaskerProfileFormModalOpen(false); // Close TaskerProfileFormModal as well
     setCurrentTask(null);
+    setCurrentTaskerProfileData(null);
   };
 
   const handleSubmitOffer = async () => {
@@ -66,7 +78,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   return (
-    <ModalContext.Provider value={{ openMakeOfferModal, openCreateTaskModal, closeModal }}>
+    <ModalContext.Provider value={{ openMakeOfferModal, openCreateTaskModal, openTaskerProfileFormModal, closeModal }}>
       {children}
 
       {/* Make Offer Modal */}
@@ -118,6 +130,13 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       {/* Create Task Modal */}
       <CreateTaskModal isOpen={isCreateTaskModalOpen} onClose={closeModal} />
+
+      {/* Tasker Profile Form Modal */}
+      <TaskerProfileFormModal
+        isOpen={isTaskerProfileFormModalOpen}
+        onClose={closeModal}
+        initialData={currentTaskerProfileData}
+      />
     </ModalContext.Provider>
   );
 };
