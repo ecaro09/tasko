@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, DocumentData } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, DocumentData, updateDoc } from 'firebase/firestore'; // Added updateDoc
 import { toast } from 'sonner';
 import { useAuth } from './use-auth'; // Assuming useAuth exists
 
