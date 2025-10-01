@@ -7,15 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { toast } from 'sonner';
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-} from "@/components/ui/drawer"; // Import Drawer components
 
 interface TaskerRegistrationModalProps {
   isOpen: boolean;
@@ -34,7 +25,6 @@ const TaskerRegistrationModal: React.FC<TaskerRegistrationModalProps> = ({ isOpe
   const [bio, setBio] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const isMobile = useIsMobile(); // Use the hook
 
   useEffect(() => {
     if (taskerProfile) {
@@ -82,24 +72,17 @@ const TaskerRegistrationModal: React.FC<TaskerRegistrationModalProps> = ({ isOpe
     }
   };
 
-  const ModalComponent = isMobile ? Drawer : Dialog;
-  const ModalContentComponent = isMobile ? DrawerContent : DialogContent;
-  const ModalHeaderComponent = isMobile ? DrawerHeader : DialogHeader;
-  const ModalTitleComponent = isMobile ? DrawerTitle : DialogTitle;
-  const ModalDescriptionComponent = isMobile ? DrawerDescription : DialogDescription;
-  const ModalFooterComponent = isMobile ? DrawerFooter : DialogFooter;
-
   return (
-    <ModalComponent open={isOpen} onOpenChange={onClose}>
-      <ModalContentComponent className="sm:max-w-[600px]">
-        <ModalHeaderComponent>
-          <ModalTitleComponent className="text-2xl font-bold text-[hsl(var(--primary-color))]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">
             {taskerProfile ? "Edit Your Tasker Profile" : "Become a Tasker"}
-          </ModalTitleComponent>
-          <ModalDescriptionComponent className="text-[hsl(var(--text-light))]">
+          </DialogTitle>
+          <DialogDescription className="text-[hsl(var(--text-light))]">
             {taskerProfile ? "Update your skills and availability." : "Share your skills and start earning!"}
-          </ModalDescriptionComponent>
-        </ModalHeaderComponent>
+          </DialogDescription>
+        </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="skills" className="text-right pt-2">
@@ -147,14 +130,14 @@ const TaskerRegistrationModal: React.FC<TaskerRegistrationModalProps> = ({ isOpe
             />
           </div>
         </div>
-        <ModalFooterComponent>
+        <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading || profileLoading}>Cancel</Button>
           <Button onClick={handleSaveProfile} disabled={isLoading || profileLoading} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
             {isLoading ? 'Saving...' : 'Save Profile'}
           </Button>
-        </ModalFooterComponent>
-      </ModalContentComponent>
-    </ModalComponent>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -7,15 +7,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { useModal } from './ModalProvider';
 import { Chrome } from 'lucide-react'; // Import Google icon
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-} from "@/components/ui/drawer"; // Import Drawer components
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -23,12 +14,11 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { loginWithEmailPassword, signInWithGoogle } = useAuth();
+  const { loginWithEmailPassword, signInWithGoogle } = useAuth(); // Destructure signInWithGoogle
   const { openSignupModal } = useModal();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const isMobile = useIsMobile(); // Use the hook
 
   const handleEmailPasswordLogin = async () => {
     if (!email || !password) {
@@ -63,22 +53,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     openSignupModal();
   };
 
-  const ModalComponent = isMobile ? Drawer : Dialog;
-  const ModalContentComponent = isMobile ? DrawerContent : DialogContent;
-  const ModalHeaderComponent = isMobile ? DrawerHeader : DialogHeader;
-  const ModalTitleComponent = isMobile ? DrawerTitle : DialogTitle;
-  const ModalDescriptionComponent = isMobile ? DrawerDescription : DialogDescription;
-  const ModalFooterComponent = isMobile ? DrawerFooter : DialogFooter;
-
   return (
-    <ModalComponent open={isOpen} onOpenChange={onClose}>
-      <ModalContentComponent className="sm:max-w-[425px]">
-        <ModalHeaderComponent>
-          <ModalTitleComponent className="text-2xl font-bold text-[hsl(var(--primary-color))]">Login to Tasko</ModalTitleComponent>
-          <ModalDescriptionComponent className="text-[hsl(var(--text-light))]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Login to Tasko</DialogTitle>
+          <DialogDescription className="text-[hsl(var(--text-light))]">
             Access your tasks and connect with taskers.
-          </ModalDescriptionComponent>
-        </ModalHeaderComponent>
+          </DialogDescription>
+        </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -127,11 +110,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             <Chrome size={20} /> {isLoading ? 'Signing In...' : 'Sign in with Google'}
           </Button>
         </div>
-        <ModalFooterComponent className="text-sm text-center text-[hsl(var(--text-light))]">
+        <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
           Don't have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]" onClick={handleSwitchToSignup}>Sign Up</Button>
-        </ModalFooterComponent>
-      </ModalContentComponent>
-    </ModalComponent>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

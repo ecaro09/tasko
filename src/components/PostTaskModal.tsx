@@ -7,15 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTasks } from '@/hooks/use-tasks';
 import { toast } from 'sonner';
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-} from "@/components/ui/drawer"; // Import Drawer components
 
 interface PostTaskModalProps {
   isOpen: boolean;
@@ -30,7 +21,6 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
   const [taskBudget, setTaskBudget] = useState('');
   const [taskCategory, setTaskCategory] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const isMobile = useIsMobile(); // Use the hook
 
   const handlePostTask = async () => {
     if (!taskTitle || !taskDescription || !taskLocation || !taskBudget || !taskCategory) {
@@ -61,22 +51,15 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const ModalComponent = isMobile ? Drawer : Dialog;
-  const ModalContentComponent = isMobile ? DrawerContent : DialogContent;
-  const ModalHeaderComponent = isMobile ? DrawerHeader : DialogHeader;
-  const ModalTitleComponent = isMobile ? DrawerTitle : DialogTitle;
-  const ModalDescriptionComponent = isMobile ? DrawerDescription : DialogDescription;
-  const ModalFooterComponent = isMobile ? DrawerFooter : DialogFooter;
-
   return (
-    <ModalComponent open={isOpen} onOpenChange={onClose}>
-      <ModalContentComponent className="sm:max-w-[500px]">
-        <ModalHeaderComponent>
-          <ModalTitleComponent className="text-2xl font-bold text-[hsl(var(--primary-color))]">Post a New Task</ModalTitleComponent>
-          <ModalDescriptionComponent className="text-[hsl(var(--text-light))]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Post a New Task</DialogTitle>
+          <DialogDescription className="text-[hsl(var(--text-light))]">
             Describe your task and let local taskers make offers.
-          </ModalDescriptionComponent>
-        </ModalHeaderComponent>
+          </DialogDescription>
+        </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">
@@ -148,14 +131,14 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
             </Select>
           </div>
         </div>
-        <ModalFooterComponent>
+        <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>Cancel</Button>
           <Button onClick={handlePostTask} disabled={isLoading} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
             {isLoading ? 'Posting...' : 'Post Task'}
           </Button>
-        </ModalFooterComponent>
-      </ModalContentComponent>
-    </ModalComponent>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
