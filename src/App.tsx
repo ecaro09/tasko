@@ -14,12 +14,13 @@ import TermsOfServicePage from "./pages/TermsOfServicePage";
 import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
+import MyOffersPage from "./pages/MyOffersPage"; // New import
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
 import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
-import { OffersProvider } from "./hooks/use-offers"; // New import
+import { OffersProvider } from "./hooks/use-offers";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -33,12 +34,13 @@ const App = () => {
             <PWAProvider>
               <TasksProvider>
                 <TaskerProfileProvider>
-                  <OffersProvider> {/* New Provider */}
+                  <OffersProvider>
                     <ModalProvider>
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/tasks/:id" element={<TaskDetailPage />} />
                         <Route path="/my-tasks" element={<MyTasksPage />} />
+                        <Route path="/my-offers" element={<MyOffersPage />} /> {/* New Route */}
                         <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/faq" element={<FAQPage />} />
