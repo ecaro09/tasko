@@ -5,9 +5,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useChat, ChatRoom as ChatRoomType } from '@/hooks/use-chat'; // Import ChatRoomType
+import { useChat, ChatRoom as ChatRoomType } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // Import useTaskerProfile
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import ChatRoom from '@/components/ChatRoom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ const ChatPage: React.FC = () => {
   const { chatRoomId } = useParams<{ chatRoomId?: string }>();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { chatRooms, loadingChatRooms, error } = useChat();
-  const { fetchTaskerProfileById } = useTaskerProfile(); // Use fetchTaskerProfileById
+  const { fetchTaskerProfileById } = useTaskerProfile();
   const [resolvedChatRooms, setResolvedChatRooms] = useState<ChatRoomWithParticipantInfo[]>([]);
 
   useEffect(() => {
