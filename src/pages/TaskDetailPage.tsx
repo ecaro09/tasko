@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 const TaskDetailPage: React.FC = () => {
@@ -101,7 +101,7 @@ const TaskDetailPage: React.FC = () => {
     
     const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
     if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`); // Navigate to chat with the chatRoomId
+      navigate(`/chat/${task.posterId}`); // Navigate to chat with the poster's ID
     }
   };
 
@@ -120,7 +120,7 @@ const TaskDetailPage: React.FC = () => {
 
     const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
     if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`); // Navigate to chat with the chatRoomId
+      navigate(`/chat/${taskerId}`); // Navigate to chat with the tasker's ID
     }
   };
 
