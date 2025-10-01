@@ -14,28 +14,14 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { signInWithGoogle, signInWithEmailPassword } = useAuth();
+  const { signInWithGoogle } = useAuth();
   const { openSignupModal } = useModal(); // Get openSignupModal from context
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      onClose(); // Close modal on successful login
-    } catch (error) {
-      // Error handled by useAuth hook, toast will be shown there
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailLogin = async () => {
-    setIsLoading(true);
-    try {
-      await signInWithEmailPassword(email, password);
       onClose(); // Close modal on successful login
     } catch (error) {
       // Error handled by useAuth hook, toast will be shown there
@@ -59,34 +45,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="m@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <Button
-            onClick={handleEmailLogin}
-            disabled={isLoading}
-            className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
-          >
-            {isLoading ? 'Logging In...' : 'Login with Email'}
-          </Button>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
               Or continue with

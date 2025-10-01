@@ -7,10 +7,9 @@ interface HeroSectionProps {
   searchTerm: string;
   onSearchTermChange: (term: string) => void;
   onSearchSubmit: () => void;
-  onPopularCategoryClick: (category: string) => void; // Added this prop
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChange, onSearchSubmit, onPopularCategoryClick }) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChange, onSearchSubmit }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onSearchSubmit();
@@ -44,11 +43,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChang
           </Button>
         </div>
         <p className="mt-6 text-sm md:text-base drop-shadow-md">
-          Popular:{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('cleaning')} className="underline hover:text-green-200">Cleaning</a>,{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('repairs')} className="underline hover:text-green-200">Handyman</a>,{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('moving')} className="underline hover:text-green-200">Moving</a>,{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('delivery')} className="underline hover:text-green-200">Delivery</a>
+          Popular: <a href="#" className="underline hover:text-green-200">Cleaning</a>, <a href="#" className="underline hover:text-green-200">Handyman</a>, <a href="#" className="underline hover:text-green-200">Moving</a>, <a href="#" className="underline hover:text-green-200">Delivery</a>
         </p>
       </div>
     </section>
