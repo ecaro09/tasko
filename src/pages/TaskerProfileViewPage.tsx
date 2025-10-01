@@ -4,13 +4,18 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
+import { User as UserIcon, DollarSign, Briefcase, Calendar, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth';
+import { useChat } from '@/hooks/use-chat';
+import { toast } from 'sonner';
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
+  const { user, isAuthenticated } = useAuth();
+  const { startNewConversation, loadingConversations: chatLoading } = useChat(); // Corrected: use loadingConversations
   const [tasker, setTasker] = useState<TaskerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +41,35 @@ const TaskerProfileViewPage: React.FC = () => {
     loadTasker();
   }, [id, fetchTaskerProfileById]);
 
+  const handleStartChat = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to start a chat.");
+      navigate('/login');
+      return;
+    }
+    if (!tasker) {
+      toast.error("Tasker profile not loaded.");
+      return;
+    }
+    if (user.uid === tasker.userId) {
+      toast.info("You cannot chat with yourself!");
+      navigate('/chat');
+      return;
+    }
+
+    try {
+      const conversationId = await startNewConversation(
+        [tasker.userId],
+        [tasker.displayName],
+        { [tasker.userId]: tasker.photoURL || undefined }, // Pass tasker's photoURL
+        `Hi ${tasker.displayName}, I'm interested in your services!`
+      );
+      navigate(`/chat/${conversationId}`);
+    } catch (err) {
+      // Error handled by useChat hook
+    }
+  };
+
   if (loading || globalLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading tasker profile...</div>;
   }
@@ -47,6 +81,8 @@ const TaskerProfileViewPage: React.FC = () => {
   if (!tasker) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Tasker profile not found.</div>;
   }
+
+  const isCurrentUserProfile = isAuthenticated && user?.uid === tasker.userId;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
@@ -64,10 +100,6 @@ const TaskerProfileViewPage: React.FC = () => {
               </AvatarFallback>
             </Avatar>
             <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{tasker.displayName}</h1>
-            <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
-              <Mail size={18} /> {tasker.userId} {/* Using userId as a placeholder for email/contact */}
-            </p>
-
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
               {tasker.bio}
             </CardDescription>
@@ -96,9 +128,23 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             </div>
 
-            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
-              Contact Tasker (Coming Soon)
-            </Button>
+            {!isCurrentUserProfile && (
+              <Button
+                onClick={handleStartChat}
+                disabled={chatLoading || !isAuthenticated}
+                className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <MessageSquare size={20} /> {chatLoading ? 'Starting Chat...' : 'Start Chat'}
+              </Button>
+            )}
+            {isCurrentUserProfile && (
+              <Button
+                onClick={() => navigate('/profile')}
+                className="mt-6 bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <UserIcon size={20} /> View My Profile
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>

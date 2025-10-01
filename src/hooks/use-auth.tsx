@@ -12,7 +12,8 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>; // Added updateProfile
+  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
+  fetchUserPhotoURL: (uid: string) => Promise<string | undefined>; // Added fetchUserPhotoURL
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,7 +77,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signInWithGoogle, logout, updateUserProfile };
+  // New function to fetch user photo URL by UID
+  const fetchUserPhotoURL = async (uid: string): Promise<string | undefined> => {
+    try {
+      // Firebase Auth doesn't directly expose a way to get another user's photoURL by UID
+      // without admin SDK or a custom backend.
+      // For a client-side app, we'd typically store this in Firestore (e.g., in a 'users' collection)
+      // or rely on the photoURL being part of the conversation document.
+      // For now, we'll return undefined, and rely on the conversation document to store it.
+      // If we had a 'users' collection, we'd do:
+      // const userDoc = await getDoc(doc(db, 'users', uid));
+      // return userDoc.data()?.photoURL;
+      return undefined; // Placeholder, will be handled by conversation document
+    } catch (error) {
+      console.error("Error fetching user photo URL:", error);
+      return undefined;
+    }
+  };
+
+  const value = { ...authState, signInWithGoogle, logout, updateUserProfile, fetchUserPhotoURL };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

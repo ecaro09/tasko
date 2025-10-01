@@ -93,18 +93,19 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const getParticipantName = (conversation: Conversation) => {
-    if (!user) return 'Unknown';
-    const otherParticipants = conversation.participantNames.filter(name => name !== (user.displayName || user.email || "Anonymous"));
-    return otherParticipants.join(', ');
-  };
+  const getOtherParticipant = (conversation: Conversation) => {
+    if (!user) return null;
+    const otherParticipantId = conversation.participants.find(id => id !== user.uid);
+    if (!otherParticipantId) return null;
 
-  const getParticipantAvatar = (conversation: Conversation) => {
-    if (!user) return undefined;
-    // This is a simplified approach. In a real app, you'd fetch individual user profiles.
-    // For now, we'll just use a generic fallback or the first other participant's initial.
-    const otherParticipants = conversation.participantNames.filter(name => name !== (user.displayName || user.email || "Anonymous"));
-    return otherParticipants.length > 0 ? otherParticipants[0].charAt(0).toUpperCase() : <UserIcon size={20} />;
+    const otherParticipantName = conversation.participantNames.find(name => name !== (user.displayName || user.email || "Anonymous"));
+    const otherParticipantAvatar = conversation.participantAvatars[otherParticipantId];
+
+    return {
+      id: otherParticipantId,
+      name: otherParticipantName || 'Unknown',
+      avatar: otherParticipantAvatar,
+    };
   };
 
   if (authLoading || loadingConversations) {
@@ -127,6 +128,8 @@ const ChatPage: React.FC = () => {
     );
   }
 
+  const otherParticipant = selectedConversation ? getOtherParticipant(selectedConversation) : null;
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col md:flex-row pt-[60px] pb-[var(--safe-area-bottom)] md:pb-0">
       {/* Conversation List (Sidebar) */}
@@ -142,6 +145,7 @@ const ChatPage: React.FC = () => {
             <p className="text-center text-gray-500 dark:text-gray-400 p-4">No conversations yet.</p>
           ) : (
             conversations.map((convo) => {
+              const other = getOtherParticipant(convo);
               const unreadCount = convo.unreadCount?.[user.uid] || 0;
               return (
                 <div
@@ -153,13 +157,13 @@ const ChatPage: React.FC = () => {
                   onClick={() => handleConversationSelect(convo)}
                 >
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={undefined} alt={getParticipantName(convo)} />
+                    <AvatarImage src={other?.avatar || undefined} alt={other?.name} />
                     <AvatarFallback className="bg-blue-200 text-blue-800">
-                      {getParticipantAvatar(convo)}
+                      {other?.name ? other.name.charAt(0).toUpperCase() : <UserIcon size={20} />}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 dark:text-gray-100">{getParticipantName(convo)}</h3>
+                    <h3 className="font-semibold text-gray-800 dark:text-gray-100">{other?.name}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{convo.lastMessage || "No messages yet."}</p>
                   </div>
                   {unreadCount > 0 && (
@@ -176,19 +180,19 @@ const ChatPage: React.FC = () => {
 
       {/* Message Area */}
       <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
-        {selectedConversation ? (
+        {selectedConversation && otherParticipant ? (
           <>
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => setSelectedConversation(null)} className="md:hidden">
                 <ArrowLeft size={20} />
               </Button>
               <Avatar className="w-10 h-10">
-                <AvatarImage src={undefined} alt={getParticipantName(selectedConversation)} />
+                <AvatarImage src={otherParticipant.avatar || undefined} alt={otherParticipant.name} />
                 <AvatarFallback className="bg-blue-200 text-blue-800">
-                  {getParticipantAvatar(selectedConversation)}
+                  {otherParticipant.name ? otherParticipant.name.charAt(0).toUpperCase() : <UserIcon size={20} />}
                 </AvatarFallback>
               </Avatar>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{getParticipantName(selectedConversation)}</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{otherParticipant.name}</h3>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {loadingMessages ? (
