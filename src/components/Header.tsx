@@ -3,12 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useModal } from './ModalProvider';
 import { useAuth } from '@/hooks/use-auth';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
-import { User as UserIcon } from 'lucide-react'; // New import
+import UserNav from './UserNav'; // New import for UserNav
 
 interface HeaderProps {
   isAuthenticated: boolean;
-  onSignOut: () => void;
+  onSignOut: () => void; // This prop will no longer be directly used for sign out, but kept for now
 }
 
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
@@ -29,25 +28,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
           )}
           <a href="#how-it-works" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">How It Works</a>
           <Link to="/features-earnings" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Become a Tasker</Link>
-          {isAuthenticated && ( // New: Profile link for authenticated users
-            <Link to="/profile" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Profile</Link>
-          )}
         </nav>
         <div className="flex gap-3 items-center">
           {isAuthenticated ? (
-            <>
-              <Link to="/profile" className="flex items-center"> {/* New: Clickable Avatar for profile */}
-                <Avatar className="w-8 h-8 border-2 border-[hsl(var(--primary-color))]">
-                  <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
-                  <AvatarFallback className="bg-[hsl(var(--primary-color))] text-white text-sm font-semibold">
-                    {user?.displayName ? user.displayName.charAt(0).toUpperCase() : <UserIcon size={16} />}
-                  </AvatarFallback>
-                </Avatar>
-              </Link>
-              <Button onClick={onSignOut} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
-                Sign Out
-              </Button>
-            </>
+            <UserNav /> // Use the new UserNav component
           ) : (
             <>
               <Button onClick={openLoginModal} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
