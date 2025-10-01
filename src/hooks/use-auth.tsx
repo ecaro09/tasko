@@ -1,82 +1,104 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser, updateProfile } from 'firebase/auth';
-import { toast } from 'sonner'; // Using sonner for toasts
+"use client";
 
-interface AuthState {
-  user: FirebaseUser | null;
+import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import { auth, db } from '@/lib/firebase'; // Import db
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  User,
+} from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'; // Import doc, setDoc, serverTimestamp
+import { showSuccess, showError } from '@/utils/toast';
+
+interface AuthContextType {
+  user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-}
-
-interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
-  logout: () => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>; // Added updateProfile
+  signOutUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    loading: true,
-  });
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setAuthState({
-        user,
-        isAuthenticated: !!user,
-        loading: false,
-      });
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      setIsAuthenticated(!!currentUser);
+      setLoading(false);
+
+      // If a user is logged in, ensure their profile exists in Firestore
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userRef, {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName,
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+          lastLogin: serverTimestamp(),
+        }, { merge: true }); // Use merge to update existing fields or add new ones
+      }
     });
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+  const signInWithGoogle = useCallback(async () => {
+    setLoading(true);
     try {
-      await signInWithPopup(auth, provider);
-      toast.success("Signed in successfully!");
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const currentUser = result.user;
+
+      // Save user data to Firestore after successful sign-in
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await setDoc(userRef, {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName,
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+          lastLogin: serverTimestamp(),
+        }, { merge: true });
+      }
+
+      showSuccess("Signed in successfully!");
     } catch (error: any) {
       console.error("Error signing in with Google:", error);
-      toast.error(`Failed to sign in: ${error.message}`);
+      showError(`Failed to sign in: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const signOutUser = useCallback(async () => {
+    setLoading(true);
     try {
       await signOut(auth);
-      toast.success("Logged out successfully!");
+      showSuccess("Signed out successfully!");
     } catch (error: any) {
       console.error("Error signing out:", error);
-      toast.error(`Failed to log out: ${error.message}`);
+      showError(`Failed to sign out: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const updateUserProfile = async (displayName: string, photoURL?: string) => {
-    if (!authState.user) {
-      toast.error("You must be logged in to update your profile.");
-      return;
-    }
-    try {
-      await updateProfile(authState.user, { displayName, photoURL });
-      // Force a re-fetch of the user to update the state with new profile info
-      setAuthState(prev => ({
-        ...prev,
-        user: auth.currentUser, // auth.currentUser will have the updated info
-      }));
-      toast.success("Profile updated successfully!");
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast.error(`Failed to update profile: ${error.message}`);
-      throw error; // Re-throw to allow calling component to handle loading state
-    }
-  };
-
-  const value = { ...authState, signInWithGoogle, logout, updateUserProfile };
+  const value = React.useMemo(
+    () => ({
+      user,
+      isAuthenticated,
+      loading,
+      signInWithGoogle,
+      signOutUser,
+    }),
+    [user, isAuthenticated, loading, signInWithGoogle, signOutUser]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
