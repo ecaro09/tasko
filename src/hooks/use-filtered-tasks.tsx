@@ -1,5 +1,6 @@
 import React from 'react';
 import { Task, useTasks } from './use-tasks';
+import { categories } from '@/lib/categories'; // Import categories from new utility
 
 interface UseFilteredTasksResult {
   filteredTasks: Task[];

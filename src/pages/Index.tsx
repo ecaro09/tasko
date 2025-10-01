@@ -20,22 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
 import { useFilteredTasks } from '@/hooks/use-filtered-tasks'; // Import the new hook
-
-const getCategoryName = (category: string) => {
-  const names: { [key: string]: string } = {
-    all: 'All Services',
-    cleaning: 'Cleaning',
-    moving: 'Moving',
-    assembly: 'Assembly',
-    repairs: 'Repairs',
-    delivery: 'Delivery',
-    mounting: 'Mounting',
-    painting: 'Painting',
-    marketing: 'Marketing', // Added marketing category
-    other: 'Other'
-  };
-  return names[category] || 'Task';
-};
+import { getCategoryDisplayName } from '@/lib/categories'; // Import from new utility
 
 const Index = () => {
   // All hooks must be called unconditionally at the top level
@@ -121,9 +106,9 @@ const Index = () => {
               filteredTasks.map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={task.imageUrl} alt={`Image for ${task.title}`} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      {getCategoryName(task.category)}
+                      {getCategoryDisplayName(task.category)}
                     </div>
                   </div>
                   <CardContent className="p-4">
@@ -134,7 +119,7 @@ const Index = () => {
                     <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
+                        <img src={task.posterAvatar} alt={`Avatar of ${task.posterName}`} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
                         <span className="font-medium">{task.posterName}</span>
                       </div>
                       <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">

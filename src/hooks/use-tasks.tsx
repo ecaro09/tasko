@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
+import { getCategoryDisplayName } from '@/lib/categories'; // Import from new utility
 
 export interface Task {
   id: string;

@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock, Phone } from 'lucide-react'; // Added Phone icon
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
+import { getCategoryDisplayName } from '@/lib/categories'; // Import from new utility
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -133,7 +134,7 @@ const TaskDetailPage: React.FC = () => {
 
         <Card className="shadow-lg">
           <CardHeader className="relative p-0">
-            <img src={task.imageUrl} alt={task.title} className="w-full h-64 object-cover rounded-t-lg" />
+            <img src={task.imageUrl} alt={`Image for ${task.title}`} className="w-full h-64 object-cover rounded-t-lg" />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
               <CardTitle className="text-3xl font-bold mb-1">{task.title}</CardTitle>
               <CardDescription className="text-gray-200 flex items-center gap-2">
@@ -148,7 +149,7 @@ const TaskDetailPage: React.FC = () => {
                 <p className="text-gray-700 dark:text-gray-300 mb-4">{task.description}</p>
 
                 <div className="space-y-2 text-gray-700 dark:text-gray-300">
-                  <p className="flex items-center gap-2"><Tag size={18} /> <strong>Category:</strong> {task.category}</p>
+                  <p className="flex items-center gap-2"><Tag size={18} /> <strong>Category:</strong> {getCategoryDisplayName(task.category)}</p>
                   <p className="flex items-center gap-2"><Calendar size={18} /> <strong>Posted:</strong> {new Date(task.datePosted).toLocaleDateString()}</p>
                   <p className="flex items-center gap-2"><DollarSign size={18} /> <strong>Budget:</strong> ₱{task.budget.toLocaleString()}</p>
                   <p className="flex items-center gap-2">
@@ -167,7 +168,7 @@ const TaskDetailPage: React.FC = () => {
                 <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Posted By</h3>
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar className="w-16 h-16 border-2 border-green-500">
-                    <AvatarImage src={task.posterAvatar} alt={task.posterName} />
+                    <AvatarImage src={task.posterAvatar} alt={`Avatar of ${task.posterName}`} />
                     <AvatarFallback className="bg-green-200 text-green-800 text-lg font-semibold">
                       {task.posterName ? task.posterName.charAt(0).toUpperCase() : <User size={20} />}
                     </AvatarFallback>
@@ -189,7 +190,7 @@ const TaskDetailPage: React.FC = () => {
                     <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100 mt-6">Assigned Tasker</h3>
                     <div className="flex items-center gap-4 mb-4">
                       <Avatar className="w-16 h-16 border-2 border-blue-500">
-                        <AvatarImage src={assignedTaskerProfile.photoURL || undefined} alt={assignedTaskerProfile.displayName} />
+                        <AvatarImage src={assignedTaskerProfile.photoURL || undefined} alt={`Avatar of ${assignedTaskerProfile.displayName}`} />
                         <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
                           {assignedTaskerProfile.displayName ? assignedTaskerProfile.displayName.charAt(0).toUpperCase() : <User size={20} />}
                         </AvatarFallback>
@@ -249,7 +250,7 @@ const TaskDetailPage: React.FC = () => {
                       <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-12 h-12 border-2 border-blue-500">
-                            <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                            <AvatarImage src={offer.taskerAvatar || undefined} alt={`Avatar of ${offer.taskerName}`} />
                             <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
                               {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={20} />}
                             </AvatarFallback>
@@ -259,7 +260,7 @@ const TaskDetailPage: React.FC = () => {
                               {offer.taskerName}
                             </Link>
                             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                              <MessageSquare size={14} /> {offer.message}
+                              <MessageSquare size={14} className="flex-shrink-0" /> <span className="line-clamp-1">{offer.message}</span>
                             </p>
                           </div>
                         </div>

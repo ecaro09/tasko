@@ -10,6 +10,7 @@ import { ArrowLeft, Tag, DollarSign, MessageSquare, Clock, CheckCircle, XCircle 
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from 'sonner';
+import { getCategoryDisplayName } from '@/lib/categories'; // Import from new utility
 
 const MyOffersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -114,7 +115,7 @@ const MyOffersPage: React.FC = () => {
                       {getOfferStatusBadge(offer.status)}
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 flex items-center mb-2">
-                      <Tag size={16} className="mr-2" /> {task.category}
+                      <Tag size={16} className="mr-2" /> {getCategoryDisplayName(task.category)}
                     </p>
                     <p className="text-gray-700 dark:text-gray-300 flex items-center mb-2">
                       <MessageSquare size={16} className="mr-2" /> {offer.message}
