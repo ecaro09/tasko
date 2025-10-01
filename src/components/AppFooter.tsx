@@ -59,10 +59,10 @@ const AppFooter: React.FC = () => {
           <h3 className="text-white text-lg font-semibold mb-4">Download Our App</h3>
           <div className="flex space-x-4">
             <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer">
-              <img src="/google-play-badge.png" alt="Get it on Google Play" className="h-10" />
+              <img src="/google-play-badge.png" alt="Get it on Google Play" className="h-10" loading="lazy" />
             </a>
             <a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer">
-              <img src="/app-store-badge.png" alt="Download on the App Store" className="h-10" />
+              <img src="/app-store-badge.png" alt="Download on the App Store" className="h-10" loading="lazy" />
             </a>
           </div>
           <p className="text-sm mt-6">&copy; {new Date().getFullYear()} Tasko. All rights reserved.</p>

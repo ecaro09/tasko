@@ -108,7 +108,7 @@ const TaskDetailPage: React.FC = () => {
 
         <Card className="shadow-lg">
           <CardHeader className="relative p-0">
-            <img src={task.imageUrl} alt={task.title} className="w-full h-64 object-cover rounded-t-lg" />
+            <img src={task.imageUrl} alt={task.title} className="w-full h-64 object-cover rounded-t-lg" loading="lazy" />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
               <CardTitle className="text-3xl font-bold mb-1">{task.title}</CardTitle>
               <CardDescription className="text-gray-200 flex items-center gap-2">
@@ -132,7 +132,7 @@ const TaskDetailPage: React.FC = () => {
               <div>
                 <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Posted By</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  <img src={task.posterAvatar} alt={task.posterName} className="w-16 h-16 rounded-full object-cover border-2 border-green-500" />
+                  <img src={task.posterAvatar} alt={task.posterName} className="w-16 h-16 rounded-full object-cover border-2 border-green-500" loading="lazy" />
                   <div>
                     <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{task.posterName}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Task Poster</p>
