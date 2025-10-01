@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import ChatInterface from '@/components/ChatInterface';
-import NewChatDialog from '@/components/NewChatDialog'; // Import NewChatDialog
+import UserSearchAndChat from '@/components/UserSearchAndChat'; // Import the new component
 
 const ChatPage: React.FC = () => {
   const {
@@ -76,68 +76,71 @@ const ChatPage: React.FC = () => {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
       <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
       <main className="flex-1 container mx-auto p-4 pt-8 flex flex-col md:flex-row gap-4">
-        {/* Chat Rooms Sidebar */}
-        <Card className="w-full md:w-1/3 lg:w-1/4 flex-shrink-0 h-[calc(100vh-150px)]">
-          <CardHeader>
-            <CardTitle className="text-xl">Your Chats</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[calc(100vh-250px)]">
-              {chatRooms.length === 0 ? (
-                <p className="p-4 text-gray-500 dark:text-gray-400 text-center">No chat rooms yet.</p>
-              ) : (
-                chatRooms.map((room) => {
-                  // Determine the other participant's info
-                  const otherParticipantIndex = room.participants.findIndex(
-                    (pId) => pId !== user?.uid,
-                  );
-                  const roomOtherParticipantName =
-                    otherParticipantIndex !== -1
-                      ? room.participantNames[otherParticipantIndex]
-                      : 'Unknown User';
-                  const otherParticipantAvatar =
-                    otherParticipantIndex !== -1
-                      ? room.participantAvatars[otherParticipantIndex]
-                      : undefined;
+        {/* Left Column: Chat Rooms Sidebar and User Search */}
+        <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-4 flex-shrink-0">
+          {/* Chat Rooms Sidebar */}
+          <Card className="flex-1 h-[calc(50vh-75px)]"> {/* Adjusted height */}
+            <CardHeader>
+              <CardTitle className="text-xl">Your Chats</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[calc(50vh-175px)]"> {/* Adjusted height */}
+                {chatRooms.length === 0 ? (
+                  <p className="p-4 text-gray-500 dark:text-gray-400 text-center">No chat rooms yet.</p>
+                ) : (
+                  chatRooms.map((room) => {
+                    // Determine the other participant's info
+                    const otherParticipantIndex = room.participants.findIndex(
+                      (pId) => pId !== user?.uid,
+                    );
+                    const roomOtherParticipantName =
+                      otherParticipantIndex !== -1
+                        ? room.participantNames[otherParticipantIndex]
+                        : 'Unknown User';
+                    const otherParticipantAvatar =
+                      otherParticipantIndex !== -1
+                        ? room.participantAvatars[otherParticipantIndex]
+                        : undefined;
 
-                  return (
-                    <div
-                      key={room.id}
-                      onClick={() => selectChatRoom(room.id)}
-                      className={cn(
-                        "flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700",
-                        selectedChatRoomId === room.id && "bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-600"
-                      )}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={otherParticipantAvatar || undefined} alt={roomOtherParticipantName} />
-                        <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                          {roomOtherParticipantName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-800 dark:text-gray-100">{roomOtherParticipantName}</p>
-                        {room.lastMessage && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                            {room.lastMessage}
-                          </p>
+                    return (
+                      <div
+                        key={room.id}
+                        onClick={() => selectChatRoom(room.id)}
+                        className={cn(
+                          "flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700",
+                          selectedChatRoomId === room.id && "bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-600"
+                        )}
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={otherParticipantAvatar || undefined} alt={roomOtherParticipantName} />
+                          <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                            {roomOtherParticipantName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800 dark:text-gray-100">{roomOtherParticipantName}</p>
+                          {room.lastMessage && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                              {room.lastMessage}
+                            </p>
+                          )}
+                        </div>
+                        {room.lastMessageTimestamp && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(room.lastMessageTimestamp).toLocaleDateString()}
+                          </span>
                         )}
                       </div>
-                      {room.lastMessageTimestamp && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(room.lastMessageTimestamp).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </ScrollArea>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <NewChatDialog />
-            </div>
-          </CardContent>
-        </Card>
+                    );
+                  })
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* User Search and Chat */}
+          <UserSearchAndChat />
+        </div>
 
         {/* Chat Interface */}
         <div className="flex-1 h-[calc(100vh-150px)]">
@@ -145,7 +148,7 @@ const ChatPage: React.FC = () => {
             <ChatInterface chatRoomId={selectedChatRoomId} otherParticipantName={otherParticipantName} />
           ) : (
             <Card className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-              <CardContent>Select a chat to start messaging.</CardContent>
+              <CardContent>Select a chat or find a new user to start messaging.</CardContent>
             </Card>
           )}
         </div>
