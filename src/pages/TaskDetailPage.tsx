@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasks } from '@/hooks/use-tasks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare } from 'lucide-react';
+import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, MessageCircle } from 'lucide-react'; // Added MessageCircle icon
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
@@ -11,6 +11,7 @@ import { useOffers } from '@/hooks/use-offers';
 import { useModal } from '@/components/ModalProvider';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
+import { useChat } from '@/hooks/use-chat'; // Import useChat
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ const TaskDetailPage: React.FC = () => {
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, getOffersForTask, acceptOffer, rejectOffer, withdrawOffer, loading: offersLoading } = useOffers();
   const { openMakeOfferModal } = useModal();
+  const { createOrGetChatRoom, selectChatRoom } = useChat(); // Use chat functions
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = getOffersForTask(id || '');
@@ -40,6 +42,7 @@ const TaskDetailPage: React.FC = () => {
   }
 
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
+  const isAssignedTasker = isAuthenticated && user?.uid === task.assignedTaskerId;
   const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster && !task.isDemo; // Cannot make offers on demo tasks
 
   const handleMakeOfferClick = () => {
@@ -73,6 +76,23 @@ const TaskDetailPage: React.FC = () => {
       return;
     }
     await withdrawOffer(offerId);
+  };
+
+  const handleInitiateChat = async (
+    participantIds: string[],
+    participantNames: string[],
+    participantAvatars: (string | undefined)[],
+    taskRefId?: string,
+  ) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to start a chat.");
+      return;
+    }
+    const chatRoomId = await createOrGetChatRoom(participantIds, participantNames, participantAvatars, taskRefId);
+    if (chatRoomId) {
+      selectChatRoom(chatRoomId);
+      navigate('/chat');
+    }
   };
 
   const getOfferStatusBadge = (status: string) => {
@@ -146,6 +166,36 @@ const TaskDetailPage: React.FC = () => {
                 {isAuthenticated && isTasker && task.isDemo && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Offers cannot be made on sample tasks.</p>
                 )}
+
+                {/* Chat with Assigned Tasker (for Poster) */}
+                {isTaskPoster && task.status === 'assigned' && task.assignedTaskerId && (
+                  <Button
+                    onClick={() => handleInitiateChat(
+                      [user.uid, task.assignedTaskerId!],
+                      [user.displayName || 'You', 'Assigned Tasker'], // Placeholder name, ideally fetch actual tasker name
+                      [user.photoURL || undefined, undefined], // Placeholder avatar
+                      task.id
+                    )}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-4"
+                  >
+                    <MessageCircle size={20} /> Chat with Assigned Tasker
+                  </Button>
+                )}
+
+                {/* Chat with Poster (for Assigned Tasker) */}
+                {isAssignedTasker && task.status === 'assigned' && (
+                  <Button
+                    onClick={() => handleInitiateChat(
+                      [user.uid, task.posterId],
+                      [user.displayName || 'You', task.posterName],
+                      [user.photoURL || undefined, task.posterAvatar || undefined],
+                      task.id
+                    )}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-4"
+                  >
+                    <MessageCircle size={20} /> Chat with Task Poster
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -187,12 +237,36 @@ const TaskDetailPage: React.FC = () => {
                               <Button variant="outline" onClick={() => handleRejectOffer(offer.id)} className="border-red-600 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 text-sm">
                                 Reject
                               </Button>
+                              <Button
+                                onClick={() => handleInitiateChat(
+                                  [user.uid, offer.taskerId],
+                                  [user.displayName || 'You', offer.taskerName],
+                                  [user.photoURL || undefined, offer.taskerAvatar || undefined],
+                                  task.id
+                                )}
+                                variant="outline"
+                                className="border-blue-600 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900 text-sm flex items-center gap-1"
+                              >
+                                <MessageCircle size={16} /> Chat
+                              </Button>
                             </div>
                           )}
                           {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && !task.isDemo && (
                             <div className="flex gap-2 mt-3">
                               <Button variant="outline" onClick={() => handleWithdrawOffer(offer.id)} className="border-gray-600 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
                                 Withdraw Offer
+                              </Button>
+                              <Button
+                                onClick={() => handleInitiateChat(
+                                  [user.uid, task.posterId],
+                                  [user.displayName || 'You', task.posterName],
+                                  [user.photoURL || undefined, task.posterAvatar || undefined],
+                                  task.id
+                                )}
+                                variant="outline"
+                                className="border-blue-600 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900 text-sm flex items-center gap-1"
+                              >
+                                <MessageCircle size={16} /> Chat
                               </Button>
                             </div>
                           )}
