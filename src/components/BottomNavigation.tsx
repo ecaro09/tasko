@@ -4,7 +4,6 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useModal } from './ModalProvider';
-import { useChat } from '@/hooks/use-chat'; // New import
 
 interface BottomNavigationProps {
   // onProfileClick: () => void; // No longer needed as we'll handle navigation directly
@@ -14,7 +13,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
   const { isAuthenticated } = useAuth();
   const { openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { totalUnreadCount } = useChat(); // Get total unread count
 
   const handleProfileClick = () => {
     if (isAuthenticated) {
@@ -54,21 +52,16 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <ListTodo size={20} className="mb-1" />
           <span>My Tasks</span>
         </NavLink>
-        {/* New NavLink for Chat with unread count */}
+        {/* New NavLink for Chat */}
         <NavLink
           to="/chat"
           className={({ isActive }) => cn(
-            "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 relative",
+            "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
             isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
           )}
         >
           <MessageSquare size={20} className="mb-1" />
           <span>Chat</span>
-          {totalUnreadCount > 0 && (
-            <span className="absolute top-0 right-2 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-              {totalUnreadCount}
-            </span>
-          )}
         </NavLink>
         <button
           onClick={handleProfileClick}

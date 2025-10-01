@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { Chrome } from 'lucide-react';
 import { useModal } from './ModalProvider'; // Import useModal
 
 interface LoginModalProps {
@@ -13,31 +14,25 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { loginWithEmailPassword } = useAuth();
-  const { openSignupModal } = useModal();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { signInWithGoogle } = useAuth();
+  const { openSignupModal } = useModal(); // Get openSignupModal from context
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleEmailPasswordLogin = async () => {
-    if (!email || !password) {
-      toast.error("Please enter both email and password.");
-      return;
-    }
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      await loginWithEmailPassword(email, password);
-      onClose();
+      await signInWithGoogle();
+      onClose(); // Close modal on successful login
     } catch (error) {
-      // Error handled by useAuth hook, toast already shown
+      // Error handled by useAuth hook, toast will be shown there
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSwitchToSignup = () => {
-    onClose();
-    openSignupModal();
+    onClose(); // Close login modal
+    openSignupModal(); // Open signup modal
   };
 
   return (
@@ -50,33 +45,21 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="m@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
           </div>
           <Button
-            onClick={handleEmailPasswordLogin}
+            onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
           >
-            {isLoading ? 'Logging In...' : 'Login with Email'}
+            {isLoading ? 'Signing In...' : (
+              <>
+                <Chrome size={20} /> Sign In with Google
+              </>
+            )}
           </Button>
         </div>
         <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
