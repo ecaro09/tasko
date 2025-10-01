@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import TaskCard from '@/components/TaskCard';
-import { MessageCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { MessageCircle, CheckCircle, XCircle, Trash2, Clock } from 'lucide-react'; // Added Trash2 icon
 import { showError } from '@/utils/toast';
 
 const MyTasksPage: React.FC = () => {
@@ -178,6 +178,17 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task?.isDemo) {
+      showError("Cannot delete sample tasks.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+      await deleteTask(taskId);
+    }
+  };
+
   const handleWithdrawOffer = async (offerId: string) => {
     const offer = offers.find(o => o.id === offerId);
     const task = tasks.find(t => t.id === offer?.taskId);
@@ -241,6 +252,9 @@ const MyTasksPage: React.FC = () => {
                           </Button>
                           <Button variant="destructive" size="sm" onClick={() => handleCancelTask(task.id)}>
                             <XCircle size={16} className="mr-1" /> Cancel
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteTask(task.id)}>
+                            <Trash2 size={16} className="mr-1" /> Delete
                           </Button>
                         </>
                       )}
