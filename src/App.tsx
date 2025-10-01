@@ -15,7 +15,11 @@ import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
-import SettingsPage from "./pages/SettingsPage"; // New import
+import SettingsPage from "./pages/SettingsPage";
+import PaymentsPage from "./pages/PaymentsPage"; // New import
+import PaymentConfirmationPage from "./pages/PaymentConfirmationPage"; // New import
+import EmergencyPage from "./pages/EmergencyPage"; // New import
+import AdminPanelPage from "./pages/AdminPanelPage"; // New import
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -24,7 +28,7 @@ import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
 import { OffersProvider } from "./hooks/use-offers";
 import React from "react";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "./components/theme-provider"; // New import
+import { ThemeProvider } from "./components/theme-provider";
 
 const queryClient = new QueryClient();
 
@@ -47,7 +51,11 @@ const App = () => {
                           <Route path="/my-offers" element={<MyOffersPage />} />
                           <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
                           <Route path="/profile" element={<ProfilePage />} />
-                          <Route path="/settings" element={<SettingsPage />} /> {/* New Route */}
+                          <Route path="/settings" element={<SettingsPage />} />
+                          <Route path="/payments" element={<PaymentsPage />} /> {/* New Route */}
+                          <Route path="/payment-confirmation" element={<PaymentConfirmationPage />} /> {/* New Route */}
+                          <Route path="/emergency" element={<EmergencyPage />} /> {/* New Route */}
+                          <Route path="/admin" element={<AdminPanelPage />} /> {/* New Route */}
                           <Route path="/faq" element={<FAQPage />} />
                           <Route path="/contact" element={<ContactPage />} />
                           <Route path="/privacy" element={<PrivacyPolicyPage />} />

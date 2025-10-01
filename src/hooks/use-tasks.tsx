@@ -9,8 +9,8 @@ import {
   serverTimestamp,
   DocumentData,
   getDocs,
-  deleteDoc, // Import deleteDoc
-  doc, // Import doc
+  deleteDoc,
+  doc,
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -28,16 +28,17 @@ export interface Task {
   datePosted: string;
   status: 'open' | 'assigned' | 'completed';
   imageUrl?: string;
-  assignedTaskerId?: string; // New field for the assigned tasker's ID
-  assignedOfferId?: string; // New field for the accepted offer's ID
+  deadline?: string; // New field for deadline
+  assignedTaskerId?: string;
+  assignedOfferId?: string;
 }
 
 interface UseTasksContextType {
-  tasks: Task[]; // This will now be all tasks
+  tasks: Task[];
   loading: boolean;
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => Promise<void>;
-  deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
+  deleteTask: (taskId: string) => Promise<void>;
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -48,8 +49,7 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const [allTasks, setAllTasks] = useState<Task[]>([]
-);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,6 +73,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           datePosted: serverTimestamp(),
           status: "open",
           imageUrl: "https://images.unsplash.com/photo-1557804506-669a67965da0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          deadline: "2024-12-31",
         },
         {
           title: "Flyer Distribution for Sari-Sari Store",
@@ -86,6 +87,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           datePosted: serverTimestamp(),
           status: "open",
           imageUrl: "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          deadline: "2024-11-15",
         },
         {
           title: "Online Content Creator for Pinoy Food Blog",
@@ -99,6 +101,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           datePosted: serverTimestamp(),
           status: "open",
           imageUrl: "https://images.unsplash.com/photo-1504711432028-ee2611f5817a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          deadline: "2025-01-31",
         },
       ];
 
@@ -131,9 +134,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-          assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
-          assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
+          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+          deadline: data.deadline || undefined, // Include deadline
+          assignedTaskerId: data.assignedTaskerId || undefined,
+          assignedOfferId: data.assignedOfferId || undefined,
         };
       });
       setAllTasks(fetchedTasks);
@@ -151,7 +155,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     });
 
     return () => unsubscribe();
-  }, []); // Empty dependency array to run once on mount
+  }, []);
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => {
     if (!isAuthenticated || !user) {
@@ -167,7 +171,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
         datePosted: serverTimestamp(),
         status: 'open',
-        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        deadline: newTaskData.deadline || null, // Save deadline
       });
       toast.success("Task posted successfully!");
     } catch (err: any) {
@@ -195,7 +200,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   };
 
   const value = {
-    tasks: allTasks, // Expose all tasks
+    tasks: allTasks,
     loading,
     error,
     addTask,

@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
-import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
+import { useOffers, Offer } from '@/hooks/use-offers';
 import { useModal } from '@/components/ModalProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock, CalendarDays } from 'lucide-react'; // Added CalendarDays icon
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 
 const TaskDetailPage: React.FC = () => {
@@ -125,6 +125,9 @@ const TaskDetailPage: React.FC = () => {
                 <div className="space-y-2 text-gray-700 dark:text-gray-300">
                   <p className="flex items-center gap-2"><Tag size={18} /> <strong>Category:</strong> {task.category}</p>
                   <p className="flex items-center gap-2"><Calendar size={18} /> <strong>Posted:</strong> {new Date(task.datePosted).toLocaleDateString()}</p>
+                  {task.deadline && (
+                    <p className="flex items-center gap-2"><CalendarDays size={18} /> <strong>Deadline:</strong> {new Date(task.deadline).toLocaleDateString()}</p>
+                  )}
                   <p className="flex items-center gap-2"><DollarSign size={18} /> <strong>Budget:</strong> ₱{task.budget.toLocaleString()}</p>
                 </div>
               </div>

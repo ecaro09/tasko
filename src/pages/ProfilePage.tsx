@@ -5,14 +5,18 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon } from 'lucide-react'; // Added SettingsIcon
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, Star, ShieldAlert, Wallet, Siren } from 'lucide-react'; // Added new icons
 import EditProfileSection from '@/components/EditProfileSection';
+import { Badge } from '@/components/ui/badge';
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+
+  // Basic check for admin role (this would be more robust in a real app)
+  const isAdmin = isAuthenticated && user?.email === 'admin@example.com'; // Replace with actual admin logic
 
   if (authLoading || taskerProfileLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
@@ -46,15 +50,31 @@ const ProfilePage: React.FC = () => {
             <Card className="shadow-lg p-6 mb-8">
               <CardContent className="flex flex-col items-center text-center p-0">
                 <Avatar className="w-24 h-24 mb-4 border-4 border-green-500">
-                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
+                  <AvatarImage src={user.photoURL || user.profile?.avatar_url || undefined} alt={user.displayName || user.email || "User"} />
                   <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
                     {user.displayName ? user.displayName.charAt(0).toUpperCase() : <UserIcon size={32} />}
                   </AvatarFallback>
                 </Avatar>
                 <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">{user.displayName || "Anonymous User"}</h2>
-                <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-2">
                   <Mail size={18} /> {user.email}
                 </p>
+                {user.profile?.contact_number && (
+                  <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-2">
+                    <Phone size={18} /> {user.profile.contact_number}
+                  </p>
+                )}
+                {user.profile?.rating !== undefined && (
+                  <div className="flex items-center gap-1 mb-2">
+                    <Star size={18} className="text-yellow-500 fill-yellow-500" />
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">{user.profile.rating.toFixed(1)}</span>
+                  </div>
+                )}
+                {user.profile?.is_verified_tasker && (
+                  <Badge className="bg-blue-500 text-white flex items-center gap-1 mt-2">
+                    <ShieldAlert size={16} /> Verified Tasker
+                  </Badge>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(true)}
@@ -85,11 +105,31 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 )}
                 <Button
+                  onClick={() => navigate('/payments')}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                >
+                  <Wallet size={20} /> Make a Payment
+                </Button>
+                <Button
+                  onClick={() => navigate('/emergency')}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                >
+                  <Siren size={20} /> Emergency Help
+                </Button>
+                <Button
                   onClick={() => navigate('/settings')}
                   className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 text-lg py-6 flex items-center justify-center gap-2"
                 >
                   <SettingsIcon size={20} /> App Settings
                 </Button>
+                {isAdmin && (
+                  <Button
+                    onClick={() => navigate('/admin')}
+                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                  >
+                    <ShieldAlert size={20} /> Admin Panel
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </>

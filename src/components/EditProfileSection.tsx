@@ -14,10 +14,14 @@ interface EditProfileSectionProps {
 const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSaveSuccess }) => {
   const { user, updateUserProfile } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [contactNumber, setContactNumber] = useState(user?.profile?.contact_number || ''); // New state
+  const [photoURL, setPhotoURL] = useState(user?.photoURL || ''); // New state
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setDisplayName(user?.displayName || '');
+    setContactNumber(user?.profile?.contact_number || '');
+    setPhotoURL(user?.photoURL || '');
   }, [user]);
 
   const handleSave = async () => {
@@ -32,7 +36,7 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
 
     setIsLoading(true);
     try {
-      await updateUserProfile(displayName);
+      await updateUserProfile(displayName, photoURL, contactNumber);
       onSaveSuccess();
     } catch (error) {
       // Error handled by useAuth, toast already shown
@@ -56,7 +60,28 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
             disabled={isLoading}
           />
         </div>
-        {/* Add more fields here for other editable profile info */}
+        <div className="grid gap-2">
+          <Label htmlFor="contactNumber">Contact Number</Label>
+          <Input
+            id="contactNumber"
+            type="tel"
+            placeholder="e.g., +639171234567"
+            value={contactNumber}
+            onChange={(e) => setContactNumber(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="photoURL">Profile Picture URL</Label>
+          <Input
+            id="photoURL"
+            type="url"
+            placeholder="e.g., https://example.com/your-photo.jpg"
+            value={photoURL}
+            onChange={(e) => setPhotoURL(e.target.value)}
+            disabled={isLoading}
+          />
+        </div>
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel
