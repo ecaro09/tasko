@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
+import FeaturesSection from "@/components/FeaturesSection"; // Updated to default import
 import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster } from "sonner";
@@ -166,6 +167,7 @@ const Index = () => {
         </section>
 
         <HowItWorksSection />
+        <FeaturesSection /> {/* Added FeaturesSection here */}
       </main>
       <AppFooter />
       <MadeWithDyad />
