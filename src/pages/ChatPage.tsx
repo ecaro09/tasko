@@ -21,11 +21,13 @@ interface ChatRoomWithParticipantInfo extends ChatRoomType {
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const { chatRoomId } = useParams<{ chatRoomId?: string }>();
+  const { id } = useParams<{ id?: string }>(); // 'id' can be chatRoomId or recipientId
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { chatRooms, loadingChatRooms, error } = useChat();
+  const { chatRooms, loadingChatRooms, error, createChatRoom, getChatRoomIdForParticipants } = useChat();
   const { fetchTaskerProfileById } = useTaskerProfile();
   const [resolvedChatRooms, setResolvedChatRooms] = useState<ChatRoomWithParticipantInfo[]>([]);
+  const [currentChatRoomId, setCurrentChatRoomId] = useState<string | null>(null);
+  const [currentOtherParticipantInfo, setCurrentOtherParticipantInfo] = useState<{ name: string; avatar?: string } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated && !authLoading) {
@@ -35,7 +37,68 @@ const ChatPage: React.FC = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Resolve participant info for each chat room
+  // Handle direct navigation to a recipient ID or a chat room ID
+  useEffect(() => {
+    const handleIdParam = async () => {
+      if (!id || !user) {
+        setCurrentChatRoomId(null);
+        setCurrentOtherParticipantInfo(null);
+        return;
+      }
+
+      // First, check if 'id' is an existing chatRoomId
+      const existingRoom = chatRooms.find(room => room.id === id);
+      if (existingRoom) {
+        setCurrentChatRoomId(id);
+        const otherParticipantId = existingRoom.participants.find(pId => pId !== user.uid);
+        const otherParticipantIndex = existingRoom.participants.indexOf(otherParticipantId || '');
+        const otherParticipantName = existingRoom.participantNames[otherParticipantIndex] || "Unknown User";
+        let otherParticipantAvatar: string | undefined;
+        if (otherParticipantId) {
+          const taskerProfile = await fetchTaskerProfileById(otherParticipantId);
+          otherParticipantAvatar = taskerProfile?.photoURL;
+        }
+        setCurrentOtherParticipantInfo({ name: otherParticipantName, avatar: otherParticipantAvatar });
+        return;
+      }
+
+      // If 'id' is not an existing chatRoomId, assume it's a recipientId
+      const recipientId = id;
+      if (recipientId === user.uid) {
+        toast.info("You cannot chat with yourself.");
+        navigate('/chat'); // Redirect to chat list
+        return;
+      }
+
+      // Try to find an existing chat room with this recipient
+      const participantIds = [user.uid, recipientId];
+      const existingChatRoom = await getChatRoomIdForParticipants(participantIds);
+
+      if (existingChatRoom) {
+        navigate(`/chat/${existingChatRoom}`); // Redirect to the existing chat room
+      } else {
+        // If no existing room, create a new one
+        const recipientProfile = await fetchTaskerProfileById(recipientId); // Try to get recipient's name
+        const recipientName = recipientProfile?.displayName || "Unknown User";
+        const participantNames = [user.displayName || user.email || "You", recipientName];
+
+        const newChatRoomId = await createChatRoom(participantIds, participantNames);
+        if (newChatRoomId) {
+          navigate(`/chat/${newChatRoomId}`); // Redirect to the newly created chat room
+        } else {
+          toast.error("Failed to start new chat.");
+          navigate('/chat'); // Fallback to chat list
+        }
+      }
+    };
+
+    if (!loadingChatRooms && !authLoading) {
+      handleIdParam();
+    }
+  }, [id, user, chatRooms, isAuthenticated, authLoading, loadingChatRooms, navigate, createChatRoom, getChatRoomIdForParticipants, fetchTaskerProfileById]);
+
+
+  // Resolve participant info for each chat room in the list view
   useEffect(() => {
     const resolveParticipants = async () => {
       if (!user || chatRooms.length === 0) {
@@ -51,7 +114,6 @@ const ChatPage: React.FC = () => {
           let otherParticipantAvatar: string | undefined;
 
           if (otherParticipantId) {
-            // Try to fetch tasker profile for avatar
             const taskerProfile = await fetchTaskerProfileById(otherParticipantId);
             otherParticipantAvatar = taskerProfile?.photoURL;
           }
@@ -67,8 +129,10 @@ const ChatPage: React.FC = () => {
       setResolvedChatRooms(resolved);
     };
 
-    resolveParticipants();
-  }, [chatRooms, user, fetchTaskerProfileById]);
+    if (!id) { // Only resolve for the list view
+      resolveParticipants();
+    }
+  }, [chatRooms, user, fetchTaskerProfileById, id]);
 
   if (authLoading || loadingChatRooms) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading chats...</div>;
@@ -82,13 +146,11 @@ const ChatPage: React.FC = () => {
     return null; // Should be redirected by useEffect
   }
 
-  const currentChatRoomWithInfo = chatRoomId ? resolvedChatRooms.find(room => room.id === chatRoomId) : null;
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col">
       <div className="container mx-auto px-4 flex-grow flex flex-col max-w-3xl">
         <div className="flex items-center justify-between mb-6">
-          {chatRoomId ? (
+          {currentChatRoomId ? (
             <Button onClick={() => navigate('/chat')} variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
               <ArrowLeft size={20} className="mr-2" /> Back to Chats
             </Button>
@@ -96,16 +158,16 @@ const ChatPage: React.FC = () => {
             <div className="w-10"></div> // Spacer
           )}
           <h1 className="text-3xl font-bold text-green-600 text-center flex-grow">
-            {chatRoomId ? currentChatRoomWithInfo?.otherParticipantName || "Chat" : "My Chats"}
+            {currentChatRoomId ? currentOtherParticipantInfo?.name || "Chat" : "My Chats"}
           </h1>
           <div className="w-10"></div> {/* Spacer to balance the back button */}
         </div>
 
-        {chatRoomId && currentChatRoomWithInfo ? (
+        {currentChatRoomId && currentOtherParticipantInfo ? (
           <ChatRoom
-            chatRoomId={chatRoomId}
-            otherParticipantName={currentChatRoomWithInfo.otherParticipantName}
-            otherParticipantAvatar={currentChatRoomWithInfo.otherParticipantAvatar}
+            chatRoomId={currentChatRoomId}
+            otherParticipantName={currentOtherParticipantInfo.name}
+            otherParticipantAvatar={currentOtherParticipantInfo.avatar}
           />
         ) : (
           <Card className="flex-grow flex flex-col shadow-lg rounded-lg overflow-hidden">
