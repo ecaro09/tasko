@@ -1,17 +1,17 @@
 import React from 'react';
 import Header from "@/components/Header";
-import ImageGallery from "@/components/ImageGallery"; // Keep ImageGallery
+import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
-import TaskCard from '@/components/TaskCard';
+import TaskList from '@/components/TaskList'; // Corrected import
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 
 const Index = () => {
   const { isAuthenticated, signInWithGoogle, signOutUser, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { loading: tasksLoading, error: tasksError } = useTasks();
 
   const loading = authLoading || tasksLoading;
 
@@ -55,16 +55,8 @@ const Index = () => {
           </div>
         )}
 
-        {tasks.length === 0 ? (
-          <p className="text-center text-gray-600 dark:text-gray-300">No tasks available. Be the first to post one!</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-        )}
-        <ImageGallery /> {/* ImageGallery remains */}
+        <TaskList />
+        <ImageGallery />
       </main>
       <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 mt-8">
         <p>&copy; 2025 DYAD Full Duplicate</p>
