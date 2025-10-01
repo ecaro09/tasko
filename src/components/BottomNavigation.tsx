@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, LayoutGrid, ListTodo, User, MessageSquare } from 'lucide-react';
+import { Home, LayoutGrid, ListTodo, User, MessageSquare, LayoutDashboard } from 'lucide-react'; // Import LayoutDashboard icon
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -42,6 +42,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <LayoutGrid size={20} className="mb-1" />
           <span>Services</span>
         </a>
+        {isAuthenticated && ( // Only show Dashboard if authenticated
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) => cn(
+              "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+              isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+            )}
+          >
+            <LayoutDashboard size={20} className="mb-1" />
+            <span>Dashboard</span>
+          </NavLink>
+        )}
         <NavLink
           to="/my-tasks"
           className={({ isActive }) => cn(
