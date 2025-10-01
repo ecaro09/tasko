@@ -4,7 +4,7 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, MessageSquare, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const TaskerProfileViewPage: React.FC = () => {
@@ -55,7 +55,7 @@ const TaskerProfileViewPage: React.FC = () => {
           &larr; Back to Taskers
         </Button>
 
-        <Card className="shadow-lg p-6">
+        <Card className="shadow-lg p-6 mb-8">
           <CardContent className="flex flex-col items-center text-center p-0">
             <Avatar className="w-32 h-32 mb-4 border-4 border-green-500">
               <AvatarImage src={tasker.photoURL || undefined} alt={tasker.displayName} />
@@ -96,9 +96,26 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             </div>
 
-            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
-              Contact Tasker (Coming Soon)
+            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+              <MessageSquare size={20} /> Contact Tasker
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Placeholder for Reviews Section */}
+        <Card className="shadow-lg p-6">
+          <CardHeader className="p-0 mb-4">
+            <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <Star size={24} /> Reviews & Ratings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <p className="text-gray-600 dark:text-gray-400 italic">
+              No reviews yet. Be the first to leave feedback!
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              (This section will display client reviews and ratings in a future update.)
+            </p>
           </CardContent>
         </Card>
       </div>
