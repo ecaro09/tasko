@@ -40,6 +40,8 @@ const ChatList: React.FC = () => {
         conversations.map((conv) => {
           const otherParticipant = getOtherParticipant(conv);
           const lastMessageTime = new Date(conv.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const currentUserUnreadCount = user && conv.unreadCount ? conv.unreadCount[user.uid] || 0 : 0;
+
 
           return (
             <Card
@@ -60,13 +62,13 @@ const ChatList: React.FC = () => {
                     <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100">{otherParticipant?.name || 'Unknown User'}</h3>
                     <span className="text-xs text-gray-500 dark:text-gray-400">{lastMessageTime}</span>
                   </div>
-                  <p className={cn("text-sm text-gray-600 dark:text-gray-300 truncate", conv.unreadCount && "font-bold text-gray-800 dark:text-gray-100")}>
+                  <p className={cn("text-sm text-gray-600 dark:text-gray-300 truncate", currentUserUnreadCount > 0 && "font-bold text-gray-800 dark:text-gray-100")}>
                     {conv.lastMessage}
                   </p>
                 </div>
-                {conv.unreadCount && conv.unreadCount > 0 && (
+                {currentUserUnreadCount > 0 && (
                   <Badge className="bg-green-500 text-white rounded-full px-2 py-1 text-xs font-bold">
-                    {conv.unreadCount}
+                    {currentUserUnreadCount}
                   </Badge>
                 )}
               </CardContent>

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { db } from '@/lib/firebase'; // Import Firebase db
+import { collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy, doc, getDocs } from 'firebase/firestore';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 
@@ -9,7 +11,7 @@ export interface Message {
   senderName: string;
   senderAvatar?: string;
   text: string;
-  timestamp: string;
+  timestamp: string; // ISO string
 }
 
 export interface Conversation {
@@ -17,8 +19,8 @@ export interface Conversation {
   participants: string[]; // User IDs of participants
   participantNames: string[]; // Display names of participants
   lastMessage: string;
-  lastMessageTimestamp: string;
-  unreadCount?: number;
+  lastMessageTimestamp: string; // ISO string
+  unreadCount?: { [key: string]: number }; // Object to store unread count per participant
 }
 
 interface ChatContextType {
@@ -41,58 +43,71 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Mock data loading
+    if (!isAuthenticated || !user) {
+      setConversations([]);
+      setAllMessages([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    if (isAuthenticated && user) {
-      // Simulate fetching conversations for the current user
-      const mockConversations: Conversation[] = [
-        {
-          id: 'conv1',
-          participants: [user.uid, 'tasker1'],
-          participantNames: [user.displayName || 'You', 'John Doe'],
-          lastMessage: 'Hi, I can help with your cleaning task!',
-          lastMessageTimestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-          unreadCount: 1,
-        },
-        {
-          id: 'conv2',
-          participants: [user.uid, 'tasker2'],
-          participantNames: [user.displayName || 'You', 'Jane Smith'],
-          lastMessage: 'Okay, I will be there by 2 PM.',
-          lastMessageTimestamp: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-        },
-      ];
+    const conversationsCollectionRef = collection(db, 'conversations');
+    const qConversations = query(
+      conversationsCollectionRef,
+      where('participants', 'array-contains', user.uid),
+      orderBy('lastMessageTimestamp', 'desc')
+    );
 
-      // Simulate fetching messages for these conversations
-      const mockMessages: Message[] = [
-        {
-          id: 'msg1-1', conversationId: 'conv1', senderId: 'tasker1', senderName: 'John Doe',
-          text: 'Hi, I can help with your cleaning task!', timestamp: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: 'msg1-2', conversationId: 'conv1', senderId: user.uid, senderName: user.displayName || 'You',
-          text: 'Great! What is your rate?', timestamp: new Date(Date.now() - 3500000).toISOString(),
-        },
-        {
-          id: 'msg2-1', conversationId: 'conv2', senderId: user.uid, senderName: user.displayName || 'You',
-          text: 'Are you available for the assembly task tomorrow?', timestamp: new Date(Date.now() - 7200000).toISOString(),
-        },
-        {
-          id: 'msg2-2', conversationId: 'conv2', senderId: 'tasker2', senderName: 'Jane Smith',
-          text: 'Yes, I am. Okay, I will be there by 2 PM.', timestamp: new Date(Date.now() - 7000000).toISOString(),
-        },
-      ];
+    const unsubscribeConversations = onSnapshot(qConversations, (snapshot) => {
+      const fetchedConversations: Conversation[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          participants: data.participants,
+          participantNames: data.participantNames,
+          lastMessage: data.lastMessage,
+          lastMessageTimestamp: data.lastMessageTimestamp?.toDate().toISOString() || new Date().toISOString(),
+          unreadCount: data.unreadCount || {},
+        };
+      });
+      setConversations(fetchedConversations);
+      setLoading(false);
+    }, (err) => {
+      console.error("Error fetching conversations:", err);
+      setError("Failed to fetch conversations.");
+      setLoading(false);
+      toast.error("Failed to load conversations.");
+    });
 
-      setConversations(mockConversations);
-      setAllMessages(mockMessages);
-    } else {
-      setConversations([]);
-      setAllMessages([]);
-    }
+    const messagesCollectionRef = collection(db, 'messages');
+    const qMessages = query(messagesCollectionRef, orderBy('timestamp', 'asc'));
 
-    setLoading(false);
+    const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
+      const fetchedMessages: Message[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          conversationId: data.conversationId,
+          senderId: data.senderId,
+          senderName: data.senderName,
+          senderAvatar: data.senderAvatar,
+          text: data.text,
+          timestamp: data.timestamp?.toDate().toISOString() || new Date().toISOString(),
+        };
+      });
+      setAllMessages(fetchedMessages);
+    }, (err) => {
+      console.error("Error fetching messages:", err);
+      setError("Failed to fetch messages.");
+      toast.error("Failed to load messages.");
+    });
+
+    return () => {
+      unsubscribeConversations();
+      unsubscribeMessages();
+    };
   }, [isAuthenticated, user]);
 
   const getMessagesForConversation = (conversationId: string): Message[] => {
@@ -109,32 +124,44 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
-    setLoading(true);
     try {
-      const newMessage: Message = {
-        id: `mock-msg-${Date.now()}`,
+      const messagesCollectionRef = collection(db, 'messages');
+      await addDoc(messagesCollectionRef, {
         conversationId,
         senderId: user.uid,
         senderName: user.displayName || 'You',
         senderAvatar: user.photoURL || undefined,
         text: text.trim(),
-        timestamp: new Date().toISOString(),
-      };
+        timestamp: serverTimestamp(),
+      });
 
-      setAllMessages(prev => [...prev, newMessage]);
-      // Update last message in conversation
-      setConversations(prev => prev.map(conv =>
-        conv.id === conversationId
-          ? { ...conv, lastMessage: text.trim(), lastMessageTimestamp: newMessage.timestamp }
-          : conv
-      ));
+      // Update last message and unread count in conversation
+      const conversationRef = doc(db, 'conversations', conversationId);
+      const currentConversation = conversations.find(conv => conv.id === conversationId);
+
+      if (currentConversation) {
+        const newUnreadCount = { ...currentConversation.unreadCount };
+        currentConversation.participants.forEach(pId => {
+          if (pId !== user.uid) {
+            newUnreadCount[pId] = (newUnreadCount[pId] || 0) + 1;
+          } else {
+            newUnreadCount[pId] = 0; // Reset sender's unread count
+          }
+        });
+
+        await addDoc(collection(db, 'conversations'), {
+          ...currentConversation,
+          lastMessage: text.trim(),
+          lastMessageTimestamp: serverTimestamp(),
+          unreadCount: newUnreadCount,
+        });
+      }
+
       toast.success("Message sent!");
     } catch (err: any) {
       console.error("Error sending message:", err);
       toast.error(`Failed to send message: ${err.message}`);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -148,55 +175,55 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error("Invalid input.");
     }
 
-    setLoading(true);
     try {
-      // Simulate checking for existing conversation
-      const existingConv = conversations.find(conv =>
-        conv.participants.length === participantIds.length + 1 &&
-        conv.participants.every(p => [...participantIds, user.uid].includes(p))
-      );
+      const allParticipants = [...participantIds, user.uid].sort(); // Sort to ensure consistent order
+      const allParticipantNames = [...participantNames, user.displayName || 'You'];
 
-      if (existingConv) {
+      // Check for existing conversation
+      const conversationsCollectionRef = collection(db, 'conversations');
+      const q = query(conversationsCollectionRef, where('participants', '==', allParticipants));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const existingConvId = querySnapshot.docs[0].id;
         toast.info("Conversation already exists. Redirecting...");
-        return existingConv.id;
+        return existingConvId;
       }
 
-      const newConversationId = `mock-conv-${Date.now()}`;
-      const newConversation: Conversation = {
-        id: newConversationId,
-        participants: [...participantIds, user.uid],
-        participantNames: [...participantNames, user.displayName || 'You'],
+      // Create new conversation
+      const newConversationData = {
+        participants: allParticipants,
+        participantNames: allParticipantNames,
         lastMessage: initialMessage.trim(),
-        lastMessageTimestamp: new Date().toISOString(),
-        unreadCount: 0,
+        lastMessageTimestamp: serverTimestamp(),
+        unreadCount: allParticipants.reduce((acc, pId) => ({ ...acc, [pId]: pId === user.uid ? 0 : 1 }), {}),
       };
+      const convDocRef = await addDoc(conversationsCollectionRef, newConversationData);
+      const newConversationId = convDocRef.id;
 
-      const firstMessage: Message = {
-        id: `mock-msg-${Date.now()}-initial`,
+      // Add initial message
+      const messagesCollectionRef = collection(db, 'messages');
+      await addDoc(messagesCollectionRef, {
         conversationId: newConversationId,
         senderId: user.uid,
         senderName: user.displayName || 'You',
         senderAvatar: user.photoURL || undefined,
         text: initialMessage.trim(),
-        timestamp: new Date().toISOString(),
-      };
+        timestamp: serverTimestamp(),
+      });
 
-      setConversations(prev => [...prev, newConversation]);
-      setAllMessages(prev => [...prev, firstMessage]);
       toast.success("New conversation started!");
       return newConversationId;
     } catch (err: any) {
       console.error("Error starting new conversation:", err);
       toast.error(`Failed to start conversation: ${err.message}`);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const value = {
     conversations,
-    messages: allMessages, // Expose all messages for filtering
+    messages: allMessages,
     loading,
     error,
     getMessagesForConversation,
