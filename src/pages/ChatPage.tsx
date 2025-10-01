@@ -111,7 +111,11 @@ const ChatPage: React.FC = () => {
 
         <div className="flex-1 h-[calc(100vh-150px)]">
           {selectedChatRoomId ? (
-            <ChatInterface chatRoomId={selectedChatRoomId} otherParticipantName={otherParticipantName} />
+            <ChatInterface
+              chatRoomId={selectedChatRoomId}
+              otherParticipantName={otherParticipantName}
+              otherParticipantAvatar={otherParticipantAvatar} // Pass the avatar here
+            />
           ) : (
             <Card className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
               <CardContent>Select a chat or find a new user to start messaging.</CardContent>

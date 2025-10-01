@@ -14,9 +14,10 @@ import { CardHeader, CardTitle, Card } from '@/components/ui/card';
 interface ChatInterfaceProps {
   chatRoomId: string;
   otherParticipantName: string;
+  otherParticipantAvatar: string | null; // New prop for avatar
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId, otherParticipantName }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId, otherParticipantName, otherParticipantAvatar }) => {
   const { messages, sendMessage, loading: chatLoading } = useChat();
   const { user, isAuthenticated } = useAuth();
   const [newMessage, setNewMessage] = useState('');
@@ -54,7 +55,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId, otherParticip
 
   return (
     <Card className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-md">
-      <CardHeader className="border-b border-gray-200 dark:border-gray-700 p-4">
+      <CardHeader className="border-b border-gray-200 dark:border-gray-700 p-4 flex flex-row items-center gap-3"> {/* Added flex for avatar */}
+        <Avatar className="h-9 w-9">
+          <AvatarImage src={otherParticipantAvatar || undefined} alt={otherParticipantName} />
+          <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+            {otherParticipantName.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
         <CardTitle className="text-xl font-semibold">{otherParticipantName}</CardTitle>
       </CardHeader>
       <ScrollArea className="flex-1 p-4 space-y-4 overflow-y-auto">
