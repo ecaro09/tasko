@@ -32,6 +32,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
           {isAuthenticated && ( // New: Profile link for authenticated users
             <Link to="/profile" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Profile</Link>
           )}
+          {isAuthenticated && ( // New: Chat link for authenticated users
+            <Link to="/chat" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Chat</Link>
+          )}
         </nav>
         <div className="flex gap-3 items-center">
           {isAuthenticated ? (
