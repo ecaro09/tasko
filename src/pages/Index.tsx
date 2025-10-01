@@ -46,9 +46,10 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
 
-  const handleSignOut = async () => {
-    await logout();
-  };
+  // The handleSignOut function is no longer directly used here as UserNav handles logout
+  // const handleSignOut = async () => {
+  //   await logout();
+  // };
 
   const handleSearchSubmit = () => {
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
@@ -97,7 +98,7 @@ const Index = () => {
 
       <Header
         isAuthenticated={isAuthenticated}
-        onSignOut={handleSignOut}
+        // onSignOut={handleSignOut} // Removed as UserNav handles logout
       />
       <HeroSection
         searchTerm={searchTerm}

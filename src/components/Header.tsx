@@ -1,18 +1,17 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useModal } from './ModalProvider';
 import { useAuth } from '@/hooks/use-auth';
-import UserNav from './UserNav'; // New import for UserNav
+import UserNav from './UserNav';
+import { Button } from "@/components/ui/button"; // Added import for Button
 
 interface HeaderProps {
   isAuthenticated: boolean;
-  onSignOut: () => void; // This prop will no longer be directly used for sign out, but kept for now
 }
 
-const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
+const Header: React.FC<HeaderProps> = ({ isAuthenticated }) => {
   const { openLoginModal, openSignupModal } = useModal();
-  const { user } = useAuth(); // Get user object from useAuth
+  const { user } = useAuth();
 
   return (
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center pt-[var(--safe-area-top)]">
@@ -31,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
         </nav>
         <div className="flex gap-3 items-center">
           {isAuthenticated ? (
-            <UserNav /> // Use the new UserNav component
+            <UserNav />
           ) : (
             <>
               <Button onClick={openLoginModal} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
