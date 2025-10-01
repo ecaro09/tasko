@@ -57,7 +57,7 @@ const TaskerProfileViewPage: React.FC = () => {
     
     const chatRoomId = await createChatRoom(participantIds, participantNames);
     if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`);
+      navigate(`/chat/${chatRoomId}`); // Navigate to chat with the chatRoomId
     }
   };
 
