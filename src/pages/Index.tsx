@@ -4,56 +4,40 @@ import TaskList from "@/components/TaskList";
 import NotesSection from "@/components/NotesSection";
 import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
+import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from '@/hooks/use-auth'; // Import the new useAuth hook
+import { useFirestoreData } from '@/hooks/use-firestore-data'; // Import the new useFirestoreData hook
 
 const Index = () => {
-  // Placeholder state for UI, Firebase integration will come later
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [tasks, setTasks] = React.useState<string[]>([]);
-  const [notes, setNotes] = React.useState<string[]>([]);
+  const { user, isAuthenticated, signInWithGoogle, signOutUser, loading: authLoading } = useAuth();
+  const { tasks, notes, addTask, addNote, loading: firestoreLoading } = useFirestoreData(user);
 
-  const handleSignIn = () => {
-    // This will be replaced with Firebase auth logic
-    console.log("Sign In clicked (Firebase auth not yet active)");
-    setIsAuthenticated(true); // Simulate sign-in for UI
-  };
+  const loading = authLoading || firestoreLoading;
 
-  const handleSignOut = () => {
-    // This will be replaced with Firebase auth logic
-    console.log("Sign Out clicked (Firebase auth not yet active)");
-    setIsAuthenticated(false); // Simulate sign-out for UI
-    setTasks([]); // Clear tasks on logout
-    setNotes([]); // Clear notes on logout
-  };
-
-  const handleAddTask = (task: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Task clicked (Firebase firestore not yet active):", task);
-    setTasks((prev) => [...prev, task]);
-  };
-
-  const handleAddNote = (note: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Note clicked (Firebase firestore not yet active):", note);
-    setNotes((prev) => [...prev, note]);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Header
         isAuthenticated={isAuthenticated}
-        onSignIn={handleSignIn}
-        onSignOut={handleSignOut}
+        onSignIn={signInWithGoogle}
+        onSignOut={signOutUser}
       />
       <main className="container mx-auto p-4">
         <TaskList
           tasks={tasks}
-          onAddTask={handleAddTask}
+          onAddTask={addTask}
           isAuthenticated={isAuthenticated}
         />
         <NotesSection
           notes={notes}
-          onAddNote={handleAddNote}
+          onAddNote={addNote}
           isAuthenticated={isAuthenticated}
         />
         <ImageGallery />
@@ -62,7 +46,7 @@ const Index = () => {
         <p>&copy; 2025 DYAD Full Duplicate</p>
       </footer>
       <MadeWithDyad />
-      <Toaster /> {/* Add Toaster for sonner notifications */}
+      <Toaster />
     </div>
   );
 };
