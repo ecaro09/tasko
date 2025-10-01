@@ -14,25 +14,43 @@ interface SignupModalProps {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
-  const { signInWithGoogle } = useAuth();
-  const { openLoginModal } = useModal(); // Get openLoginModal from context
+  const { signInWithGoogle, signupWithEmailPassword } = useAuth();
+  const { openLoginModal } = useModal();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignup = async () => {
     setIsLoading(true);
     try {
       await signInWithGoogle(); // Google Sign-In handles both login and signup
-      onClose(); // Close modal on successful signup
+      onClose();
     } catch (error) {
-      // Error handled by useAuth hook, toast will be shown there
+      // Error handled by useAuth hook, toast already shown
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailPasswordSignup = async () => {
+    if (!email || !password) {
+      toast.error("Please enter both email and password.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await signupWithEmailPassword(email, password);
+      onClose();
+    } catch (error) {
+      // Error handled by useAuth hook, toast already shown
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSwitchToLogin = () => {
-    onClose(); // Close signup modal
-    openLoginModal(); // Open login modal
+    onClose();
+    openLoginModal();
   };
 
   return (
@@ -45,6 +63,35 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="m@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+          <Button
+            onClick={handleEmailPasswordSignup}
+            disabled={isLoading}
+            className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
+          >
+            {isLoading ? 'Signing Up...' : 'Sign Up with Email'}
+          </Button>
+
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
               Or continue with
