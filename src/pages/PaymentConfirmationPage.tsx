@@ -12,13 +12,15 @@ const PaymentConfirmationPage: React.FC = () => {
       <Card className="w-full max-w-md text-center shadow-lg p-8">
         <CardHeader className="p-0 mb-6">
           <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
-          <CardTitle className="text-3xl font-bold text-green-600">Payment Confirmed!</CardTitle>
+          <CardTitle className="text-3xl font-bold text-green-600">Payment Proof Submitted!</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
-            Thank you for your payment. Our team will verify it shortly.
+          <p className="text-lg text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-wrap">
+            🎉 Thank you for submitting your payment proof!
+            <br /><br />
+            We are verifying your transaction. Keep your receipt or screenshot as proof of payment. The admin will confirm and notify you once verified.
           </p>
-          <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full">
+          <Button onClick={() => navigate('/')} variant="secondary" className="text-lg px-8 py-4 rounded-full">
             Back to Home
           </Button>
         </CardContent>

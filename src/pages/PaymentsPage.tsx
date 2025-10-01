@@ -5,14 +5,44 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
+import { Separator } from "@/components/ui/separator"; // Import Separator
+import { Input } from "@/components/ui/input"; // Import Input for form fields
+import { Label } from "@/components/ui/label"; // Import Label for form fields
 
 const PaymentsPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("uniondigital");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [transactionNumber, setTransactionNumber] = useState('');
+  const [payerName, setPayerName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Mobile number copied to clipboard!");
+  };
+
+  const handleSubmitPaymentProof = async () => {
+    if (!receiptFile || !payerName.trim()) {
+      toast.error("Please upload your payment receipt and enter your name.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    // In a real application, you would upload the file to storage (e.g., Supabase Storage)
+    // and then submit the form data to your backend/database for verification.
+    console.log("Submitting payment proof:", {
+      receiptFile: receiptFile.name,
+      transactionNumber,
+      payerName,
+    });
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    toast.success("Payment proof submitted successfully!");
+    setIsSubmitting(false);
+    navigate('/payment-confirmation');
   };
 
   return (
@@ -28,6 +58,10 @@ const PaymentsPage: React.FC = () => {
             <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Select Payment Method</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
+            <p className="text-gray-700 dark:text-gray-300 text-base mb-6">
+              💳 Please select your preferred payment method below. Pay via <strong className="text-green-600">UnionDigital Bank</strong> or <strong className="text-green-600">GCash</strong> by scanning the QR code or copying account details.
+            </p>
+
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="uniondigital">UnionDigital Bank</TabsTrigger>
@@ -35,9 +69,14 @@ const PaymentsPage: React.FC = () => {
               </TabsList>
               <TabsContent value="uniondigital" className="mt-6">
                 <div className="space-y-4 text-center">
-                  <img src="/placeholder.svg" alt="UnionDigital QR Code" className="mx-auto w-48 h-48 object-contain border rounded-lg p-2 dark:bg-gray-700" />
-                  <p className="text-gray-700 dark:text-gray-300 text-lg font-medium">Account Name: TASKO</p>
-                  <p className="text-gray-700 dark:text-gray-300 text-lg font-medium">Mobile No: +6391 **** 9188</p>
+                  <img src="/placeholder.svg" alt="UnionDigital Bank QR" className="mx-auto w-48 h-48 object-contain border rounded-lg p-2 dark:bg-gray-700" />
+                  <p className="text-gray-700 dark:text-gray-300 text-lg font-medium whitespace-pre-wrap">
+                    📌 <strong className="text-gray-800 dark:text-gray-100">Account Name:</strong> TASKO
+                    <br />
+                    📌 <strong className="text-gray-800 dark:text-gray-100">Mobile No:</strong> +6391 **** 9188
+                    <br /><br />
+                    ✅ Scan the QR code above using UnionDigital App or any InstaPay-supported banking app.
+                  </p>
                   <Button onClick={() => handleCopy("+6391****9188")} variant="outline" className="w-full max-w-xs mx-auto border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
                     Copy Mobile No
                   </Button>
@@ -45,17 +84,68 @@ const PaymentsPage: React.FC = () => {
               </TabsContent>
               <TabsContent value="gcash" className="mt-6">
                 <div className="space-y-4 text-center">
-                  <img src="/placeholder.svg" alt="GCash QR Code" className="mx-auto w-48 h-48 object-contain border rounded-lg p-2 dark:bg-gray-700" />
-                  <p className="text-gray-700 dark:text-gray-300 text-lg font-medium">Account Name: TASKO</p>
-                  <p className="text-gray-700 dark:text-gray-300 text-lg font-medium">Mobile No: +63 992 492 ****</p>
+                  <img src="/placeholder.svg" alt="GCash QR" className="mx-auto w-48 h-48 object-contain border rounded-lg p-2 dark:bg-gray-700" />
+                  <p className="text-gray-700 dark:text-gray-300 text-lg font-medium whitespace-pre-wrap">
+                    📌 <strong className="text-gray-800 dark:text-gray-100">Account Name:</strong> TASKO
+                    <br />
+                    📌 <strong className="text-gray-800 dark:text-gray-100">Mobile No:</strong> +63 992 492 ****
+                    <br />
+                    📌 <strong className="text-gray-800 dark:text-gray-100">User ID:</strong> ********2IJBBA
+                    <br /><br />
+                    ✅ Scan the QR code above using the GCash app.
+                  </p>
                   <Button onClick={() => handleCopy("+63992492****")} variant="outline" className="w-full max-w-xs mx-auto border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
                     Copy Mobile No
                   </Button>
                 </div>
               </TabsContent>
             </Tabs>
-            <Button onClick={() => navigate('/payment-confirmation')} className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-3 mt-8">
-              ✅ I Have Paid
+
+            <Separator className="my-8" />
+
+            <p className="text-gray-700 dark:text-gray-300 text-base mb-6">
+              📎 After payment, please upload your payment receipt or screenshot below for verification.
+            </p>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="receiptUpload">Upload Payment Receipt</Label>
+                <Input
+                  id="receiptUpload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)}
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="transactionNumber">Transaction Number (if any)</Label>
+                <Input
+                  id="transactionNumber"
+                  type="text"
+                  placeholder="Enter transaction number"
+                  value={transactionNumber}
+                  onChange={(e) => setTransactionNumber(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="payerName">Your Name</Label>
+                <Input
+                  id="payerName"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={payerName}
+                  onChange={(e) => setPayerName(e.target.value)}
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+            </div>
+
+            <Button onClick={handleSubmitPaymentProof} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-3 mt-8">
+              {isSubmitting ? 'Submitting Proof...' : '✅ Submit Payment Proof'}
             </Button>
           </CardContent>
         </Card>
