@@ -101,7 +101,7 @@ const TaskDetailPage: React.FC = () => {
     
     const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
     if (chatRoomId) {
-      navigate(`/chat/${task.posterId}`); // Navigate to chat with the poster's ID
+      navigate(`/chat/${chatRoomId}`); // Navigate to the specific chat room ID
     }
   };
 
@@ -120,7 +120,7 @@ const TaskDetailPage: React.FC = () => {
 
     const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
     if (chatRoomId) {
-      navigate(`/chat/${taskerId}`); // Navigate to chat with the tasker's ID
+      navigate(`/chat/${chatRoomId}`); // Navigate to the specific chat room ID
     }
   };
 
