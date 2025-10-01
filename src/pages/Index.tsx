@@ -4,6 +4,7 @@ import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import AppFooter from "@/components/AppFooter";
+import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Plus } from 'lucide-react';
@@ -17,7 +18,6 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
-import { getTaskImageUrl } from '@/utils/task-images'; // Import the new utility
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -46,10 +46,9 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
 
-  // The handleSignOut function is no longer directly used here as UserNav handles logout
-  // const handleSignOut = async () => {
-  //   await logout();
-  // };
+  const handleSignOut = async () => {
+    await logout();
+  };
 
   const handleSearchSubmit = () => {
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
@@ -98,7 +97,7 @@ const Index = () => {
 
       <Header
         isAuthenticated={isAuthenticated}
-        // onSignOut={handleSignOut} // Removed as UserNav handles logout
+        onSignOut={handleSignOut}
       />
       <HeroSection
         searchTerm={searchTerm}
@@ -128,7 +127,7 @@ const Index = () => {
               (filteredTasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
-                    <img src={getTaskImageUrl(task.category, task.imageUrl)} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
                       {getCategoryName(task.category)}
                     </div>
@@ -158,7 +157,7 @@ const Index = () => {
         <HowItWorksSection />
       </main>
       <AppFooter />
-      
+      <MadeWithDyad />
 
       <InstallPrompt
         isVisible={showInstallPrompt}

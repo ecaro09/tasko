@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, updateDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 
@@ -51,80 +51,10 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
-  // Function to seed initial tasker profiles
-  const seedInitialTaskerProfiles = async () => {
-    const taskerProfilesCollectionRef = collection(db, 'taskerProfiles');
-    const snapshot = await getDocs(taskerProfilesCollectionRef);
-
-    if (snapshot.empty) {
-      console.log("Tasker profiles collection is empty, seeding initial tasker profiles...");
-      const initialTaskers = [
-        {
-          taskerId: "U001",
-          name: "Juan Dela Cruz",
-          skills: ["Plumbing", "Electrical Repair", "Home Cleaning"],
-          hourlyRate: 500,
-          bio: "Experienced handyman specializing in plumbing and electrical repairs. Also offers general home cleaning services.",
-          photoURL: "https://randomuser.me/api/portraits/men/75.jpg",
-        },
-        {
-          taskerId: "U002",
-          name: "Maria Santos",
-          skills: ["Cleaning", "Housekeeping", "Laundry"],
-          hourlyRate: 400,
-          bio: "Dedicated and thorough cleaner with years of experience in residential housekeeping. Available for regular cleaning and deep cleans.",
-          photoURL: "https://randomuser.me/api/portraits/women/76.jpg",
-        },
-        {
-          taskerId: "U003",
-          name: "Jose Ramirez",
-          skills: ["Carpentry", "Furniture Assembly", "Minor Repairs"],
-          hourlyRate: 450,
-          bio: "Skilled carpenter and assembler. Can help with custom furniture, repairs, and flat-pack assembly.",
-          photoURL: "https://randomuser.me/api/portraits/men/77.jpg",
-        },
-        {
-          taskerId: "U004",
-          name: "Anna Cruz",
-          skills: ["Appliance Repair", "Aircon Cleaning", "Electrical"],
-          hourlyRate: 600,
-          bio: "Expert in appliance repair and air conditioning maintenance. Ensures your home appliances run smoothly.",
-          photoURL: "https://randomuser.me/api/portraits/women/78.jpg",
-        },
-        {
-          taskerId: "U005",
-          name: "Mark Villanueva",
-          skills: ["Painting", "Renovation", "Wall Repair"],
-          hourlyRate: 550,
-          bio: "Professional painter and renovator. Transforms spaces with quality finishes and attention to detail.",
-          photoURL: "https://randomuser.me/api/portraits/men/79.jpg",
-        }
-      ];
-
-      for (const tasker of initialTaskers) {
-        const profileData: TaskerProfile = {
-          userId: tasker.taskerId,
-          displayName: tasker.name,
-          photoURL: tasker.photoURL,
-          skills: tasker.skills,
-          bio: tasker.bio,
-          hourlyRate: tasker.hourlyRate,
-          isTasker: true,
-          dateJoined: new Date().toISOString(), // Set current date for seeded profiles
-        };
-        await setDoc(doc(db, 'taskerProfiles', tasker.taskerId), profileData);
-      }
-      toast.info("Initial tasker profiles added!");
-    }
-  };
-
   useEffect(() => {
     const loadProfiles = async () => {
       setLoading(true);
       setError(null);
-
-      // Seed initial tasker profiles if the collection is empty
-      await seedInitialTaskerProfiles();
 
       // Fetch current user's tasker profile
       if (isAuthenticated && user) {

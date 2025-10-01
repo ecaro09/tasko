@@ -1,11 +1,10 @@
 import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom'; // Import Link
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
 import { useModal } from '@/components/ModalProvider';
-import { useChat } from '@/hooks/use-chat'; // New import for useChat
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
@@ -18,10 +17,9 @@ const TaskDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Removed fetchTaskerProfileById as it's not used here
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { createChatRoom } = useChat(); // Corrected destructuring from useChat
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -86,44 +84,6 @@ const TaskDetailPage: React.FC = () => {
     }
   };
 
-  const handleChatWithPoster = async () => {
-    if (!isAuthenticated || !user) {
-      toast.error("Please log in to chat.");
-      return;
-    }
-    if (user.uid === task.posterId) {
-      toast.info("You cannot chat with yourself (the task poster).");
-      return;
-    }
-
-    const participantIds = [user.uid, task.posterId];
-    const participantNames = [user.displayName || user.email || "You", task.posterName];
-    
-    const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
-    if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`); // Navigate to the specific chat room ID
-    }
-  };
-
-  const handleChatWithTasker = async (taskerId: string, taskerName: string) => {
-    if (!isAuthenticated || !user) {
-      toast.error("Please log in to chat.");
-      return;
-    }
-    if (user.uid === taskerId) {
-      toast.info("You cannot chat with yourself.");
-      return;
-    }
-
-    const participantIds = [user.uid, taskerId];
-    const participantNames = [user.displayName || user.email || "You", taskerName];
-
-    const chatRoomId = await createChatRoom(participantIds, participantNames, task.id);
-    if (chatRoomId) {
-      navigate(`/chat/${chatRoomId}`); // Navigate to the specific chat room ID
-    }
-  };
-
   const getOfferStatusBadge = (status: Offer['status']) => {
     switch (status) {
       case 'pending':
@@ -183,13 +143,8 @@ const TaskDetailPage: React.FC = () => {
                     <User size={20} /> Make an Offer
                   </Button>
                 )}
-                {isAuthenticated && !isTaskPoster && (
-                  <Button onClick={handleChatWithPoster} className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-2">
-                    <MessageSquare size={20} /> Chat with Client
-                  </Button>
-                )}
                 {!isAuthenticated && (
-                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer or chat.</p>
+                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer.</p>
                 )}
                 {isAuthenticated && !isTasker && !isTaskPoster && (
                   <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>
@@ -207,20 +162,20 @@ const TaskDetailPage: React.FC = () => {
                   {taskOffers.map(offer => (
                     <Card key={offer.id} className="p-4 shadow-sm">
                       <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <Link to={`/taskers/${offer.taskerId}`} className="flex items-center gap-3 group"> {/* Added Link */}
-                          <Avatar className="w-12 h-12 border-2 border-blue-500 group-hover:border-green-500 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-12 h-12 border-2 border-blue-500">
                             <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
                             <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
                               {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={20} />}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-semibold text-lg text-gray-800 dark:text-gray-100 group-hover:text-green-600 transition-colors">{offer.taskerName}</p>
+                            <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
                             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                               <MessageSquare size={14} /> {offer.message}
                             </p>
                           </div>
-                        </Link>
+                        </div>
                         <div className="flex flex-col items-end sm:items-center gap-2">
                           <p className="text-2xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
                           {getOfferStatusBadge(offer.status)}
@@ -250,15 +205,6 @@ const TaskDetailPage: React.FC = () => {
                               onClick={() => handleWithdrawOffer(offer.id)}
                             >
                               <Clock size={16} className="mr-1" /> Withdraw
-                            </Button>
-                          )}
-                          {isAuthenticated && (isTaskPoster || user?.uid === offer.taskerId) && offer.status === 'accepted' && (
-                            <Button
-                              size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white mt-2"
-                              onClick={() => handleChatWithTasker(offer.taskerId, offer.taskerName)}
-                            >
-                              <MessageSquare size={16} className="mr-1" /> Chat
                             </Button>
                           )}
                         </div>

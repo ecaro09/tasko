@@ -15,18 +15,16 @@ import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
-import SettingsPage from "./pages/SettingsPage";
-import DashboardPage from "./pages/DashboardPage"; // New import for DashboardPage
+import SettingsPage from "./pages/SettingsPage"; // New import
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
 import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
 import { OffersProvider } from "./hooks/use-offers";
-import { ChatProvider } from "./hooks/use-chat"; // New import for ChatProvider
 import React from "react";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "./components/theme-provider";
+import { ThemeProvider } from "./components/theme-provider"; // New import
 
 const queryClient = new QueryClient();
 
@@ -41,29 +39,26 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ChatProvider> {/* Wrap ModalProvider with ChatProvider */}
-                        <ModalProvider>
-                          <Routes>
-                            <Route path="/" element={<Index />} />
-                            <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                            <Route path="/my-tasks" element={<MyTasksPage />} />
-                            <Route path="/my-offers" element={<MyOffersPage />} />
-                            <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
-                            <Route path="/profile" element={<ProfilePage />} />
-                            <Route path="/settings" element={<SettingsPage />} />
-                            <Route path="/dashboard" element={<DashboardPage />} />
-                            <Route path="/faq" element={<FAQPage />} />
-                            <Route path="/contact" element={<ContactPage />} />
-                            <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                            <Route path="/terms" element={<TermsOfServicePage />} />
-                            <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
-                            <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                            <Route path="/chat/:chatRoomId" element={<ChatPage />} /> {/* Updated Chat Route */}
-                            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </ModalProvider>
-                      </ChatProvider>
+                      <ModalProvider>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                          <Route path="/my-tasks" element={<MyTasksPage />} />
+                          <Route path="/my-offers" element={<MyOffersPage />} />
+                          <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
+                          <Route path="/profile" element={<ProfilePage />} />
+                          <Route path="/settings" element={<SettingsPage />} /> {/* New Route */}
+                          <Route path="/faq" element={<FAQPage />} />
+                          <Route path="/contact" element={<ContactPage />} />
+                          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                          <Route path="/terms" element={<TermsOfServicePage />} />
+                          <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
+                          <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
+                          <Route path="/chat" element={<ChatPage />} />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </ModalProvider>
                     </OffersProvider>
                   </TaskerProfileProvider>
                 </TasksProvider>

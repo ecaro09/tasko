@@ -52,7 +52,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <ListTodo size={20} className="mb-1" />
           <span>My Tasks</span>
         </NavLink>
-        {/* Updated NavLink for Chat to point to the main chat list page */}
+        {/* New NavLink for Chat */}
         <NavLink
           to="/chat"
           className={({ isActive }) => cn(
