@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowLeft, User as UserIcon } from 'lucide-react';
+import { MessageSquare, ArrowLeft, User as UserIcon, Frown } from 'lucide-react'; // Added Frown icon
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -101,7 +101,18 @@ const ChatPage: React.FC = () => {
           <div className="w-10"></div> {/* Spacer to balance the back button */}
         </div>
 
-        {chatRoomId && currentChatRoomWithInfo ? (
+        {chatRoomId && !currentChatRoomWithInfo ? (
+          <Card className="flex-grow flex flex-col items-center justify-center shadow-lg rounded-lg p-8 text-center">
+            <Frown size={64} className="text-gray-400 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Chat Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              The chat room you are looking for does not exist or you do not have access to it.
+            </p>
+            <Button onClick={() => navigate('/chat')} className="bg-green-600 hover:bg-green-700 text-white">
+              View All Chats
+            </Button>
+          </Card>
+        ) : chatRoomId && currentChatRoomWithInfo ? (
           <ChatRoom
             chatRoomId={chatRoomId}
             otherParticipantName={currentChatRoomWithInfo.otherParticipantName}
