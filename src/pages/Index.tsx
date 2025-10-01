@@ -5,31 +5,42 @@ import NotesSection from "@/components/NotesSection";
 import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { useTasks } from '@/hooks/use-tasks'; // Import useTasks
+import { toast } from 'sonner'; // Import toast for notifications
 
 const Index = () => {
-  // Placeholder state for UI, Firebase integration will come later
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [tasks, setTasks] = React.useState<string[]>([]);
+  const { isAuthenticated, signInWithGoogle, signOutUser } = useAuth();
+  const { tasks, addTask, loading: tasksLoading } = useTasks(); // Use tasks and addTask from useTasks hook
+
+  // Placeholder state for notes
   const [notes, setNotes] = React.useState<string[]>([]);
 
-  const handleSignIn = () => {
-    // This will be replaced with Firebase auth logic
-    console.log("Sign In clicked (Firebase auth not yet active)");
-    setIsAuthenticated(true); // Simulate sign-in for UI
-  };
-
-  const handleSignOut = () => {
-    // This will be replaced with Firebase auth logic
-    console.log("Sign Out clicked (Firebase auth not yet active)");
-    setIsAuthenticated(false); // Simulate sign-out for UI
-    setTasks([]); // Clear tasks on logout
-    setNotes([]); // Clear notes on logout
-  };
-
-  const handleAddTask = (task: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Task clicked (Firebase firestore not yet active):", task);
-    setTasks((prev) => [...prev, task]);
+  // This function will be called by TaskList when a user tries to add a task
+  const handleAddTaskFromInput = async (title: string) => {
+    if (!isAuthenticated) {
+      toast.error("You must be logged in to post a task.");
+      return;
+    }
+    if (!title.trim()) {
+      toast.error("Task title cannot be empty.");
+      return;
+    }
+    try {
+      // For now, we'll use placeholder values for other task properties
+      // In a real scenario, you'd have a form to gather these details.
+      await addTask(
+        title,
+        "A general description for " + title,
+        "General", // Default category
+        1000, // Default budget
+        "Metro Manila", // Default location
+        "https://via.placeholder.com/400x200?text=New+Task" // Default image
+      );
+    } catch (error) {
+      console.error("Error adding task from input:", error);
+      toast.error("Failed to add task. Please try again.");
+    }
   };
 
   const handleAddNote = (note: string) => {
@@ -42,13 +53,13 @@ const Index = () => {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Header
         isAuthenticated={isAuthenticated}
-        onSignIn={handleSignIn}
-        onSignOut={handleSignOut}
+        onSignIn={signInWithGoogle} // Use actual signInWithGoogle from useAuth
+        onSignOut={signOutUser}    // Use actual signOutUser from useAuth
       />
       <main className="container mx-auto p-4">
         <TaskList
-          tasks={tasks}
-          onAddTask={handleAddTask}
+          tasks={tasks} // Now correctly typed as Task[]
+          onAddTask={handleAddTaskFromInput} // Use the new wrapper function
           isAuthenticated={isAuthenticated}
         />
         <NotesSection
