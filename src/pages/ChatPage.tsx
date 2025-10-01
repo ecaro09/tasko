@@ -25,7 +25,7 @@ const ChatPage: React.FC = () => {
     loading: chatLoading,
     error: chatError,
   } = useChat();
-  const { isAuthenticated, loading: authLoading } = useAuth(); // Only need isAuthenticated for conditional rendering
+  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Get user object
   const isMobile = useIsMobile(); // Use the hook to detect mobile
 
   const loading = chatLoading || authLoading;
@@ -71,10 +71,20 @@ const ChatPage: React.FC = () => {
     );
   }
 
+  let otherParticipantName = 'Select a Chat';
+  let otherParticipantAvatar: string | null = null;
+
   const currentChatRoom = chatRooms.find(room => room.id === selectedChatRoomId);
-  const otherParticipantName = currentChatRoom
-    ? currentChatRoom.participantNames[currentChatRoom.participants.findIndex(pId => pId !== currentChatRoom.participants[0])] || 'Unknown User' // Simplified to avoid direct user?.uid access here
-    : 'Select a Chat';
+
+  if (currentChatRoom && user) {
+    const currentUserIndex = currentChatRoom.participants.indexOf(user.uid);
+    const otherParticipantIndex = currentUserIndex === 0 ? 1 : 0; // Assuming only two participants
+
+    if (currentChatRoom.participants[otherParticipantIndex]) {
+      otherParticipantName = currentChatRoom.participantNames[otherParticipantIndex] || 'Unknown User';
+      otherParticipantAvatar = currentChatRoom.participantAvatars[otherParticipantIndex] || null;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
