@@ -6,6 +6,8 @@ import {
   updateProfile,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  GoogleAuthProvider, // Import GoogleAuthProvider
+  signInWithPopup, // Import signInWithPopup
 } from 'firebase/auth';
 import { toast } from 'sonner'; // Using sonner for toasts
 
@@ -20,6 +22,7 @@ interface AuthContextType extends AuthState {
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>; // Add Google Sign-In function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,7 +115,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile };
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast.success("Logged in with Google successfully!");
+    } catch (error: any) {
+      console.error("Auth error caught during Google sign-in:", error);
+      let errorMessage = "Failed to sign in with Google.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Google sign-in popup closed.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

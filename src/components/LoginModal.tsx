@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { useModal } from './ModalProvider';
+import { Chrome } from 'lucide-react'; // Import Google icon
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { loginWithEmailPassword } = useAuth();
+  const { loginWithEmailPassword, signInWithGoogle } = useAuth(); // Destructure signInWithGoogle
   const { openSignupModal } = useModal();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +28,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     setIsLoading(true);
     try {
       await loginWithEmailPassword(email, password);
+      onClose();
+    } catch (error) {
+      // Error handled by useAuth hook, toast already shown
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGoogle();
       onClose();
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
@@ -77,6 +90,24 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
           >
             {isLoading ? 'Logging In...' : 'Login with Email'}
+          </Button>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                Or continue with
+              </span>
+            </div>
+          </div>
+          <Button
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            variant="outline"
+            className="w-full flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <Chrome size={20} /> {isLoading ? 'Signing In...' : 'Sign in with Google'}
           </Button>
         </div>
         <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
