@@ -18,7 +18,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { cn } from '@/lib/utils';
+import { useFilteredTasks } from '@/hooks/use-filtered-tasks'; // Import the new hook
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -30,23 +31,25 @@ const getCategoryName = (category: string) => {
     delivery: 'Delivery',
     mounting: 'Mounting',
     painting: 'Painting',
-    marketing: 'Marketing', // Added marketing category
+    marketing: 'Marketing',
     other: 'Other'
   };
   return names[category] || 'Task';
 };
 
 const Index = () => {
-  // All hooks must be called unconditionally at the top level
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { loading: tasksLoading, error: tasksError } = useTasks();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
+
+  // Use the new filtered tasks hook
+  const { filteredTasks } = useFilteredTasks(searchTerm, selectedCategory);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -72,31 +75,8 @@ const Index = () => {
     navigate(`/tasks/${taskId}`);
   };
 
-  // Removed handleProfileClick as it's now handled internally by BottomNavigation
-
-  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
-  const filteredTasks = React.useMemo(() => {
-    let currentFilteredTasks = tasks;
-
-    if (selectedCategory && selectedCategory !== 'all') {
-      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
-    }
-
-    if (searchTerm) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      currentFilteredTasks = currentFilteredTasks.filter(task =>
-        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
-        task.location.toLowerCase().includes(lowerCaseSearchTerm)
-      );
-    }
-    return currentFilteredTasks;
-  }, [tasks, searchTerm, selectedCategory]);
-
-
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
-      {/* SplashScreen is now always rendered, but its visibility is controlled by CSS */}
       <div className={cn(
         "fixed inset-0 z-[9999] transition-opacity duration-500",
         isSplashVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -114,6 +94,7 @@ const Index = () => {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         onSearchSubmit={handleSearchSubmit}
+        onPopularCategoryClick={handleCategorySelect}
       />
       <main className="container mx-auto p-4 pt-[60px]">
         <CategoriesSection
@@ -121,7 +102,6 @@ const Index = () => {
           onCategorySelect={handleCategorySelect}
         />
 
-        {/* Tasks Section */}
         <section id="tasks" className="py-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))]">📋 Available Tasks Near You</h2>
@@ -132,10 +112,10 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
             {tasksLoading && <p className="col-span-full text-center text-gray-500 italic py-8">Loading tasks...</p>}
-            {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
+            {!tasksLoading && filteredTasks.length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
             ) : (
-              (filteredTasks || []).map((task) => (
+              filteredTasks.map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
                     <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
