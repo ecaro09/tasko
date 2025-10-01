@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { MessageSquare, ArrowLeft, Send } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTasks } from '@/hooks/use-tasks';
+import { useAuth } from '@/hooks/use-auth';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
+import { toast } from 'sonner';
 
 interface Message {
   id: number;
@@ -16,13 +20,78 @@ interface Message {
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: 'other', text: "Hi! I'm interested in your house cleaning task. Can you tell me more about the scope?", timestamp: "10:00 AM" },
-    { id: 2, sender: 'me', text: "Sure! It's a 2-bedroom apartment, mostly general cleaning, kitchen, and bathroom. Looking for someone this weekend.", timestamp: "10:05 AM" },
-    { id: 3, sender: 'other', text: "Great! I'm available Saturday morning. My rate is ₱1200 for a 2-bedroom. Does that work for you?", timestamp: "10:10 AM" },
-    { id: 4, sender: 'me', text: "That sounds good. Let's confirm the details.", timestamp: "10:15 AM" },
-  ]);
+  const { taskId, otherUserId } = useParams<{ taskId: string; otherUserId: string }>();
+  const { tasks, loading: tasksLoading } = useTasks();
+  const { user: currentUser, isAuthenticated, loading: authLoading } = useAuth();
+  const { fetchTaskerProfileById, loading: taskerProfileLoading } = useTaskerProfile();
+
+  const [chatPartnerName, setChatPartnerName] = useState('Loading...');
+  const [chatPartnerAvatar, setChatPartnerAvatar] = useState<string | undefined>(undefined);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [loadingChat, setLoadingChat] = useState(true);
+
+  useEffect(() => {
+    const loadChatContext = async () => {
+      setLoadingChat(true);
+      if (!isAuthenticated || !currentUser) {
+        toast.error("You must be logged in to view chats.");
+        navigate('/login'); // Redirect to login if not authenticated
+        return;
+      }
+
+      if (!taskId || !otherUserId) {
+        toast.error("Chat context (task or other user) is missing.");
+        navigate(-1); // Go back if context is missing
+        return;
+      }
+
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) {
+        toast.error("Task not found for this chat.");
+        navigate(-1);
+        return;
+      }
+
+      let partnerDisplayName = "Unknown User";
+      let partnerPhotoURL: string | undefined = undefined;
+
+      // Determine if the other user is the task poster or a tasker
+      if (task.posterId === otherUserId) {
+        // Chatting with the task poster
+        partnerDisplayName = task.posterName;
+        partnerPhotoURL = task.posterAvatar;
+      } else {
+        // Chatting with a tasker
+        const partnerProfile = await fetchTaskerProfileById(otherUserId);
+        if (partnerProfile) {
+          partnerDisplayName = partnerProfile.displayName;
+          partnerPhotoURL = partnerProfile.photoURL;
+        } else {
+          toast.error("Chat partner profile not found.");
+          navigate(-1);
+          return;
+        }
+      }
+
+      setChatPartnerName(partnerDisplayName);
+      setChatPartnerAvatar(partnerPhotoURL);
+
+      // Generate initial dummy messages based on task context
+      const initialDummyMessages: Message[] = [
+        { id: 1, sender: 'other', text: `Hi! I'm interested in your task: "${task.title}". Can you tell me more?`, timestamp: "10:00 AM" },
+        { id: 2, sender: 'me', text: `Sure! For "${task.title}", it's about ${task.description}. My budget is ₱${task.budget.toLocaleString()}.`, timestamp: "10:05 AM" },
+        { id: 3, sender: 'other', text: `Okay, I can do that for ₱${(task.budget * 0.9).toLocaleString()}. I'm available on ${new Date(task.datePosted).toLocaleDateString()}.`, timestamp: "10:10 AM" },
+        { id: 4, sender: 'me', text: "That sounds good. Let's confirm the details.", timestamp: "10:15 AM" },
+      ];
+      setMessages(initialDummyMessages);
+      setLoadingChat(false);
+    };
+
+    if (!tasksLoading && !authLoading && !taskerProfileLoading) {
+      loadChatContext();
+    }
+  }, [taskId, otherUserId, tasks, currentUser, isAuthenticated, tasksLoading, authLoading, taskerProfileLoading, fetchTaskerProfileById, navigate]);
 
   const handleSendMessage = () => {
     if (newMessage.trim() !== '') {
@@ -32,10 +101,14 @@ const ChatPage: React.FC = () => {
         text: newMessage.trim(),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages([...messages, newMsg]);
+      setMessages((prevMessages) => [...prevMessages, newMsg]);
       setNewMessage('');
     }
   };
+
+  if (loadingChat || tasksLoading || authLoading || taskerProfileLoading) {
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading chat...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col">
@@ -52,11 +125,11 @@ const ChatPage: React.FC = () => {
           <CardContent className="flex-grow p-4 flex flex-col">
             <div className="flex items-center gap-3 border-b pb-3 mb-4">
               <Avatar className="w-10 h-10">
-                <AvatarImage src="https://randomuser.me/api/portraits/men/75.jpg" alt="Tasker Name" />
-                <AvatarFallback>TS</AvatarFallback>
+                <AvatarImage src={chatPartnerAvatar} alt={chatPartnerName} />
+                <AvatarFallback>{chatPartnerName.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">Tasker John Doe</p>
+                <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{chatPartnerName}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Online</p>
               </div>
             </div>
