@@ -53,7 +53,8 @@ interface ChatContextType {
     initialMessageText?: string
   ) => Promise<string>;
   markConversationAsRead: (conversationId: string) => Promise<void>;
-  totalUnreadCount: number; // New: Total unread count for the current user
+  totalUnreadCount: number;
+  loading: boolean; // Added loading property here
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -67,13 +68,18 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [totalUnreadCount, setTotalUnreadCount] = useState(0); // New state for total unread count
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
+  const [overallLoading, setOverallLoading] = useState(true); // New state for overall loading
+
+  useEffect(() => {
+    setOverallLoading(authLoading || loadingConversations || loadingMessages);
+  }, [authLoading, loadingConversations, loadingMessages]);
 
   // Fetch conversations for the current user
   useEffect(() => {
     if (!isAuthenticated || !user) {
       setConversations([]);
-      setTotalUnreadCount(0); // Reset unread count
+      setTotalUnreadCount(0);
       setLoadingConversations(false);
       return;
     }
@@ -103,7 +109,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setConversations(fetchedConversations);
 
-      // Calculate total unread count
       const newTotalUnreadCount = fetchedConversations.reduce((sum, convo) => {
         return sum + (convo.unreadCount?.[user.uid] || 0);
       }, 0);
@@ -213,10 +218,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error("User not authenticated.");
     }
 
-    const allParticipantIds = [...new Set([...participantIds, user.uid])].sort(); // Ensure current user is included and unique
+    const allParticipantIds = [...new Set([...participantIds, user.uid])].sort();
     const allParticipantNames = [...new Set([...participantNames, user.displayName || user.email || "Anonymous"])];
 
-    // Check for existing conversation with the exact same participants
     const q = query(
       collection(db, 'conversations'),
       where('participants', '==', allParticipantIds)
@@ -283,14 +287,15 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value = {
     conversations,
     messages,
-    loadingConversations: loadingConversations || authLoading,
+    loadingConversations,
     loadingMessages,
     error,
     fetchMessages,
     sendMessage,
     startNewConversation,
     markConversationAsRead,
-    totalUnreadCount, // Expose total unread count
+    totalUnreadCount,
+    loading: overallLoading, // Expose overall loading state
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
