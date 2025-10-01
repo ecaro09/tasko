@@ -1,15 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebase'; // This auth could be null now
 import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
   User as FirebaseUser,
   updateProfile,
-  signInWithEmailAndPassword, // New import
-  createUserWithEmailAndPassword, // New import
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
 } from 'firebase/auth';
-import { toast } from 'sonner'; // Using sonner for toasts
+import { toast } from 'sonner';
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -19,8 +19,8 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
-  loginWithEmailPassword: (email: string, password: string) => Promise<void>; // New function
-  signupWithEmailPassword: (email: string, password: string) => Promise<void>; // New function
+  loginWithEmailPassword: (email: string, password: string) => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
 }
@@ -35,6 +35,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   useEffect(() => {
+    if (!auth) { // Handle case where Firebase auth failed to initialize
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+      });
+      console.error("Firebase Auth is not initialized. Check your Firebase configuration.");
+      toast.error("Authentication services are unavailable. Please check Firebase configuration.");
+      return;
+    }
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setAuthState({
         user,
@@ -45,7 +56,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
+  // All auth functions need to check if 'auth' is available
   const signInWithGoogle = async () => {
+    if (!auth) {
+      toast.error("Authentication services are not available.");
+      throw new Error("Auth not initialized.");
+    }
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -53,11 +69,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error: any) {
       console.error("Error signing in with Google:", error);
       toast.error(`Failed to sign in with Google: ${error.message}`);
-      throw error; // Re-throw to allow calling component to handle loading state
+      throw error;
     }
   };
 
   const loginWithEmailPassword = async (email: string, password: string) => {
+    if (!auth) {
+      toast.error("Authentication services are not available.");
+      throw new Error("Auth not initialized.");
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success("Logged in successfully!");
@@ -69,6 +89,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signupWithEmailPassword = async (email: string, password: string) => {
+    if (!auth) {
+      toast.error("Authentication services are not available.");
+      throw new Error("Auth not initialized.");
+    }
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       toast.success("Account created successfully!");
@@ -80,6 +104,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
+    if (!auth) {
+      toast.error("Authentication services are not available.");
+      throw new Error("Auth not initialized.");
+    }
     try {
       await signOut(auth);
       toast.success("Logged out successfully!");
@@ -91,22 +119,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUserProfile = async (displayName: string, photoURL?: string) => {
-    if (!authState.user) {
+    if (!auth || !authState.user) {
       toast.error("You must be logged in to update your profile.");
       return;
     }
     try {
       await updateProfile(authState.user, { displayName, photoURL });
-      // Force a re-fetch of the user to update the state with new profile info
       setAuthState(prev => ({
         ...prev,
-        user: auth.currentUser, // auth.currentUser will have the updated info
+        user: auth.currentUser,
       }));
       toast.success("Profile updated successfully!");
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast.error(`Failed to update profile: ${error.message}`);
-      throw error; // Re-throw to allow calling component to handle loading state
+      throw error;
     }
   };
 
