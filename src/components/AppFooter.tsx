@@ -24,7 +24,6 @@ const AppFooter: React.FC = () => {
             <li><Link to="/my-tasks" className="text-sm hover:text-green-400 transition-colors">My Tasks</Link></li>
             <li><Link to="/features-earnings" className="text-sm hover:text-green-400 transition-colors">Become a Tasker</Link></li>
             <li><a href="#how-it-works" className="text-sm hover:text-green-400 transition-colors">How It Works</a></li>
-            <li><a href="#testimonials" className="text-sm hover:text-green-400 transition-colors">Testimonials</a></li>{/* New Link */}
           </ul>
         </div>
 
@@ -34,7 +33,7 @@ const AppFooter: React.FC = () => {
           <ul className="space-y-2">
             <li><Link to="/faq" className="text-sm hover:text-green-400 transition-colors">FAQ</Link></li>
             <li><Link to="/contact" className="text-sm hover:text-green-400 transition-colors">Contact Us</Link></li>
-            <li><Link to="/chat" className="text-sm hover:text-green-400 transition-colors">Chat</Link></li>
+            <li><Link to="/chat" className="text-sm hover:text-green-400 transition-colors">Chat</Link></li> {/* New Link */}
             <li><Link to="/privacy" className="text-sm hover:text-green-400 transition-colors">Privacy Policy</Link></li>
             <li><Link to="/terms" className="text-sm hover:text-green-400 transition-colors">Terms of Service</Link></li>
           </ul>

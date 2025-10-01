@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings } from 'lucide-react'; // Added Settings icon
+import { User as UserIcon, Mail, Edit, Briefcase } from 'lucide-react'; // Added Briefcase icon
 import EditProfileSection from '@/components/EditProfileSection';
-import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Check if user is a tasker
   const navigate = useNavigate();
-  const { openTaskerRegistrationModal } = useModal(); // Get the modal opener
   const [isEditing, setIsEditing] = useState(false);
 
   if (authLoading || taskerProfileLoading) { // Include taskerProfileLoading
@@ -79,29 +77,14 @@ const ProfilePage: React.FC = () => {
                   View My Posted Tasks
                 </Button>
                 {isTasker && ( // Only show this button if the user is a tasker
-                  <>
-                    <Button
-                      onClick={() => navigate('/my-offers')}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 flex items-center justify-center gap-2"
-                    >
-                      <Briefcase size={20} /> View My Offers
-                    </Button>
-                    <Button
-                      onClick={openTaskerRegistrationModal} // New button to edit tasker profile
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white text-lg py-6 flex items-center justify-center gap-2"
-                    >
-                      <Settings size={20} /> Edit Tasker Profile
-                    </Button>
-                  </>
-                )}
-                {!isTasker && ( // If not a tasker, show option to become one
                   <Button
-                    onClick={() => navigate('/features-earnings')}
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                    onClick={() => navigate('/my-offers')}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 flex items-center justify-center gap-2"
                   >
-                    <Briefcase size={20} /> Become a Tasker
+                    <Briefcase size={20} /> View My Offers
                   </Button>
                 )}
+                {/* Add more buttons for other activities like "Completed Tasks" etc. */}
               </CardContent>
             </Card>
           </>
