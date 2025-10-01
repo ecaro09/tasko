@@ -52,12 +52,12 @@ const TaskDetailPage: React.FC = () => {
   const handleStartChatWithPoster = async () => {
     if (!isAuthenticated || !user) {
       toast.error("Please log in to start a chat.");
-      navigate('/login'); // Redirect to login if not authenticated
+      navigate('/login');
       return;
     }
     if (user.uid === task.posterId) {
       toast.info("You cannot chat with yourself!");
-      navigate('/chat'); // Redirect to chat list
+      navigate('/chat');
       return;
     }
 
@@ -169,10 +169,10 @@ const TaskDetailPage: React.FC = () => {
                     <User size={20} /> Make an Offer
                   </Button>
                 )}
-                {!isTaskPoster && isAuthenticated && ( // Show "Start Chat" if not the poster and authenticated
+                {!isTaskPoster && isAuthenticated && (
                   <Button
                     onClick={handleStartChatWithPoster}
-                    disabled={chatLoading || user?.uid === task.posterId}
+                    disabled={chatLoading}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-2"
                   >
                     <MessageSquare size={20} /> {chatLoading ? 'Starting Chat...' : 'Chat with Poster'}
