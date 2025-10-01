@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { Chrome } from 'lucide-react';
 import { useModal } from './ModalProvider'; // Import useModal
 
 interface LoginModalProps {
@@ -14,23 +13,11 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { signInWithGoogle, loginWithEmailPassword } = useAuth();
+  const { loginWithEmailPassword } = useAuth();
   const { openSignupModal } = useModal();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      await signInWithGoogle();
-      onClose();
-    } catch (error) {
-      // Error handled by useAuth hook, toast already shown
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleEmailPasswordLogin = async () => {
     if (!email || !password) {
@@ -90,23 +77,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
           >
             {isLoading ? 'Logging In...' : 'Login with Email'}
-          </Button>
-
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-          <Button
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-          >
-            {isLoading ? 'Signing In...' : (
-              <>
-                <Chrome size={20} /> Sign In with Google
-              </>
-            )}
           </Button>
         </div>
         <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
