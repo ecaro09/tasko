@@ -13,7 +13,7 @@ import {
   updateDoc,
   arrayUnion,
   DocumentData,
-  getDocs, // <--- Added getDocs here
+  getDocs,
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -53,6 +53,7 @@ interface ChatContextType {
     initialMessageText?: string
   ) => Promise<string>;
   markConversationAsRead: (conversationId: string) => Promise<void>;
+  totalUnreadCount: number; // New: Total unread count for the current user
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -66,11 +67,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0); // New state for total unread count
 
   // Fetch conversations for the current user
   useEffect(() => {
     if (!isAuthenticated || !user) {
       setConversations([]);
+      setTotalUnreadCount(0); // Reset unread count
       setLoadingConversations(false);
       return;
     }
@@ -99,6 +102,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
       });
       setConversations(fetchedConversations);
+
+      // Calculate total unread count
+      const newTotalUnreadCount = fetchedConversations.reduce((sum, convo) => {
+        return sum + (convo.unreadCount?.[user.uid] || 0);
+      }, 0);
+      setTotalUnreadCount(newTotalUnreadCount);
+
       setLoadingConversations(false);
     }, (err) => {
       console.error("Error fetching conversations:", err);
@@ -280,6 +290,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     sendMessage,
     startNewConversation,
     markConversationAsRead,
+    totalUnreadCount, // Expose total unread count
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
