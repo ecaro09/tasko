@@ -65,6 +65,12 @@ const ChatPage: React.FC = () => {
     );
   }
 
+  // Determine the other participant's name for the currently selected chat room
+  const currentChatRoom = chatRooms.find(room => room.id === selectedChatRoomId);
+  const otherParticipantName = currentChatRoom
+    ? currentChatRoom.participantNames[currentChatRoom.participants.findIndex(pId => pId !== user?.uid)] || 'Unknown User'
+    : 'Select a Chat';
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
       <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
@@ -84,7 +90,7 @@ const ChatPage: React.FC = () => {
                   const otherParticipantIndex = room.participants.findIndex(
                     (pId) => pId !== user?.uid,
                   );
-                  const otherParticipantName =
+                  const roomOtherParticipantName =
                     otherParticipantIndex !== -1
                       ? room.participantNames[otherParticipantIndex]
                       : 'Unknown User';
@@ -103,13 +109,13 @@ const ChatPage: React.FC = () => {
                       )}
                     >
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={otherParticipantAvatar || undefined} alt={otherParticipantName} />
+                        <AvatarImage src={otherParticipantAvatar || undefined} alt={roomOtherParticipantName} />
                         <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                          {otherParticipantName.charAt(0).toUpperCase()}
+                          {roomOtherParticipantName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-800 dark:text-gray-100">{otherParticipantName}</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-100">{roomOtherParticipantName}</p>
                         {room.lastMessage && (
                           <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                             {room.lastMessage}
@@ -132,7 +138,7 @@ const ChatPage: React.FC = () => {
         {/* Chat Interface */}
         <div className="flex-1 h-[calc(100vh-150px)]">
           {selectedChatRoomId ? (
-            <ChatInterface chatRoomId={selectedChatRoomId} />
+            <ChatInterface chatRoomId={selectedChatRoomId} otherParticipantName={otherParticipantName} />
           ) : (
             <Card className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
               <CardContent>Select a chat to start messaging.</CardContent>

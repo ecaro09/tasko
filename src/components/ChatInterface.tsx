@@ -9,12 +9,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CardHeader, CardTitle, Card } from '@/components/ui/card'; // Import Card components
 
 interface ChatInterfaceProps {
   chatRoomId: string;
+  otherParticipantName: string; // New prop
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId, otherParticipantName }) => {
   const { messages, sendMessage, loading: chatLoading } = useChat();
   const { user, isAuthenticated } = useAuth();
   const [newMessage, setNewMessage] = useState('');
@@ -42,7 +44,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId }) => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-md">
+    <Card className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-md">
+      <CardHeader className="border-b border-gray-200 dark:border-gray-700 p-4">
+        <CardTitle className="text-xl font-semibold">{otherParticipantName}</CardTitle>
+      </CardHeader>
       <ScrollArea className="flex-1 p-4 space-y-4 overflow-y-auto">
         {filteredMessages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400">No messages yet. Start the conversation!</div>
@@ -111,7 +116,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatRoomId }) => {
           <Send size={20} />
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 
