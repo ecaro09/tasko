@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, DocumentData } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, DocumentData, getDoc } from 'firebase/firestore'; // Added getDoc
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // To check if user is a tasker
+import { useChat } from './use-chat'; // New import for chat functionality
 
 export interface Offer {
   id: string;
@@ -40,6 +41,7 @@ const OffersContext = createContext<OffersContextType | undefined>(undefined);
 export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const { taskerProfile, isTasker, loading: taskerLoading } = useTaskerProfile();
+  const { startNewConversation } = useChat(); // Use startNewConversation from useChat
   const [allOffers, setAllOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,20 +129,36 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setLoading(true);
     try {
       const offerRef = doc(db, 'offers', offerId);
+      const offerSnap = await getDoc(offerRef);
+      const offerData = offerSnap.data() as Offer;
+
+      if (!offerData) {
+        toast.error("Offer not found.");
+        setLoading(false);
+        return;
+      }
+
       await updateDoc(offerRef, {
         status: 'accepted',
         dateUpdated: serverTimestamp(),
       });
 
-      // Optionally, update the task status to 'assigned'
+      // Update the task status to 'assigned' and assign the tasker
       const taskRef = doc(db, 'tasks', taskId);
       await updateDoc(taskRef, {
         status: 'assigned',
-        assignedTaskerId: user.uid, // Assuming the current user is the client accepting
+        assignedTaskerId: offerData.taskerId,
         assignedOfferId: offerId,
       });
 
-      toast.success("Offer accepted!");
+      // Automatically start a chat between the client (current user) and the accepted tasker
+      await startNewConversation(
+        [offerData.taskerId],
+        [offerData.taskerName],
+        `Hi ${offerData.taskerName}, I've accepted your offer for the task "${offerData.message}". Let's discuss the details!`
+      );
+
+      toast.success("Offer accepted and chat started!");
     } catch (err: any) {
       console.error("Error accepting offer:", err);
       toast.error(`Failed to accept offer: ${err.message}`);
