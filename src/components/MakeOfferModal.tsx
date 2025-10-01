@@ -9,6 +9,15 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useOffers } from '@/hooks/use-offers';
 import { toast } from 'sonner';
 import { Task } from '@/hooks/use-tasks'; // Import Task interface
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from "@/components/ui/drawer"; // Import Drawer components
 
 interface MakeOfferModalProps {
   isOpen: boolean;
@@ -24,6 +33,7 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ isOpen, onClose, task }
   const [offerAmount, setOfferAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile(); // Use the hook
 
   useEffect(() => {
     if (isOpen) {
@@ -68,15 +78,22 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ isOpen, onClose, task }
 
   const isFormDisabled = isLoading || taskerProfileLoading || offersLoading;
 
+  const ModalComponent = isMobile ? Drawer : Dialog;
+  const ModalContentComponent = isMobile ? DrawerContent : DialogContent;
+  const ModalHeaderComponent = isMobile ? DrawerHeader : DialogHeader;
+  const ModalTitleComponent = isMobile ? DrawerTitle : DialogTitle;
+  const ModalDescriptionComponent = isMobile ? DrawerDescription : DialogDescription;
+  const ModalFooterComponent = isMobile ? DrawerFooter : DialogFooter;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Make an Offer</DialogTitle>
-          <DialogDescription className="text-[hsl(var(--text-light))]">
+    <ModalComponent open={isOpen} onOpenChange={onClose}>
+      <ModalContentComponent className="sm:max-w-[500px]">
+        <ModalHeaderComponent>
+          <ModalTitleComponent className="text-2xl font-bold text-[hsl(var(--primary-color))]">Make an Offer</ModalTitleComponent>
+          <ModalDescriptionComponent className="text-[hsl(var(--text-light))]">
             Submit your offer for "{task?.title || 'this task'}".
-          </DialogDescription>
-        </DialogHeader>
+          </ModalDescriptionComponent>
+        </ModalHeaderComponent>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="offerAmount" className="text-right">
@@ -106,14 +123,14 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ isOpen, onClose, task }
             />
           </div>
         </div>
-        <DialogFooter>
+        <ModalFooterComponent>
           <Button variant="outline" onClick={onClose} disabled={isFormDisabled}>Cancel</Button>
           <Button onClick={handleMakeOffer} disabled={isFormDisabled} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
             {isLoading ? 'Submitting...' : 'Submit Offer'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ModalFooterComponent>
+      </ModalContentComponent>
+    </ModalComponent>
   );
 };
 

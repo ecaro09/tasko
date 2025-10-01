@@ -104,7 +104,7 @@ const Index = () => {
         onSearchTermChange={setSearchTerm}
         onSearchSubmit={handleSearchSubmit}
       />
-      <main className="container mx-auto p-4 pt-[60px]">
+      <main className="container mx-auto p-4"> {/* Removed pt-[60px] */}
         <CategoriesSection
           activeCategory={selectedCategory}
           onCategorySelect={handleCategorySelect}

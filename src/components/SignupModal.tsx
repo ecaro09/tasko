@@ -6,6 +6,15 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { useModal } from './ModalProvider';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from "@/components/ui/drawer"; // Import Drawer components
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -18,6 +27,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile(); // Use the hook
 
   const handleEmailPasswordSignup = async () => {
     if (!email || !password) {
@@ -40,15 +50,22 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
     openLoginModal();
   };
 
+  const ModalComponent = isMobile ? Drawer : Dialog;
+  const ModalContentComponent = isMobile ? DrawerContent : DialogContent;
+  const ModalHeaderComponent = isMobile ? DrawerHeader : DialogHeader;
+  const ModalTitleComponent = isMobile ? DrawerTitle : DialogTitle;
+  const ModalDescriptionComponent = isMobile ? DrawerDescription : DialogDescription;
+  const ModalFooterComponent = isMobile ? DrawerFooter : DialogFooter;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Sign Up for Tasko</DialogTitle>
-          <DialogDescription className="text-[hsl(var(--text-light))]">
+    <ModalComponent open={isOpen} onOpenChange={onClose}>
+      <ModalContentComponent className="sm:max-w-[425px]">
+        <ModalHeaderComponent>
+          <ModalTitleComponent className="text-2xl font-bold text-[hsl(var(--primary-color))]">Sign Up for Tasko</ModalTitleComponent>
+          <ModalDescriptionComponent className="text-[hsl(var(--text-light))]">
             Join our community and start getting tasks done or earning money.
-          </DialogDescription>
-        </DialogHeader>
+          </ModalDescriptionComponent>
+        </ModalHeaderComponent>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -79,11 +96,11 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
             {isLoading ? 'Signing Up...' : 'Sign Up with Email'}
           </Button>
         </div>
-        <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
+        <ModalFooterComponent className="text-sm text-center text-[hsl(var(--text-light))]">
           Already have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]" onClick={handleSwitchToLogin}>Login</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ModalFooterComponent>
+      </ModalContentComponent>
+    </ModalComponent>
   );
 };
 
