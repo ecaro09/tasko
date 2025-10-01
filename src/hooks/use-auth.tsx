@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser, updateProfile } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser, updateProfile, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { toast } from 'sonner'; // Using sonner for toasts
 
 interface AuthState {
@@ -11,8 +11,10 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
+  signInWithEmailPassword: (email: string, password: string) => Promise<void>; // New
+  signUpWithEmailPassword: (displayName: string, email: string, password: string) => Promise<void>; // New
   logout: () => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>; // Added updateProfile
+  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +45,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error: any) {
       console.error("Error signing in with Google:", error);
       toast.error(`Failed to sign in: ${error.message}`);
+      throw error; // Re-throw to allow calling component to handle loading state
+    }
+  };
+
+  const signInWithEmailPassword = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success("Signed in successfully!");
+    } catch (error: any) {
+      console.error("Error signing in with email/password:", error);
+      toast.error(`Failed to sign in: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const signUpWithEmailPassword = async (displayName: string, email: string, password: string) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName });
+      toast.success("Account created and signed in successfully!");
+    } catch (error: any) {
+      console.error("Error signing up with email/password:", error);
+      toast.error(`Failed to sign up: ${error.message}`);
+      throw error;
     }
   };
 
@@ -53,6 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error: any) {
       console.error("Error signing out:", error);
       toast.error(`Failed to log out: ${error.message}`);
+      throw error; // Re-throw to allow calling component to handle loading state
     }
   };
 
@@ -76,7 +103,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signInWithGoogle, logout, updateUserProfile };
+  const value = { ...authState, signInWithGoogle, signInWithEmailPassword, signUpWithEmailPassword, logout, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
