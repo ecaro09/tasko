@@ -22,6 +22,7 @@ import { PWAProvider } from "./hooks/use-pwa";
 import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
 import { OffersProvider } from "./hooks/use-offers";
 import React from "react";
+import { Toaster } from "sonner"; // Import Toaster here
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => {
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
+      <Toaster /> {/* Toaster is now here, ensuring it's always rendered */}
     </QueryClientProvider>
   );
 };
