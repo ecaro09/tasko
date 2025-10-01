@@ -16,6 +16,8 @@ const Index = () => {
     notes,
     addTask,
     addNote,
+    deleteTask, // Destructure deleteTask
+    deleteNote, // Destructure deleteNote
     loadingTasks,
     loadingNotes,
     error,
@@ -50,13 +52,15 @@ const Index = () => {
         ) : (
           <>
             <TaskList
-              tasks={tasks.map(item => item.content)} // Pass only content for now
+              tasks={tasks} // Pass full task objects
               onAddTask={handleAddTask}
+              onDeleteTask={deleteTask} // Pass deleteTask function
               isAuthenticated={isAuthenticated}
             />
             <NotesSection
-              notes={notes.map(item => item.content)} // Pass only content for now
+              notes={notes} // Pass full note objects
               onAddNote={handleAddNote}
+              onDeleteNote={deleteNote} // Pass deleteNote function
               isAuthenticated={isAuthenticated}
             />
           </>
