@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTasks } from '@/hooks/use-tasks';
 import { toast } from 'sonner';
-import { categories } from '@/lib/categories'; // Import categories from new utility
 
 interface PostTaskModalProps {
   isOpen: boolean;
@@ -120,9 +119,14 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.filter(cat => cat.value !== 'all').map(cat => ( // Exclude 'All Services' from posting
-                  <SelectItem key={cat.value} value={cat.value}>{cat.displayName}</SelectItem>
-                ))}
+                <SelectItem value="cleaning">Home Cleaning</SelectItem>
+                <SelectItem value="repairs">Handyman Services</SelectItem>
+                <SelectItem value="moving">Moving & Hauling</SelectItem>
+                <SelectItem value="delivery">Delivery & Errands</SelectItem>
+                <SelectItem value="painting">Painting Services</SelectItem>
+                <SelectItem value="assembly">Assembly Services</SelectItem>
+                <SelectItem value="marketing">Marketing Services</SelectItem> {/* Added Marketing */}
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -31,6 +31,15 @@ const BrowseTaskersPage: React.FC = () => {
           Find the perfect professional for your task. Filter by skills, ratings, price, and location.
         </p>
 
+        <div className="flex justify-center gap-4 mb-12">
+          <Button variant="outline" className="flex items-center gap-2 border-gray-400 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <Filter size={20} /> Filters (Coming Soon)
+          </Button>
+          <Button variant="outline" className="flex items-center gap-2 border-gray-400 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <Search size={20} /> Search Taskers (Coming Soon)
+          </Button>
+        </div>
+
         {allTaskerProfiles.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md text-center">
             <p className="text-gray-600 dark:text-gray-400 text-xl mb-4">
@@ -46,7 +55,7 @@ const BrowseTaskersPage: React.FC = () => {
               <Card key={tasker.userId} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                 <CardContent className="p-4 flex flex-col items-center text-center">
                   <Avatar className="w-20 h-20 mb-3 border-2 border-green-500">
-                    <AvatarImage src={tasker.photoURL || undefined} alt={`Avatar of ${tasker.displayName}`} />
+                    <AvatarImage src={tasker.photoURL || undefined} alt={tasker.displayName} />
                     <AvatarFallback className="bg-green-200 text-green-800 text-2xl font-semibold">
                       {tasker.displayName ? tasker.displayName.charAt(0).toUpperCase() : <UserIcon size={24} />}
                     </AvatarFallback>

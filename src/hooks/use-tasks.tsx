@@ -14,7 +14,6 @@ import {
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
-import { getCategoryDisplayName } from '@/lib/categories'; // Import from new utility
 
 export interface Task {
   id: string;
@@ -29,15 +28,13 @@ export interface Task {
   datePosted: string;
   status: 'open' | 'assigned' | 'completed';
   imageUrl?: string;
-  assignedTaskerId?: string; // New field for assigned tasker's ID
-  assignedOfferId?: string; // New field for the accepted offer's ID
 }
 
 interface UseTasksContextType {
   tasks: Task[]; // This will now be all tasks
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
 }
 
@@ -132,9 +129,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://via.placeholder.com/500x300?text=Task+Image", // Updated default image URL
-          assignedTaskerId: data.assignedTaskerId || undefined, // Map new field
-          assignedOfferId: data.assignedOfferId || undefined, // Map new field
+          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
         };
       });
       setAllTasks(fetchedTasks);
@@ -154,7 +149,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -168,7 +163,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
         datePosted: serverTimestamp(),
         status: 'open',
-        imageUrl: newTaskData.imageUrl || "https://via.placeholder.com/500x300?text=Task+Image", // Updated default image URL
+        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
       });
       toast.success("Task posted successfully!");
     } catch (err: any) {

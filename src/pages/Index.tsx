@@ -19,8 +19,22 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
-import { useFilteredTasks } from '@/hooks/use-filtered-tasks'; // Import the new hook
-import { getCategoryDisplayName } from '@/lib/categories'; // Import from new utility
+
+const getCategoryName = (category: string) => {
+  const names: { [key: string]: string } = {
+    all: 'All Services',
+    cleaning: 'Cleaning',
+    moving: 'Moving',
+    assembly: 'Assembly',
+    repairs: 'Repairs',
+    delivery: 'Delivery',
+    mounting: 'Mounting',
+    painting: 'Painting',
+    marketing: 'Marketing', // Added marketing category
+    other: 'Other'
+  };
+  return names[category] || 'Task';
+};
 
 const Index = () => {
   // All hooks must be called unconditionally at the top level
@@ -28,14 +42,11 @@ const Index = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { loading: tasksLoading, error: tasksError } = useTasks(); // Keep useTasks for overall loading/error
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
-
-  // Use the new filtered tasks hook
-  const { filteredTasks } = useFilteredTasks(searchTerm, selectedCategory);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -61,6 +72,28 @@ const Index = () => {
     navigate(`/tasks/${taskId}`);
   };
 
+  // Removed handleProfileClick as it's now handled internally by BottomNavigation
+
+  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
+  const filteredTasks = React.useMemo(() => {
+    let currentFilteredTasks = tasks;
+
+    if (selectedCategory && selectedCategory !== 'all') {
+      currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
+    }
+
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      currentFilteredTasks = currentFilteredTasks.filter(task =>
+        task.title.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+        task.location.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+    }
+    return currentFilteredTasks;
+  }, [tasks, searchTerm, selectedCategory]);
+
+
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
       {/* SplashScreen is now always rendered, but its visibility is controlled by CSS */}
@@ -81,7 +114,6 @@ const Index = () => {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         onSearchSubmit={handleSearchSubmit}
-        onPopularCategoryClick={handleCategorySelect} // Pass the handler here
       />
       <main className="container mx-auto p-4 pt-[60px]">
         <CategoriesSection
@@ -100,15 +132,15 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
             {tasksLoading && <p className="col-span-full text-center text-gray-500 italic py-8">Loading tasks...</p>}
-            {!tasksLoading && filteredTasks.length === 0 && !tasksError ? (
+            {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
             ) : (
-              filteredTasks.map((task) => (
+              (filteredTasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={`Image for ${task.title}`} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      {getCategoryDisplayName(task.category)}
+                      {getCategoryName(task.category)}
                     </div>
                   </div>
                   <CardContent className="p-4">
@@ -119,7 +151,7 @@ const Index = () => {
                     <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={`Avatar of ${task.posterName}`} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
+                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
                         <span className="font-medium">{task.posterName}</span>
                       </div>
                       <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">

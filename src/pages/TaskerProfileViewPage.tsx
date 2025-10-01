@@ -4,7 +4,7 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, DollarSign, Briefcase, Calendar, Hash } from 'lucide-react'; // Added Hash icon
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const TaskerProfileViewPage: React.FC = () => {
@@ -58,14 +58,14 @@ const TaskerProfileViewPage: React.FC = () => {
         <Card className="shadow-lg p-6">
           <CardContent className="flex flex-col items-center text-center p-0">
             <Avatar className="w-32 h-32 mb-4 border-4 border-green-500">
-              <AvatarImage src={tasker.photoURL || undefined} alt={`Avatar of ${tasker.displayName}`} />
+              <AvatarImage src={tasker.photoURL || undefined} alt={tasker.displayName} />
               <AvatarFallback className="bg-green-200 text-green-800 text-5xl font-semibold">
                 {tasker.displayName ? tasker.displayName.charAt(0).toUpperCase() : <UserIcon size={48} />}
               </AvatarFallback>
             </Avatar>
             <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{tasker.displayName}</h1>
             <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
-              <Hash size={18} /> User ID: {tasker.userId}
+              <Mail size={18} /> {tasker.userId} {/* Using userId as a placeholder for email/contact */}
             </p>
 
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
@@ -95,6 +95,10 @@ const TaskerProfileViewPage: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
+              Contact Tasker (Coming Soon)
+            </Button>
           </CardContent>
         </Card>
       </div>

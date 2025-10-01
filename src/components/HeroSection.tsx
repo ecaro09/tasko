@@ -7,10 +7,9 @@ interface HeroSectionProps {
   searchTerm: string;
   onSearchTermChange: (term: string) => void;
   onSearchSubmit: () => void;
-  onPopularCategoryClick: (category: string) => void;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChange, onSearchSubmit, onPopularCategoryClick }) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChange, onSearchSubmit }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onSearchSubmit();
@@ -20,7 +19,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChang
   return (
     <section className="relative bg-gradient-to-r from-[hsl(var(--primary-color))] to-[#008a25] text-white py-20 md:py-32 overflow-hidden mt-[60px] rounded-b-[20px] mb-6">
       <div className="absolute inset-0 z-0 opacity-20">
-        <img src="/hero-bg.jpg" alt="People working on various tasks" className="w-full h-full object-cover" loading="lazy" />
+        <img src="/hero-bg.jpg" alt="Background" className="w-full h-full object-cover" loading="lazy" />
       </div>
       <div className="container mx-auto px-4 relative z-10 text-center">
         <h2 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 drop-shadow-lg">
@@ -44,11 +43,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChang
           </Button>
         </div>
         <p className="mt-6 text-sm md:text-base drop-shadow-md">
-          Popular:{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('cleaning')} className="underline hover:text-green-200">Cleaning</a>,{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('repairs')} className="underline hover:text-green-200">Handyman</a>,{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('moving')} className="underline hover:text-green-200">Moving</a>,{" "}
-          <a href="#" onClick={() => onPopularCategoryClick('delivery')} className="underline hover:text-green-200">Delivery</a>
+          Popular: <a href="#" className="underline hover:text-green-200">Cleaning</a>, <a href="#" className="underline hover:text-green-200">Handyman</a>, <a href="#" className="underline hover:text-green-200">Moving</a>, <a href="#" className="underline hover:text-green-200">Delivery</a>
         </p>
       </div>
     </section>
