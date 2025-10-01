@@ -13,7 +13,7 @@ import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import BottomNavigation from '@/components/BottomNavigation';
-import { usePWA } from '@/hooks/use-pwa'; // Removed PWAPROVIDER_SPLASH_SCREEN_DELAY as it's not directly used here
+import { usePWA, PWAPROVIDER_SPLASH_SCREEN_DELAY } from '@/hooks/use-pwa';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
@@ -46,7 +46,14 @@ const Index = () => {
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
-  // Removed isSplashVisible state and its useEffect, now directly using showSplashScreen from usePWA
+  const [isSplashVisible, setIsSplashVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsSplashVisible(false);
+    }, PWAPROVIDER_SPLASH_SCREEN_DELAY);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSignOut = async () => {
     await logout();
@@ -64,6 +71,8 @@ const Index = () => {
   const handleViewTaskDetails = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
   };
+
+  // Removed handleProfileClick as it's now handled internally by BottomNavigation
 
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
   const filteredTasks = React.useMemo(() => {
@@ -87,8 +96,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
-      {/* SplashScreen is now conditionally rendered based on usePWA's showSplashScreen state */}
-      {showSplashScreen && <SplashScreen />}
+      {/* SplashScreen is now always rendered, but its visibility is controlled by CSS */}
+      <div className={cn(
+        "fixed inset-0 z-[9999] transition-opacity duration-500",
+        isSplashVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}>
+        <SplashScreen />
+      </div>
 
       <OfflineIndicator isVisible={!isOnline} />
 
