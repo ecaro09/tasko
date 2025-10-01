@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, DollarSign, Star, Shield, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const FeaturesAndEarningsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { openTaskerRegistrationModal } = useModal(); // Get the new modal opener
 
   const features = [
     {
@@ -61,7 +63,7 @@ const FeaturesAndEarningsPage: React.FC = () => {
 
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Ready to Start Earning?</h2>
-          <Button onClick={() => navigate('/signup')} className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
+          <Button onClick={openTaskerRegistrationModal} className="bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
             Sign Up as a Tasker
           </Button>
         </div>

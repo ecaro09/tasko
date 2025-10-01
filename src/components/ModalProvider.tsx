@@ -11,11 +11,13 @@ import { toast } from 'sonner';
 import LoginModal from './LoginModal';
 import SignupModal from './SignupModal';
 import PostTaskModal from './PostTaskModal';
+import TaskerRegistrationModal from './TaskerRegistrationModal'; // Import new modal
 
 interface ModalContextType {
   openLoginModal: () => void;
   openSignupModal: () => void;
   openPostTaskModal: () => void;
+  openTaskerRegistrationModal: () => void; // New function
   closeAllModals: () => void;
 }
 
@@ -25,6 +27,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isPostTaskModalOpen, setIsPostTaskModalOpen] = useState(false);
+  const [isTaskerRegistrationModalOpen, setIsTaskerRegistrationModalOpen] = useState(false); // New state
 
   const { isAuthenticated } = useAuth();
 
@@ -45,16 +48,29 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     closeAllModals(); // Ensure other modals are closed
     setIsPostTaskModalOpen(true);
   };
+
+  const openTaskerRegistrationModal = () => { // New function
+    if (!isAuthenticated) {
+      toast.error("Please log in to register as a tasker.");
+      openLoginModal();
+      return;
+    }
+    closeAllModals();
+    setIsTaskerRegistrationModalOpen(true);
+  };
+
   const closeAllModals = () => {
     setIsLoginModalOpen(false);
     setIsSignupModalOpen(false);
     setIsPostTaskModalOpen(false);
+    setIsTaskerRegistrationModalOpen(false); // Close new modal
   };
 
   const value = {
     openLoginModal,
     openSignupModal,
     openPostTaskModal,
+    openTaskerRegistrationModal, // Add to context value
     closeAllModals,
   };
 
@@ -64,6 +80,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <LoginModal isOpen={isLoginModalOpen} onClose={closeAllModals} />
       <SignupModal isOpen={isSignupModalOpen} onClose={closeAllModals} />
       <PostTaskModal isOpen={isPostTaskModalOpen} onClose={closeAllModals} />
+      <TaskerRegistrationModal isOpen={isTaskerRegistrationModalOpen} onClose={closeAllModals} /> {/* Render new modal */}
     </ModalContext.Provider>
   );
 };
