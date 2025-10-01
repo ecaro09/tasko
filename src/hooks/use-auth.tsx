@@ -1,13 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '@/lib/firebase';
 import {
-  GoogleAuthProvider, // Keep import for now, but will remove usage
-  signInWithPopup, // Keep import for now, but will remove usage
   signOut,
   User as FirebaseUser,
   updateProfile,
-  createUserWithEmailAndPassword, // New import
-  signInWithEmailAndPassword, // New import
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { toast } from 'sonner'; // Using sonner for toasts
 
@@ -18,8 +16,8 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signupWithEmailPassword: (email: string, password: string) => Promise<void>; // New function
-  loginWithEmailPassword: (email: string, password: string) => Promise<void>; // New function
+  signupWithEmailPassword: (email: string, password: string) => Promise<void>;
+  loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
 }
