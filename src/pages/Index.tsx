@@ -1,9 +1,12 @@
+"use client";
+
 import React from 'react';
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
-import FeaturesSection from "@/components/FeaturesSection"; // Updated to default import
+import FeaturesSection from "@/components/FeaturesSection"; // Corrected import
+import { TestimonialsSection } from "@/components/TestimonialsSection";
 import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster } from "sonner";
@@ -19,7 +22,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { cn } from '@/lib/utils';
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -31,14 +34,13 @@ const getCategoryName = (category: string) => {
     delivery: 'Delivery',
     mounting: 'Mounting',
     painting: 'Painting',
-    marketing: 'Marketing', // Added marketing category
+    marketing: 'Marketing',
     other: 'Other'
   };
   return names[category] || 'Task';
 };
 
 const Index = () => {
-  // All hooks must be called unconditionally at the top level
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
@@ -73,9 +75,6 @@ const Index = () => {
     navigate(`/tasks/${taskId}`);
   };
 
-  // Removed handleProfileClick as it's now handled internally by BottomNavigation
-
-  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
   const filteredTasks = React.useMemo(() => {
     let currentFilteredTasks = tasks;
 
@@ -97,7 +96,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
-      {/* SplashScreen is now always rendered, but its visibility is controlled by CSS */}
       <div className={cn(
         "fixed inset-0 z-[9999] transition-opacity duration-500",
         isSplashVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -122,7 +120,6 @@ const Index = () => {
           onCategorySelect={handleCategorySelect}
         />
 
-        {/* Tasks Section */}
         <section id="tasks" className="py-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))]">📋 Available Tasks Near You</h2>
@@ -167,7 +164,8 @@ const Index = () => {
         </section>
 
         <HowItWorksSection />
-        <FeaturesSection /> {/* Added FeaturesSection here */}
+        <FeaturesSection />
+        <TestimonialsSection />
       </main>
       <AppFooter />
       <MadeWithDyad />
