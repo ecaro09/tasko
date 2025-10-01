@@ -1,10 +1,9 @@
 import React from 'react';
-import { Home, LayoutGrid, ListTodo, User, MessageSquare, Briefcase } from 'lucide-react'; // Added Briefcase icon
+import { Home, LayoutGrid, ListTodo, User, MessageSquare } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useModal } from './ModalProvider';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
 
 interface BottomNavigationProps {
   // onProfileClick: () => void; // No longer needed as we'll handle navigation directly
@@ -12,7 +11,6 @@ interface BottomNavigationProps {
 
 const BottomNavigation: React.FC<BottomNavigationProps> = () => {
   const { isAuthenticated } = useAuth();
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Check if user is a tasker
   const { openLoginModal } = useModal();
   const navigate = useNavigate();
 
@@ -23,11 +21,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
       openLoginModal(); // Open login modal if not authenticated
     }
   };
-
-  // Don't render anything if tasker profile is still loading to avoid flickering
-  if (taskerProfileLoading) {
-    return null;
-  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50 md:hidden pb-[var(--safe-area-bottom)]">
@@ -59,19 +52,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <ListTodo size={20} className="mb-1" />
           <span>My Tasks</span>
         </NavLink>
-        {/* New NavLink for My Offers, visible only if the user is a tasker */}
-        {isTasker && (
-          <NavLink
-            to="/my-offers"
-            className={({ isActive }) => cn(
-              "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
-              isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
-            )}
-          >
-            <Briefcase size={20} className="mb-1" />
-            <span>My Offers</span>
-          </NavLink>
-        )}
         {/* New NavLink for Chat */}
         <NavLink
           to="/chat"
