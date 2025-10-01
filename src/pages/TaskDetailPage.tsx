@@ -92,6 +92,9 @@ const TaskDetailPage: React.FC = () => {
                 <MapPin size={18} /> {task.location}
               </CardDescription>
             </div>
+            {task.isDemo && (
+              <Badge className="absolute top-4 left-4 bg-blue-500 text-white text-base px-3 py-1">Sample Task</Badge>
+            )}
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

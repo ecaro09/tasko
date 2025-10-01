@@ -1,45 +1,76 @@
 import React from 'react';
 import Header from "@/components/Header";
-import TaskList from "@/components/TaskList";
-import NotesSection from "@/components/NotesSection";
-import ImageGallery from "@/components/ImageGallery";
+import ImageGallery from "@/components/ImageGallery"; // Keep ImageGallery
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
-import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from '@/hooks/use-auth';
+import { useTasks } from '@/hooks/use-tasks';
+import TaskCard from '@/components/TaskCard';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
 
 const Index = () => {
-  const { isAuthenticated, signInWithGoogle, signOutUser } = useAuth(); // Use useAuth hook
+  const { isAuthenticated, signInWithGoogle, signOutUser, loading: authLoading } = useAuth();
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
 
-  // Placeholder state for NotesSection, Firebase integration will come later
-  const [notes, setNotes] = React.useState<string[]>([]);
+  const loading = authLoading || tasksLoading;
 
-  const handleAddNote = (note: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Note clicked (Firebase firestore not yet active):", note);
-    setNotes((prev) => [...prev, note]);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center">
+        <p>Loading application...</p>
+      </div>
+    );
+  }
+
+  if (tasksError) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 pt-[80px]">
+        <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
+        <main className="container mx-auto p-4 text-center text-red-500">
+          <p>Error loading tasks: {tasksError}</p>
+        </main>
+        <MadeWithDyad />
+        <Toaster />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Header
         isAuthenticated={isAuthenticated}
-        onSignIn={signInWithGoogle} // Use signInWithGoogle from useAuth
-        onSignOut={signOutUser}   // Use signOutUser from useAuth
+        onSignIn={signInWithGoogle}
+        onSignOut={signOutUser}
       />
-      <main className="container mx-auto p-4">
-        <TaskList /> {/* TaskList now manages its own data */}
-        <NotesSection
-          notes={notes}
-          onAddNote={handleAddNote}
-          isAuthenticated={isAuthenticated}
-        />
-        <ImageGallery />
+      <main className="container mx-auto p-4 pt-8">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">Available Tasks</h2>
+        
+        {/* Optional: Add a button to post a new task */}
+        {isAuthenticated && (
+          <div className="flex justify-center mb-8">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+              <PlusCircle size={20} /> Post a New Task
+            </Button>
+          </div>
+        )}
+
+        {tasks.length === 0 ? (
+          <p className="text-center text-gray-600 dark:text-gray-300">No tasks available. Be the first to post one!</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} />
+            ))}
+          </div>
+        )}
+        <ImageGallery /> {/* ImageGallery remains */}
       </main>
-      <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+      <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 mt-8">
         <p>&copy; 2025 DYAD Full Duplicate</p>
       </footer>
       <MadeWithDyad />
-      <Toaster /> {/* Add Toaster for sonner notifications */}
+      <Toaster />
     </div>
   );
 };
