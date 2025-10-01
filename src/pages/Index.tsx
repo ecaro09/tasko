@@ -96,6 +96,7 @@ const Index = () => {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         onSearchSubmit={handleSearchSubmit}
+        onPopularCategoryClick={handleCategorySelect} // Pass the handler here
       />
       <main className="container mx-auto p-4 pt-[60px]">
         <CategoriesSection
