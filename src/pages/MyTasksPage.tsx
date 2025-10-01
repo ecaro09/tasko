@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
+import { useOffers, Offer } from '@/hooks/use-offers'; // New import for offers
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2 } from 'lucide-react'; // Import Trash2 icon
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle } from 'lucide-react'; // Added icons
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -15,17 +16,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // Import AlertDialog components
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
+import { Badge } from '@/components/ui/badge'; // New import
+import { toast } from 'sonner'; // New import
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
+  const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
-  if (authLoading || tasksLoading) {
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks...</div>;
+  if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
   }
 
   if (!isAuthenticated || !user) {
@@ -60,6 +65,37 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
+  const handleAcceptOffer = async (offerId: string, taskId: string) => {
+    try {
+      await acceptOffer(offerId, taskId);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const handleRejectOffer = async (offerId: string) => {
+    try {
+      await rejectOffer(offerId);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const getOfferStatusBadge = (status: Offer['status']) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200">Pending</Badge>;
+      case 'accepted':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Rejected</Badge>;
+      case 'withdrawn':
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Withdrawn</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
       <div className="container mx-auto px-4">
@@ -76,43 +112,100 @@ const MyTasksPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userTasks.map((task) => (
-              <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
-                <div className="h-40 overflow-hidden relative">
-                  <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
-                  <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                    task.status === 'open' ? 'bg-blue-600 text-white' :
-                    task.status === 'assigned' ? 'bg-yellow-600 text-white' :
-                    'bg-green-600 text-white'
-                  }`}>
-                    {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+            {userTasks.map((task) => {
+              const offersForTask = offers.filter(offer => offer.taskId === task.id);
+              return (
+                <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="h-40 overflow-hidden relative">
+                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
+                    <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                      task.status === 'open' ? 'bg-blue-600 text-white' :
+                      task.status === 'assigned' ? 'bg-yellow-600 text-white' :
+                      'bg-green-600 text-white'
+                    }`}>
+                      {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                    </div>
                   </div>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="text-xl font-semibold mb-2">{task.title}</h3>
-                  <p className="text-gray-600 flex items-center mb-2">
-                    <MapPin size={16} className="mr-2" /> {task.location}
-                  </p>
-                  <p className="text-gray-600 flex items-center mb-2">
-                    <Tag size={16} className="mr-2" /> {task.category}
-                  </p>
-                  <p className="text-2xl font-bold text-green-600 mb-4">₱{task.budget.toLocaleString()}</p>
-                  <div className="flex justify-between items-center">
-                    <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
-                      View Details
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => handleDeleteClick(task.id)}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      <Trash2 size={20} />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-4">
+                    <h3 className="text-xl font-semibold mb-2">{task.title}</h3>
+                    <p className="text-gray-600 flex items-center mb-2">
+                      <MapPin size={16} className="mr-2" /> {task.location}
+                    </p>
+                    <p className="text-gray-600 flex items-center mb-2">
+                      <Tag size={16} className="mr-2" /> {task.category}
+                    </p>
+                    <p className="text-2xl font-bold text-green-600 mb-4">₱{task.budget.toLocaleString()}</p>
+                    <div className="flex justify-between items-center">
+                      <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
+                        View Details
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => handleDeleteClick(task.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        <Trash2 size={20} />
+                      </Button>
+                    </div>
+
+                    {/* Offers for this task */}
+                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">Offers ({offersForTask.length})</h4>
+                      {offersForTask.length === 0 ? (
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">No offers yet.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {offersForTask.map(offer => (
+                            <Card key={offer.id} className="p-3 shadow-sm">
+                              <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="w-10 h-10 border-2 border-blue-500">
+                                    <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                                    <AvatarFallback className="bg-blue-200 text-blue-800 text-md font-semibold">
+                                      {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={16} />}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-semibold text-md text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                      <MessageSquare size={12} /> {offer.message}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end sm:items-center gap-1">
+                                  <p className="text-xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
+                                  {getOfferStatusBadge(offer.status)}
+                                  {offer.status === 'pending' && (
+                                    <div className="flex gap-1 mt-1">
+                                      <Button
+                                        size="sm"
+                                        className="bg-green-600 hover:bg-green-700 text-white h-7 px-3 text-xs"
+                                        onClick={() => handleAcceptOffer(offer.id, task.id)}
+                                      >
+                                        <CheckCircle size={14} className="mr-1" /> Accept
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="h-7 px-3 text-xs"
+                                        onClick={() => handleRejectOffer(offer.id)}
+                                      >
+                                        <XCircle size={14} className="mr-1" /> Reject
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
