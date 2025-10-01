@@ -8,7 +8,6 @@ import { useChat, Message } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Card } from "@/components/ui/card"; // Added Card import
 
 interface ChatRoomProps {
   chatRoomId: string;
