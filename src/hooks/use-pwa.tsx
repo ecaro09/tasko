@@ -19,6 +19,13 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [showInstallPromptState, setShowInstallPromptState] = React.useState(false);
   const [showSplashScreen, setShowSplashScreen] = React.useState(true);
 
+  // Function to check if the app is already installed
+  const isAppInstalled = React.useCallback(() => {
+    // Check if running in standalone mode (iOS) or if display-mode is standalone (Android/Desktop)
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           (window.navigator as any).standalone === true;
+  }, []);
+
   React.useEffect(() => {
     // Hide splash screen after a delay
     const splashTimer = setTimeout(() => {
@@ -42,11 +49,9 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show install prompt after a delay, only if not already installed
+      // Show install prompt only if not already installed
       if (!isAppInstalled()) {
-        setTimeout(() => {
-          setShowInstallPromptState(true);
-        }, 3000); // Delay showing the prompt
+        setShowInstallPromptState(true);
       }
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -80,12 +85,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
-
-  const isAppInstalled = () => {
-    return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as any).standalone === true;
-  };
+  }, [isAppInstalled]); // Add isAppInstalled to dependencies
 
   const installApp = async () => {
     if (deferredPrompt) {
