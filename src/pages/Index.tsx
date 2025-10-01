@@ -6,24 +6,27 @@ import ImageGallery from "@/components/ImageGallery";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Toaster } from "@/components/ui/sonner"; // Using sonner for toasts
 import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { useFirestoreData } from '@/hooks/use-firestore-data'; // Import useFirestoreData
+import { Loader2 } from 'lucide-react'; // Import Loader2 for spinner
 
 const Index = () => {
   const { isAuthenticated, signInWithGoogle, signOutUser } = useAuth();
-
-  // Placeholder state for UI, Firebase integration will come later
-  const [tasks, setTasks] = React.useState<string[]>([]);
-  const [notes, setNotes] = React.useState<string[]>([]);
+  const {
+    tasks,
+    notes,
+    addTask,
+    addNote,
+    loadingTasks,
+    loadingNotes,
+    error,
+  } = useFirestoreData();
 
   const handleAddTask = (task: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Task clicked (Firebase firestore not yet active):", task);
-    setTasks((prev) => [...prev, task]);
+    addTask(task);
   };
 
   const handleAddNote = (note: string) => {
-    // This will be replaced with Firebase firestore logic
-    console.log("Add Note clicked (Firebase firestore not yet active):", note);
-    setNotes((prev) => [...prev, note]);
+    addNote(note);
   };
 
   return (
@@ -34,16 +37,30 @@ const Index = () => {
         onSignOut={signOutUser}
       />
       <main className="container mx-auto p-4">
-        <TaskList
-          tasks={tasks}
-          onAddTask={handleAddTask}
-          isAuthenticated={isAuthenticated}
-        />
-        <NotesSection
-          notes={notes}
-          onAddNote={handleAddNote}
-          isAuthenticated={isAuthenticated}
-        />
+        {loadingTasks || loadingNotes ? (
+          <div className="flex justify-center items-center h-48">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <p className="ml-2 text-lg text-gray-600 dark:text-gray-300">Loading your data...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-500 p-4">
+            <p>Error: {error}</p>
+            <p>Please ensure your Firebase configuration is correct and you are signed in.</p>
+          </div>
+        ) : (
+          <>
+            <TaskList
+              tasks={tasks.map(item => item.content)} // Pass only content for now
+              onAddTask={handleAddTask}
+              isAuthenticated={isAuthenticated}
+            />
+            <NotesSection
+              notes={notes.map(item => item.content)} // Pass only content for now
+              onAddNote={handleAddNote}
+              isAuthenticated={isAuthenticated}
+            />
+          </>
+        )}
         <ImageGallery />
       </main>
       <footer className="text-center p-4 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
