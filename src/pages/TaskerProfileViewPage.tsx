@@ -4,7 +4,7 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, MessageSquare } from 'lucide-react'; // Added MessageSquare icon
 import { Badge } from '@/components/ui/badge';
 
 const TaskerProfileViewPage: React.FC = () => {
@@ -65,7 +65,7 @@ const TaskerProfileViewPage: React.FC = () => {
             </Avatar>
             <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{tasker.displayName}</h1>
             <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
-              <Mail size={18} /> {tasker.userId} {/* Using userId as a placeholder for email/contact */}
+              <MessageSquare size={18} /> Contact via Tasko Messaging (Coming Soon)
             </p>
 
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
@@ -96,8 +96,11 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             </div>
 
-            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
-              Contact Tasker (Coming Soon)
+            <Button
+              onClick={() => navigate('/chat')} // Link to the chat page
+              className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all"
+            >
+              <MessageSquare size={20} className="mr-2" /> Message Tasker
             </Button>
           </CardContent>
         </Card>
