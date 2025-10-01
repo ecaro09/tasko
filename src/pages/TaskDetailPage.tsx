@@ -5,12 +5,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
 import { useModal } from '@/components/ModalProvider';
-import { useChat } from '@/hooks/use-chat'; // New import for chat
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 const TaskDetailPage: React.FC = () => {
@@ -21,12 +20,11 @@ const TaskDetailPage: React.FC = () => {
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { startNewConversation, loadingConversations: chatLoading } = useChat(); // Corrected: use loadingConversations
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
 
-  const isLoading = tasksLoading || authLoading || taskerProfileLoading || offersLoading || chatLoading;
+  const isLoading = tasksLoading || authLoading || taskerProfileLoading || offersLoading;
 
   if (isLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading task details...</div>;
@@ -46,31 +44,6 @@ const TaskDetailPage: React.FC = () => {
   const handleMakeOfferClick = () => {
     if (task) {
       openMakeOfferModal(task);
-    }
-  };
-
-  const handleStartChatWithPoster = async () => {
-    if (!isAuthenticated || !user) {
-      toast.error("Please log in to start a chat.");
-      navigate('/login');
-      return;
-    }
-    if (user.uid === task.posterId) {
-      toast.info("You cannot chat with yourself!");
-      navigate('/chat');
-      return;
-    }
-
-    try {
-      const conversationId = await startNewConversation(
-        [task.posterId],
-        [task.posterName],
-        { [task.posterId]: task.posterAvatar || undefined }, // Pass poster's photoURL
-        `Hi ${task.posterName}, I'm interested in your task: "${task.title}"`
-      );
-      navigate(`/chat/${conversationId}`);
-    } catch (err) {
-      // Error handled by useChat hook
     }
   };
 
@@ -170,17 +143,8 @@ const TaskDetailPage: React.FC = () => {
                     <User size={20} /> Make an Offer
                   </Button>
                 )}
-                {!isTaskPoster && isAuthenticated && (
-                  <Button
-                    onClick={handleStartChatWithPoster}
-                    disabled={chatLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-2"
-                  >
-                    <MessageSquare size={20} /> {chatLoading ? 'Starting Chat...' : 'Chat with Poster'}
-                  </Button>
-                )}
                 {!isAuthenticated && (
-                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer or chat.</p>
+                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer.</p>
                 )}
                 {isAuthenticated && !isTasker && !isTaskPoster && (
                   <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>

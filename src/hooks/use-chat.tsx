@@ -13,7 +13,7 @@ import {
   updateDoc,
   arrayUnion,
   DocumentData,
-  getDocs,
+  getDocs, // <--- Added getDocs here
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -32,7 +32,6 @@ export interface Conversation {
   id: string;
   participants: string[]; // Array of user UIDs
   participantNames: string[]; // Array of user display names
-  participantAvatars: { [userId: string]: string | undefined }; // New: Map of userId to avatar URL
   lastMessage?: string;
   lastMessageTimestamp?: string;
   unreadCount?: { [userId: string]: number };
@@ -51,7 +50,6 @@ interface ChatContextType {
   startNewConversation: (
     participantIds: string[],
     participantNames: string[],
-    participantAvatars: { [userId: string]: string | undefined }, // New: Pass avatars
     initialMessageText?: string
   ) => Promise<string>;
   markConversationAsRead: (conversationId: string) => Promise<void>;
@@ -93,7 +91,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: doc.id,
           participants: data.participants,
           participantNames: data.participantNames,
-          participantAvatars: data.participantAvatars || {}, // Read participantAvatars
           lastMessage: data.lastMessage,
           lastMessageTimestamp: data.lastMessageTimestamp?.toDate().toISOString(),
           unreadCount: data.unreadCount || {},
@@ -167,7 +164,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await addDoc(messageRef, {
         senderId: user.uid,
         senderName: user.displayName || user.email || "Anonymous",
-        senderAvatar: user.photoURL || undefined, // Use current user's photoURL
+        senderAvatar: user.photoURL || undefined,
         text: text.trim(),
         timestamp: serverTimestamp(),
       });
@@ -199,7 +196,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const startNewConversation = async (
     participantIds: string[],
     participantNames: string[],
-    participantAvatars: { [userId: string]: string | undefined }, // New parameter
     initialMessageText?: string
   ): Promise<string> => {
     if (!isAuthenticated || !user) {
@@ -209,7 +205,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const allParticipantIds = [...new Set([...participantIds, user.uid])].sort(); // Ensure current user is included and unique
     const allParticipantNames = [...new Set([...participantNames, user.displayName || user.email || "Anonymous"])];
-    const allParticipantAvatars = { ...participantAvatars, [user.uid]: user.photoURL || undefined }; // Include current user's avatar
 
     // Check for existing conversation with the exact same participants
     const q = query(
@@ -231,7 +226,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const newConversationRef = await addDoc(collection(db, 'conversations'), {
         participants: allParticipantIds,
         participantNames: allParticipantNames,
-        participantAvatars: allParticipantAvatars, // Store participant avatars
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         lastMessage: initialMessageText || "Conversation started.",
