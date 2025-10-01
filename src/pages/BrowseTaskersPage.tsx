@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Filter, Search, DollarSign, Briefcase, MapPin, Star, ShieldAlert } from 'lucide-react'; // Added Star and ShieldAlert icons
+import { Filter, Search, DollarSign, Briefcase, MapPin } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -65,17 +65,6 @@ const BrowseTaskersPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-3">
                     <DollarSign size={16} /> <span>₱{tasker.hourlyRate.toLocaleString()}/hr</span>
                   </div>
-                  {tasker.rating !== undefined && (
-                    <div className="flex items-center gap-1 mb-2">
-                      <Star size={16} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">{tasker.rating.toFixed(1)}</span>
-                    </div>
-                  )}
-                  {tasker.isVerifiedTasker && (
-                    <Badge className="bg-blue-500 text-white flex items-center gap-1 mb-2">
-                      <ShieldAlert size={14} /> Verified
-                    </Badge>
-                  )}
                   <div className="flex flex-wrap justify-center gap-2 mb-4">
                     {tasker.skills.slice(0, 3).map((skill, index) => (
                       <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 px-2 py-0.5 text-xs">

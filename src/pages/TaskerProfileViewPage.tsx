@@ -4,7 +4,7 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Phone, Star, ShieldAlert } from 'lucide-react'; // Added Phone, Star, ShieldAlert icons
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const TaskerProfileViewPage: React.FC = () => {
@@ -64,25 +64,9 @@ const TaskerProfileViewPage: React.FC = () => {
               </AvatarFallback>
             </Avatar>
             <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{tasker.displayName}</h1>
-            <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-2">
+            <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
               <Mail size={18} /> {tasker.userId} {/* Using userId as a placeholder for email/contact */}
             </p>
-            {tasker.contactNumber && (
-              <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-2">
-                <Phone size={18} /> {tasker.contactNumber}
-              </p>
-            )}
-            {tasker.rating !== undefined && (
-              <div className="flex items-center gap-1 mb-4">
-                <Star size={18} className="text-yellow-500 fill-yellow-500" />
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{tasker.rating.toFixed(1)}</span>
-              </div>
-            )}
-            {tasker.isVerifiedTasker && (
-              <Badge className="bg-blue-500 text-white flex items-center gap-1 mb-4">
-                <ShieldAlert size={16} /> Verified Tasker
-              </Badge>
-            )}
 
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
               {tasker.bio}

@@ -2,8 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { useAuth, EnhancedUser } from './use-auth'; // Import EnhancedUser
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { useAuth } from './use-auth';
 
 export interface TaskerProfile {
   userId: string;
@@ -14,19 +13,16 @@ export interface TaskerProfile {
   hourlyRate: number;
   isTasker: boolean;
   dateJoined: string;
-  contactNumber?: string; // New field
-  rating?: number; // New field
-  isVerifiedTasker?: boolean; // New field
 }
 
 interface TaskerProfileContextType {
   taskerProfile: TaskerProfile | null;
-  allTaskerProfiles: TaskerProfile[];
+  allTaskerProfiles: TaskerProfile[]; // Added to store all tasker profiles
   loading: boolean;
   error: string | null;
-  createOrUpdateTaskerProfile: (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating'>) => Promise<void>;
+  createOrUpdateTaskerProfile: (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined'>) => Promise<void>;
   isTasker: boolean;
-  fetchTaskerProfileById: (id: string) => Promise<TaskerProfile | null>;
+  fetchTaskerProfileById: (id: string) => Promise<TaskerProfile | null>; // Added for fetching specific tasker
 }
 
 const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>(undefined);
@@ -34,37 +30,18 @@ const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>
 export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [taskerProfile, setTaskerProfile] = useState<TaskerProfile | null>(null);
-  const [allTaskerProfiles, setAllTaskerProfiles] = useState<TaskerProfile[]>([]);
+  const [allTaskerProfiles, setAllTaskerProfiles] = useState<TaskerProfile[]>([]); // New state for all taskers
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTasker, setIsTasker] = useState(false);
 
-  // Function to fetch a single tasker profile by ID
+  // Function to fetch a single tasker profile by ID (can be used outside the hook context)
   const fetchTaskerProfileById = async (id: string): Promise<TaskerProfile | null> => {
     try {
       const docRef = doc(db, 'taskerProfiles', id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        const taskerData = docSnap.data() as TaskerProfile;
-        
-        // Fetch additional profile data from Supabase
-        const { data: supabaseProfile, error: supabaseError } = await supabase
-          .from('profiles')
-          .select('contact_number, rating, is_verified_tasker')
-          .eq('id', id)
-          .single();
-
-        if (supabaseError && supabaseError.code !== 'PGRST116') {
-          console.error("Error fetching Supabase profile for tasker:", supabaseError);
-          // Don't throw, just log and continue with available data
-        }
-
-        return {
-          ...taskerData,
-          contactNumber: supabaseProfile?.contact_number || taskerData.contactNumber,
-          rating: supabaseProfile?.rating || taskerData.rating,
-          isVerifiedTasker: supabaseProfile?.is_verified_tasker || taskerData.isVerifiedTasker,
-        };
+        return docSnap.data() as TaskerProfile;
       }
       return null;
     } catch (err: any) {
@@ -96,26 +73,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       // Fetch all tasker profiles
       try {
         const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
-        const profiles: TaskerProfile[] = await Promise.all(querySnapshot.docs.map(async doc => {
-          const taskerData = doc.data() as TaskerProfile;
-          // Fetch additional profile data from Supabase for each tasker
-          const { data: supabaseProfile, error: supabaseError } = await supabase
-            .from('profiles')
-            .select('contact_number, rating, is_verified_tasker')
-            .eq('id', taskerData.userId)
-            .single();
-
-          if (supabaseError && supabaseError.code !== 'PGRST116') {
-            console.error("Error fetching Supabase profile for all taskers:", supabaseError);
-          }
-
-          return {
-            ...taskerData,
-            contactNumber: supabaseProfile?.contact_number || taskerData.contactNumber,
-            rating: supabaseProfile?.rating || taskerData.rating,
-            isVerifiedTasker: supabaseProfile?.is_verified_tasker || taskerData.isVerifiedTasker,
-          };
-        }));
+        const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
         setAllTaskerProfiles(profiles);
       } catch (err: any) {
         console.error("Error fetching all tasker profiles:", err);
@@ -127,9 +85,9 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     };
 
     loadProfiles();
-  }, [isAuthenticated, user, authLoading]);
+  }, [isAuthenticated, user, authLoading]); // Re-run when auth state changes
 
-  const createOrUpdateTaskerProfile = async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating'>) => {
+  const createOrUpdateTaskerProfile = async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined'>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to manage a tasker profile.");
       return;
@@ -144,8 +102,6 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         photoURL: user.photoURL || undefined,
         isTasker: true,
         dateJoined: new Date().toISOString(),
-        rating: user.profile?.rating || 0, // Use existing rating from Supabase profile
-        isVerifiedTasker: user.profile?.is_verified_tasker || false, // Use existing verified status
         ...data,
       };
 
@@ -153,28 +109,9 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       setTaskerProfile(profileData);
       setIsTasker(true);
       toast.success("Tasker profile saved successfully!");
-      
       // Re-fetch all profiles to update the list
       const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
-      const profiles: TaskerProfile[] = await Promise.all(querySnapshot.docs.map(async doc => {
-        const taskerData = doc.data() as TaskerProfile;
-        const { data: supabaseProfile, error: supabaseError } = await supabase
-          .from('profiles')
-          .select('contact_number, rating, is_verified_tasker')
-          .eq('id', taskerData.userId)
-          .single();
-
-        if (supabaseError && supabaseError.code !== 'PGRST116') {
-          console.error("Error fetching Supabase profile for all taskers:", supabaseError);
-        }
-
-        return {
-          ...taskerData,
-          contactNumber: supabaseProfile?.contact_number || taskerData.contactNumber,
-          rating: supabaseProfile?.rating || taskerData.rating,
-          isVerifiedTasker: supabaseProfile?.is_verified_tasker || taskerData.isVerifiedTasker,
-        };
-      }));
+      const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
       setAllTaskerProfiles(profiles);
     } catch (err: any) {
       console.error("Error saving tasker profile:", err);
@@ -188,12 +125,12 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const value = {
     taskerProfile,
-    allTaskerProfiles,
+    allTaskerProfiles, // Expose all tasker profiles
     loading,
     error,
     createOrUpdateTaskerProfile,
     isTasker,
-    fetchTaskerProfileById,
+    fetchTaskerProfileById, // Expose the utility function
   };
 
   return <TaskerProfileContext.Provider value={value}>{children}</TaskerProfileContext.Provider>;

@@ -20,17 +20,11 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
   const [taskLocation, setTaskLocation] = useState('');
   const [taskBudget, setTaskBudget] = useState('');
   const [taskCategory, setTaskCategory] = useState('');
-  const [taskDeadline, setTaskDeadline] = useState(''); // New state for deadline
-  const [taskImageUrl, setTaskImageUrl] = useState(''); // New state for image URL
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePostTask = async () => {
     if (!taskTitle || !taskDescription || !taskLocation || !taskBudget || !taskCategory) {
-      toast.error("Please fill in all required task details.");
-      return;
-    }
-    if (isNaN(parseFloat(taskBudget)) || parseFloat(taskBudget) <= 0) {
-      toast.error("Budget must be a positive number.");
+      toast.error("Please fill in all task details.");
       return;
     }
 
@@ -42,8 +36,6 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
         location: taskLocation,
         budget: parseFloat(taskBudget),
         category: taskCategory,
-        deadline: taskDeadline || undefined, // Include deadline
-        imageUrl: taskImageUrl || undefined, // Include image URL
       });
       // Clear form fields on success
       setTaskTitle('');
@@ -51,8 +43,6 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
       setTaskLocation('');
       setTaskBudget('');
       setTaskCategory('');
-      setTaskDeadline('');
-      setTaskImageUrl('');
       onClose(); // Close modal on successful post
     } catch (error) {
       // Error handled by useTasks hook, toast will be shown there
@@ -81,7 +71,6 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
               className="col-span-3"
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
-              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -94,7 +83,6 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
               className="col-span-3"
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
-              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -107,7 +95,6 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
               className="col-span-3"
               value={taskLocation}
               onChange={(e) => setTaskLocation(e.target.value)}
-              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -121,14 +108,13 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
               className="col-span-3"
               value={taskBudget}
               onChange={(e) => setTaskBudget(e.target.value)}
-              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">
               Category
             </Label>
-            <Select value={taskCategory} onValueChange={setTaskCategory} disabled={isLoading}>
+            <Select value={taskCategory} onValueChange={setTaskCategory}>
               <SelectTrigger id="category" className="col-span-3">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
@@ -139,37 +125,10 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
                 <SelectItem value="delivery">Delivery & Errands</SelectItem>
                 <SelectItem value="painting">Painting Services</SelectItem>
                 <SelectItem value="assembly">Assembly Services</SelectItem>
-                <SelectItem value="marketing">Marketing Services</SelectItem>
+                <SelectItem value="marketing">Marketing Services</SelectItem> {/* Added Marketing */}
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="deadline" className="text-right">
-              Deadline
-            </Label>
-            <Input
-              id="deadline"
-              type="date"
-              className="col-span-3"
-              value={taskDeadline}
-              onChange={(e) => setTaskDeadline(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="imageUrl" className="text-right">
-              Image URL
-            </Label>
-            <Input
-              id="imageUrl"
-              type="url"
-              placeholder="e.g., https://example.com/task-photo.jpg"
-              className="col-span-3"
-              value={taskImageUrl}
-              onChange={(e) => setTaskImageUrl(e.target.value)}
-              disabled={isLoading}
-            />
           </div>
         </div>
         <DialogFooter>
