@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase } from 'lucide-react'; // Added Briefcase icon
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon } from 'lucide-react'; // Added SettingsIcon
 import EditProfileSection from '@/components/EditProfileSection';
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Check if user is a tasker
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
 
-  if (authLoading || taskerProfileLoading) { // Include taskerProfileLoading
+  if (authLoading || taskerProfileLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
   }
 
@@ -76,7 +76,7 @@ const ProfilePage: React.FC = () => {
                 >
                   View My Posted Tasks
                 </Button>
-                {isTasker && ( // Only show this button if the user is a tasker
+                {isTasker && (
                   <Button
                     onClick={() => navigate('/my-offers')}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 flex items-center justify-center gap-2"
@@ -84,7 +84,12 @@ const ProfilePage: React.FC = () => {
                     <Briefcase size={20} /> View My Offers
                   </Button>
                 )}
-                {/* Add more buttons for other activities like "Completed Tasks" etc. */}
+                <Button
+                  onClick={() => navigate('/settings')}
+                  className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 text-lg py-6 flex items-center justify-center gap-2"
+                >
+                  <SettingsIcon size={20} /> App Settings
+                </Button>
               </CardContent>
             </Card>
           </>
