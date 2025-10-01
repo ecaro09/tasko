@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useModal } from './ModalProvider';
 import { useAuth } from '@/hooks/use-auth';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
-import { User as UserIcon } from 'lucide-react'; // New import
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle'; // Import ThemeToggle
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -13,7 +14,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
   const { openLoginModal, openSignupModal } = useModal();
-  const { user } = useAuth(); // Get user object from useAuth
+  const { user } = useAuth();
 
   return (
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center pt-[var(--safe-area-top)]">
@@ -29,14 +30,15 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
           )}
           <a href="#how-it-works" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">How It Works</a>
           <Link to="/features-earnings" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Become a Tasker</Link>
-          {isAuthenticated && ( // New: Profile link for authenticated users
+          {isAuthenticated && (
             <Link to="/profile" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Profile</Link>
           )}
         </nav>
         <div className="flex gap-3 items-center">
+          <ThemeToggle /> {/* Added ThemeToggle here */}
           {isAuthenticated ? (
             <>
-              <Link to="/profile" className="flex items-center"> {/* New: Clickable Avatar for profile */}
+              <Link to="/profile" className="flex items-center">
                 <Avatar className="w-8 h-8 border-2 border-[hsl(var(--primary-color))]">
                   <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
                   <AvatarFallback className="bg-[hsl(var(--primary-color))] text-white text-sm font-semibold">
