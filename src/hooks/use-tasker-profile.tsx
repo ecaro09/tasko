@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, DocumentData, updateDoc } from 'firebase/firestore'; // Added updateDoc
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, DocumentData, updateDoc, collection, query, getDocs } from 'firebase/firestore'; // Added collection, query, getDocs
 import { toast } from 'sonner';
-import { useAuth } from './use-auth'; // Assuming useAuth exists
+import { useAuth } from './use-auth';
 
 export interface TaskerProfile {
   uid: string;
@@ -31,6 +31,7 @@ interface TaskerProfileContextType {
   updateTaskerProfile: (
     updates: Partial<Omit<TaskerProfile, 'uid' | 'displayName' | 'photoURL' | 'dateRegistered'>>,
   ) => Promise<void>;
+  getAllTaskerProfiles: () => Promise<TaskerProfile[]>; // New function to get all taskers
 }
 
 const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>(undefined);
@@ -145,6 +146,33 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
+  const getAllTaskerProfiles = async (): Promise<TaskerProfile[]> => {
+    try {
+      const q = query(collection(db, 'taskerProfiles'));
+      const querySnapshot = await getDocs(q);
+      const allTaskers: TaskerProfile[] = querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data() as DocumentData;
+        return {
+          uid: docSnap.id,
+          displayName: data.displayName || 'Anonymous',
+          photoURL: data.photoURL || undefined,
+          bio: data.bio,
+          skills: data.skills,
+          hourlyRate: data.hourlyRate,
+          location: data.location,
+          isVerified: data.isVerified || false,
+          dateRegistered: data.dateRegistered?.toDate().toISOString() || new Date().toISOString(),
+          dateUpdated: data.dateUpdated?.toDate().toISOString(),
+        };
+      });
+      return allTaskers;
+    } catch (err: any) {
+      console.error("Error fetching all tasker profiles:", err);
+      toast.error(`Failed to fetch all tasker profiles: ${err.message}`);
+      return [];
+    }
+  };
+
   const value = {
     taskerProfile,
     isTasker: !!taskerProfile,
@@ -152,6 +180,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     error,
     createTaskerProfile,
     updateTaskerProfile,
+    getAllTaskerProfiles,
   };
 
   return <TaskerProfileContext.Provider value={value}>{children}</TaskerProfileContext.Provider>;
