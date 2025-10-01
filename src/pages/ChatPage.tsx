@@ -1,182 +1,168 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowLeft, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Send } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useChat, ChatRoom as ChatRoomType } from '@/hooks/use-chat'; // Import ChatRoomType (now exported)
 import { useAuth } from '@/hooks/use-auth';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // Import useTaskerProfile
-import ChatRoom from '@/components/ChatRoom'; // Import the new ChatRoom component
-import { cn } from '@/lib/utils';
+import { useChat } from '@/hooks/use-chat';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // To fetch tasker details
 import { toast } from 'sonner';
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const { chatRoomId } = useParams<{ chatRoomId?: string }>(); // Get chatRoomId from URL
+  const { recipientId } = useParams<{ recipientId: string }>();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { chatRooms, loadingChatRooms, error } = useChat(); // Now correctly destructured
-  const { fetchTaskerProfileById } = useTaskerProfile(); // Use this to fetch other participant's details
+  const { messages, loading: chatLoading, error: chatError, sendMessage, getConversationId } = useChat();
+  const { fetchTaskerProfileById } = useTaskerProfile(); // To get recipient's display name
+  const [newMessageText, setNewMessageText] = useState('');
+  const [recipientDisplayName, setRecipientDisplayName] = useState('Loading...');
+  const [recipientAvatar, setRecipientAvatar] = useState<string | undefined>(undefined);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // State to store fetched participant details for the chat list
-  const [participantDetails, setParticipantDetails] = useState<{ [key: string]: { name: string; avatar?: string } }>({});
+  const conversationId = user && recipientId ? getConversationId(user.uid, recipientId) : undefined;
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated && !authLoading) {
       toast.error("Please log in to access chat.");
       navigate('/profile'); // Redirect to profile/login if not authenticated
       return;
     }
 
-    // Fetch details for all other participants in chat rooms
-    const fetchAllParticipantDetails = async () => {
-      const newDetails: { [key: string]: { name: string; avatar?: string } } = {};
-      for (const room of chatRooms) {
-        const otherParticipantId = room.participants.find(pId => pId !== user.uid);
-        if (otherParticipantId && !newDetails[otherParticipantId]) {
-          // Try to fetch as a tasker profile
-          const taskerProfile = await fetchTaskerProfileById(otherParticipantId);
-          if (taskerProfile) {
-            newDetails[otherParticipantId] = {
-              name: taskerProfile.displayName,
-              avatar: taskerProfile.photoURL,
-            };
+    const loadRecipientDetails = async () => {
+      if (recipientId) {
+        if (recipientId === 'support-team') {
+          setRecipientDisplayName('Support Team');
+          setRecipientAvatar('https://randomuser.me/api/portraits/lego/5.jpg'); // Generic support avatar
+        } else {
+          const tasker = await fetchTaskerProfileById(recipientId);
+          if (tasker) {
+            setRecipientDisplayName(tasker.displayName);
+            setRecipientAvatar(tasker.photoURL);
           } else {
-            // Fallback if not a tasker (e.g., another client).
-            // In a real app, you'd have a general user profile fetch here.
-            const otherParticipantIndex = room.participants.indexOf(otherParticipantId);
-            newDetails[otherParticipantId] = {
-              name: room.participantNames[otherParticipantIndex] || "Unknown User",
-              avatar: undefined, // Default avatar if not found
-            };
+            // Fallback if recipient is not a tasker (e.g., another client)
+            // In a full app, you'd fetch from a general user profiles collection
+            setRecipientDisplayName('Unknown User');
+            setRecipientAvatar(undefined);
           }
         }
+      } else {
+        setRecipientDisplayName('Select a Chat');
+        setRecipientAvatar(undefined);
       }
-      setParticipantDetails(newDetails);
     };
 
-    if (chatRooms.length > 0) {
-      fetchAllParticipantDetails();
-    }
-  }, [chatRooms, user, isAuthenticated, fetchTaskerProfileById, navigate]);
+    loadRecipientDetails();
+  }, [recipientId, fetchTaskerProfileById, isAuthenticated, authLoading, navigate]);
 
-  if (authLoading || loadingChatRooms) {
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading chats...</div>;
-  }
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 pt-[60px] px-4">
-        <Card className="w-full max-w-md text-center shadow-lg">
-          <CardContent className="p-6">
-            <h2 className="text-2xl font-bold text-[hsl(var(--primary-color))]">Access Denied</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Please log in to view your chats.</p>
-            <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700 text-white">
-              Go to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const currentChatRoom = chatRoomId ? chatRooms.find(room => room.id === chatRoomId) : null;
-
-  // Determine the other participant's info for the ChatRoom component and header
-  const getOtherParticipantInfo = (room: ChatRoomType) => {
-    if (!user) return { id: "unknown", name: "Unknown", avatar: undefined };
-
-    const otherParticipantId = room.participants.find(pId => pId !== user.uid);
-    if (!otherParticipantId) return { id: "unknown", name: "Unknown", avatar: undefined };
-
-    // Use fetched details if available
-    if (participantDetails[otherParticipantId]) {
-      return { id: otherParticipantId, ...participantDetails[otherParticipantId] };
+  const handleSendMessage = async () => {
+    if (newMessageText.trim() === '') return;
+    if (!user || !conversationId || !recipientId) {
+      toast.error("Cannot send message. User or conversation not identified.");
+      return;
     }
 
-    // Fallback to participantNames if details not yet fetched or not a tasker
-    const otherParticipantIndex = room.participants.indexOf(otherParticipantId);
-    return {
-      id: otherParticipantId,
-      name: room.participantNames[otherParticipantIndex] || "Unknown User",
-      avatar: undefined,
-    };
+    try {
+      await sendMessage(conversationId, recipientId, newMessageText);
+      setNewMessageText('');
+    } catch (error) {
+      // Error handled by useChat hook
+    }
   };
 
-  const otherParticipantInfoForCurrentChat = currentChatRoom ? getOtherParticipantInfo(currentChatRoom) : { id: "unknown", name: "Select a Chat", avatar: undefined };
+  const filteredMessages = messages.filter(msg => msg.conversationId === conversationId);
+
+  if (authLoading || chatLoading) {
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading chat...</div>;
+  }
+
+  if (chatError) {
+    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px]">Error: {chatError}</div>;
+  }
+
+  if (!user) {
+    return null; // Should be redirected by useEffect
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col">
       <div className="container mx-auto px-4 flex-grow flex flex-col max-w-3xl">
         <div className="flex items-center justify-between mb-6">
-          {chatRoomId ? (
-            <Button onClick={() => navigate('/chat')} variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
-              <ArrowLeft size={20} className="mr-2" /> Back to Chats
-            </Button>
-          ) : (
-            <div className="w-10"></div> 
-          )}
-          <h1 className="text-3xl font-bold text-green-600 text-center flex-grow">
-            {chatRoomId ? otherParticipantInfoForCurrentChat.name : "My Chats"}
-          </h1>
+          <Button onClick={() => navigate(-1)} variant="outline" className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
+            <ArrowLeft size={20} className="mr-2" /> Back
+          </Button>
+          <h1 className="text-3xl font-bold text-green-600 text-center flex-grow">Chat</h1>
           <div className="w-10"></div> {/* Spacer to balance the back button */}
         </div>
 
-        {chatRoomId && currentChatRoom ? (
-          <ChatRoom
-            chatRoomId={chatRoomId}
-            otherParticipantId={otherParticipantInfoForCurrentChat.id} // Pass otherParticipantId
-            otherParticipantName={otherParticipantInfoForCurrentChat.name}
-            otherParticipantAvatar={otherParticipantInfoForCurrentChat.avatar}
-            currentUserAvatar={user.photoURL || undefined} // Pass current user's avatar
-          />
-        ) : (
-          <Card className="flex-grow flex flex-col shadow-lg rounded-lg overflow-hidden">
-            <CardContent className="flex-grow p-4">
-              <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Your Conversations</h2>
-              {chatRooms.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <MessageSquare size={48} className="mx-auto mb-4" />
-                  <p>No active conversations yet.</p>
-                  <p className="text-sm mt-2">Start a chat from a task detail page or a tasker's profile.</p>
-                </div>
-              ) : (
-                <ScrollArea className="h-[calc(100vh-250px)]"> {/* Adjust height as needed */}
-                  <div className="space-y-3">
-                    {chatRooms.map((room) => {
-                      const otherParticipantInfoForList = getOtherParticipantInfo(room);
+        <Card className="flex-grow flex flex-col shadow-lg rounded-lg overflow-hidden">
+          <CardContent className="flex-grow p-4 flex flex-col">
+            <div className="flex items-center gap-3 border-b pb-3 mb-4">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={recipientAvatar} alt={recipientDisplayName} />
+                <AvatarFallback>{recipientDisplayName.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{recipientDisplayName}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Online</p> {/* Placeholder for online status */}
+              </div>
+            </div>
 
-                      return (
-                        <div
-                          key={room.id}
-                          className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                          onClick={() => navigate(`/chat/${room.id}`)}
-                        >
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={otherParticipantInfoForList.avatar || undefined} alt={otherParticipantInfoForList.name} />
-                            <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
-                              {otherParticipantInfoForList.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-grow">
-                            <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{otherParticipantInfoForList.name}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{room.lastMessage}</p>
-                          </div>
-                          {room.lastMessageTimestamp && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {new Date(room.lastMessageTimestamp).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        )}
+            <ScrollArea className="flex-grow pr-4 mb-4">
+              <div className="space-y-4">
+                {filteredMessages.length === 0 ? (
+                  <p className="text-center text-gray-500 dark:text-gray-400 italic">No messages yet. Start the conversation!</p>
+                ) : (
+                  filteredMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.senderId === user.uid ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[70%] p-3 rounded-lg ${
+                          msg.senderId === user.uid
+                            ? 'bg-green-600 text-white rounded-br-none'
+                            : 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100 rounded-bl-none'
+                        }`}
+                      >
+                        <p className="text-sm">{msg.text}</p>
+                        <span className={`text-xs mt-1 block ${msg.senderId === user.uid ? 'text-green-100' : 'text-gray-500 dark:text-gray-300'}`}>
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            <div className="flex gap-2 mt-auto">
+              <Input
+                type="text"
+                placeholder="Type your message..."
+                value={newMessageText}
+                onChange={(e) => setNewMessageText(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSendMessage();
+                  }
+                }}
+                className="flex-grow"
+                disabled={!conversationId}
+              />
+              <Button onClick={handleSendMessage} className="bg-green-600 hover:bg-green-700 text-white" disabled={!conversationId || newMessageText.trim() === ''}>
+                <Send size={20} />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
