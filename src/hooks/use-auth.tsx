@@ -47,12 +47,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await createUserWithEmailAndPassword(auth, email, password);
       toast.success("Account created successfully! You are now logged in.");
     } catch (error: any) {
-      console.error("Error signing up with email and password:", error);
+      console.error("Auth error caught during signup:", error); // Added console log
       let errorMessage = "Failed to create account.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email is already in use.";
       } else if (error.code === 'auth/weak-password') {
         errorMessage = "Password should be at least 6 characters.";
+      } else if (error.message) { // Catch any other error messages
+        errorMessage = error.message;
       }
       toast.error(errorMessage);
       throw error;
@@ -64,7 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await signInWithEmailAndPassword(auth, email, password);
       toast.success("Logged in successfully!");
     } catch (error: any) {
-      console.error("Error logging in with email and password:", error);
+      console.error("Auth error caught during login:", error); // Added console log
       let errorMessage = "Failed to log in.";
       if (error.code === 'auth/invalid-credential') {
         errorMessage = "Invalid email or password.";
@@ -72,6 +74,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         errorMessage = "No user found with this email.";
       } else if (error.code === 'auth/wrong-password') {
         errorMessage = "Incorrect password.";
+      } else if (error.message) { // Catch any other error messages
+        errorMessage = error.message;
       }
       toast.error(errorMessage);
       throw error;
