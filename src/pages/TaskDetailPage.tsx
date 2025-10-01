@@ -40,24 +40,38 @@ const TaskDetailPage: React.FC = () => {
   }
 
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
-  const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
+  const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster && !task.isDemo; // Cannot make offers on demo tasks
 
   const handleMakeOfferClick = () => {
-    if (task) {
+    if (task && !task.isDemo) {
       openMakeOfferModal(task);
+    } else if (task.isDemo) {
+      toast.info("You cannot make offers on sample tasks.");
     }
   };
 
   const handleAcceptOffer = async (offerId: string) => {
     if (!task) return;
+    if (task.isDemo) {
+      toast.info("Cannot accept offers on sample tasks.");
+      return;
+    }
     await acceptOffer(offerId, task.id);
   };
 
   const handleRejectOffer = async (offerId: string) => {
+    if (task?.isDemo) {
+      toast.info("Cannot reject offers on sample tasks.");
+      return;
+    }
     await rejectOffer(offerId);
   };
 
   const handleWithdrawOffer = async (offerId: string) => {
+    if (task?.isDemo) {
+      toast.info("Cannot withdraw offers on sample tasks.");
+      return;
+    }
     await withdrawOffer(offerId);
   };
 
@@ -129,6 +143,9 @@ const TaskDetailPage: React.FC = () => {
                 {isAuthenticated && !isTasker && !isTaskPoster && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Register as a tasker to make an offer.</p>
                 )}
+                {isAuthenticated && isTasker && task.isDemo && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Offers cannot be made on sample tasks.</p>
+                )}
               </div>
             </div>
 
@@ -162,7 +179,7 @@ const TaskDetailPage: React.FC = () => {
                             {offer.dateUpdated && ` (Updated: ${new Date(offer.dateUpdated).toLocaleDateString()})`}
                           </p>
 
-                          {isTaskPoster && offer.status === 'pending' && (
+                          {isTaskPoster && offer.status === 'pending' && !task.isDemo && (
                             <div className="flex gap-2 mt-3">
                               <Button onClick={() => handleAcceptOffer(offer.id)} className="bg-green-600 hover:bg-green-700 text-white text-sm">
                                 Accept Offer
@@ -172,12 +189,15 @@ const TaskDetailPage: React.FC = () => {
                               </Button>
                             </div>
                           )}
-                          {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && (
+                          {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && !task.isDemo && (
                             <div className="flex gap-2 mt-3">
                               <Button variant="outline" onClick={() => handleWithdrawOffer(offer.id)} className="border-gray-600 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
                                 Withdraw Offer
                               </Button>
                             </div>
+                          )}
+                          {task.isDemo && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Actions are disabled for sample tasks.</p>
                           )}
                         </div>
                       </CardContent>
