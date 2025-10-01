@@ -54,7 +54,7 @@ interface ChatContextType {
   ) => Promise<string>;
   markConversationAsRead: (conversationId: string) => Promise<void>;
   totalUnreadCount: number;
-  loading: boolean;
+  loading: boolean; // Added loading property here
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -69,7 +69,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
-  const [overallLoading, setOverallLoading] = useState(true);
+  const [overallLoading, setOverallLoading] = useState(true); // New state for overall loading
 
   useEffect(() => {
     setOverallLoading(authLoading || loadingConversations || loadingMessages);
@@ -77,12 +77,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fetch conversations for the current user
   useEffect(() => {
-    if (!db) {
-      setError("Database not initialized. Cannot fetch conversations.");
-      setLoadingConversations(false);
-      toast.error("Database services are unavailable. Please check Firebase configuration.");
-      return;
-    }
     if (!isAuthenticated || !user) {
       setConversations([]);
       setTotalUnreadCount(0);
@@ -133,11 +127,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Fetch messages for the currently selected conversation
   useEffect(() => {
-    if (!db) {
-      setError("Database not initialized. Cannot fetch messages.");
-      setLoadingMessages(false);
-      return;
-    }
     if (!currentConversationId) {
       setMessages([]);
       return;
@@ -180,10 +169,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const sendMessage = async (conversationId: string, text: string) => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot send message.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user || !text.trim()) {
       toast.error("You must be logged in and provide a message.");
       return;
@@ -228,10 +213,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     participantNames: string[],
     initialMessageText?: string
   ): Promise<string> => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot start conversation.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to start a conversation.");
       throw new Error("User not authenticated.");
@@ -286,10 +267,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const markConversationAsRead = async (conversationId: string) => {
-    if (!db) {
-      console.error("Database not initialized. Cannot mark conversation as read.");
-      return;
-    }
     if (!isAuthenticated || !user) return;
 
     try {
@@ -318,7 +295,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     startNewConversation,
     markConversationAsRead,
     totalUnreadCount,
-    loading: overallLoading,
+    loading: overallLoading, // Expose overall loading state
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

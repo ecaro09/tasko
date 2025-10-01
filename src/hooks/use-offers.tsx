@@ -45,13 +45,6 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!db) {
-      setError("Database not initialized. Cannot fetch offers.");
-      setLoading(false);
-      toast.error("Database services are unavailable. Please check Firebase configuration.");
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -93,10 +86,6 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     offerAmount: number,
     message: string,
   ) => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot add offer.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user || !isTasker || !taskerProfile) {
       toast.error("You must be logged in as a tasker to make an offer.");
       return;
@@ -130,10 +119,6 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const acceptOffer = async (offerId: string, taskId: string) => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot accept offer.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to accept an offer.");
       return;
@@ -166,10 +151,6 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const rejectOffer = async (offerId: string) => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot reject offer.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to reject an offer.");
       return;
@@ -193,10 +174,6 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const withdrawOffer = async (offerId: string) => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot withdraw offer.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to withdraw an offer.");
       return;
@@ -221,7 +198,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const value = {
     offers: allOffers,
-    loading: loading || taskerLoading,
+    loading: loading || taskerLoading, // Consider tasker profile loading as well
     error,
     addOffer,
     getOffersForTask,

@@ -9,8 +9,8 @@ import {
   serverTimestamp,
   DocumentData,
   getDocs,
-  deleteDoc,
-  doc,
+  deleteDoc, // Import deleteDoc
+  doc, // Import doc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -31,11 +31,11 @@ export interface Task {
 }
 
 interface UseTasksContextType {
-  tasks: Task[];
+  tasks: Task[]; // This will now be all tasks
   loading: boolean;
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => Promise<void>;
-  deleteTask: (taskId: string) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -46,16 +46,13 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]
+);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Function to seed initial tasks
   const seedInitialTasks = async () => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot seed tasks.");
-      return;
-    }
     const tasksCollectionRef = collection(db, 'tasks');
     const snapshot = await getDocs(tasksCollectionRef);
 
@@ -111,13 +108,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    if (!db) {
-      setError("Database not initialized. Cannot fetch tasks.");
-      setLoading(false);
-      toast.error("Database services are unavailable. Please check Firebase configuration.");
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -157,13 +147,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Empty dependency array to run once on mount
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status'>) => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot post task.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -188,10 +174,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   };
 
   const deleteTask = async (taskId: string) => {
-    if (!db) {
-      toast.error("Database not initialized. Cannot delete task.");
-      throw new Error("Database not initialized.");
-    }
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to delete a task.");
       return;
@@ -209,7 +191,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   };
 
   const value = {
-    tasks: allTasks,
+    tasks: allTasks, // Expose all tasks
     loading,
     error,
     addTask,
