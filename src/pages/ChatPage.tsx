@@ -1,130 +1,32 @@
-"use client";
-
-import React, { useEffect } from 'react';
-import { useChat } from '@/hooks/use-chat';
-import { useAuth } from '@/hooks/use-auth';
-import Header from '@/components/Header';
-import { MadeWithDyad } from '@/components/made-with-dyad';
-import { Toaster } from '@/components/ui/sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import ChatInterface from '@/components/ChatInterface';
-import UserSearchAndChat from '@/components/UserSearchAndChat';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import ChatRoomsList from '@/components/ChatRoomsList'; // Import the new ChatRoomsList
-import MobileChatSidebar from '@/components/MobileChatSidebar'; // Import the new MobileChatSidebar
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile hook
-import { Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { MessageSquare, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ChatPage: React.FC = () => {
-  const {
-    chatRooms,
-    selectedChatRoomId,
-    selectChatRoom,
-    loading: chatLoading,
-    error: chatError,
-  } = useChat();
-  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Get user object
-  const isMobile = useIsMobile(); // Use the hook to detect mobile
-
-  const loading = chatLoading || authLoading;
-
-  useEffect(() => {
-    // Automatically select the first chat room if none is selected and rooms exist
-    if (!selectedChatRoomId && chatRooms.length > 0) {
-      selectChatRoom(chatRooms[0].id);
-    }
-  }, [chatRooms, selectedChatRoomId, selectChatRoom]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center">
-        <p>Loading chat...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 pt-[80px]">
-        <Header /> {/* Header now manages its own auth state */}
-        <main className="container mx-auto p-4 text-center">
-          <p className="text-red-500">Please sign in to view your chats.</p>
-        </main>
-        <MadeWithDyad />
-        <Toaster />
-      </div>
-    );
-  }
-
-  if (chatError) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 pt-[80px]">
-        <Header /> {/* Header now manages its own auth state */}
-        <main className="container mx-auto p-4 text-center text-red-500">
-          <p>Error loading chats: {chatError}</p>
-        </main>
-        <MadeWithDyad />
-        <Toaster />
-      </div>
-    );
-  }
-
-  let otherParticipantName = 'Select a Chat';
-  let otherParticipantAvatar: string | null = null;
-
-  const currentChatRoom = chatRooms.find(room => room.id === selectedChatRoomId);
-
-  if (currentChatRoom && user) {
-    const currentUserIndex = currentChatRoom.participants.indexOf(user.uid);
-    const otherParticipantIndex = currentUserIndex === 0 ? 1 : 0; // Assuming only two participants
-
-    if (currentChatRoom.participants[otherParticipantIndex]) {
-      otherParticipantName = currentChatRoom.participantNames[otherParticipantIndex] || 'Unknown User';
-      otherParticipantAvatar = currentChatRoom.participantAvatars[otherParticipantIndex] || null;
-    }
-  }
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
-      <Header /> {/* Header now manages its own auth state */}
-      <main className="flex-1 container mx-auto p-4 pt-8 flex gap-4">
-        {isMobile ? (
-          <MobileChatSidebar />
-        ) : (
-          <ResizablePanelGroup direction="vertical" className="w-full md:w-1/3 lg:w-1/4 flex-shrink-0 h-[calc(100vh-150px)]">
-            <ResizablePanel defaultSize={60} minSize={30}>
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="text-xl">Your Chats</CardTitle>
-                </CardHeader>
-                <ChatRoomsList />
-              </Card>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={40} minSize={20}>
-              <UserSearchAndChat />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        )}
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
+      <div className="container mx-auto px-4">
+        <Button onClick={() => navigate(-1)} variant="outline" className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
+          <ArrowLeft size={20} className="mr-2" /> Back
+        </Button>
+        <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">Chat & Messaging</h1>
+        <p className="text-lg text-gray-700 dark:text-gray-300 mb-12 text-center max-w-3xl mx-auto">
+          Real-time communication with taskers and clients.
+        </p>
 
-        <div className="flex-1 h-[calc(100vh-150px)]">
-          {selectedChatRoomId ? (
-            <ChatInterface
-              chatRoomId={selectedChatRoomId}
-              otherParticipantName={otherParticipantName}
-              otherParticipantAvatar={otherParticipantAvatar} // Pass the avatar here
-            />
-          ) : (
-            <Card className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-              <CardContent>Select a chat or find a new user to start messaging.</CardContent>
-            </Card>
-          )}
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md text-center">
+          <MessageSquare size={64} className="text-green-500 mx-auto mb-6" />
+          <p className="text-gray-600 dark:text-gray-400 text-xl mb-4">
+            Your conversations will appear here!
+          </p>
+          <p className="text-gray-500 dark:text-gray-500">
+            This feature is currently under development. Stay tuned for real-time messaging.
+          </p>
         </div>
-      </main>
-      <MadeWithDyad />
-      <Toaster />
+      </div>
     </div>
   );
 };
