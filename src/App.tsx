@@ -11,8 +11,9 @@ import FAQPage from "./pages/FAQPage";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
-import BrowseTaskersPage from "./pages/BrowseTaskersPage"; // New import
-import TaskerProfileViewPage from "./pages/TaskerProfileViewPage"; // New import
+import BrowseTaskersPage from "./pages/BrowseTaskersPage";
+import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
+import ChatPage from "./pages/ChatPage"; // New import
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -42,8 +43,9 @@ const App = () => {
                       <Route path="/contact" element={<ContactPage />} />
                       <Route path="/privacy" element={<PrivacyPolicyPage />} />
                       <Route path="/terms" element={<TermsOfServicePage />} />
-                      <Route path="/browse-taskers" element={<BrowseTaskersPage />} /> {/* New Route */}
-                      <Route path="/taskers/:id" element={<TaskerProfileViewPage />} /> {/* New Route */}
+                      <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
+                      <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
+                      <Route path="/chat" element={<ChatPage />} /> {/* New Route */}
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

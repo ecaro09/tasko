@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, LayoutGrid, ListTodo, User } from 'lucide-react';
+import { Home, LayoutGrid, ListTodo, User, MessageSquare } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -43,7 +43,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <span>Services</span>
         </a>
         <NavLink
-          to="/my-tasks" // Changed to NavLink for My Tasks
+          to="/my-tasks"
           className={({ isActive }) => cn(
             "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
             isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
@@ -51,6 +51,17 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
         >
           <ListTodo size={20} className="mb-1" />
           <span>My Tasks</span>
+        </NavLink>
+        {/* New NavLink for Chat */}
+        <NavLink
+          to="/chat"
+          className={({ isActive }) => cn(
+            "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+            isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          )}
+        >
+          <MessageSquare size={20} className="mb-1" />
+          <span>Chat</span>
         </NavLink>
         <button
           onClick={handleProfileClick}

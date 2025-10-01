@@ -33,6 +33,7 @@ const AppFooter: React.FC = () => {
           <ul className="space-y-2">
             <li><Link to="/faq" className="text-sm hover:text-green-400 transition-colors">FAQ</Link></li>
             <li><Link to="/contact" className="text-sm hover:text-green-400 transition-colors">Contact Us</Link></li>
+            <li><Link to="/chat" className="text-sm hover:text-green-400 transition-colors">Chat</Link></li> {/* New Link */}
             <li><Link to="/privacy" className="text-sm hover:text-green-400 transition-colors">Privacy Policy</Link></li>
             <li><Link to="/terms" className="text-sm hover:text-green-400 transition-colors">Terms of Service</Link></li>
           </ul>
