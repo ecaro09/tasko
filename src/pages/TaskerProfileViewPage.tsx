@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, MessageSquare, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { useChat } from '@/hooks/use-chat'; // Import useChat
 import { toast } from 'sonner'; // Import toast
 
 const TaskerProfileViewPage: React.FC = () => {
@@ -14,6 +15,7 @@ const TaskerProfileViewPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth(); // Get current user info
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
+  const { createChatRoom } = useChat(); // Get createChatRoom from useChat
   const [tasker, setTasker] = useState<TaskerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ const TaskerProfileViewPage: React.FC = () => {
     loadTasker();
   }, [id, fetchTaskerProfileById]);
 
-  const handleContactTasker = () => {
+  const handleContactTasker = async () => {
     if (!isAuthenticated || !user) {
       toast.error("Please log in to contact a tasker.");
       navigate('/profile'); // Or open login modal
@@ -49,7 +51,14 @@ const TaskerProfileViewPage: React.FC = () => {
       toast.info("You cannot chat with yourself.");
       return;
     }
-    navigate(`/chat/${id}`);
+
+    const participantIds = [user.uid, id];
+    const participantNames = [user.displayName || user.email || "You", tasker?.displayName || "Tasker"];
+    
+    const chatRoomId = await createChatRoom(participantIds, participantNames);
+    if (chatRoomId) {
+      navigate(`/chat/${chatRoomId}`);
+    }
   };
 
   if (loading || globalLoading) {
