@@ -13,19 +13,16 @@ export interface TaskerProfile {
   hourlyRate: number;
   isTasker: boolean;
   dateJoined: string;
-  rating?: number; // Added rating
-  location?: string; // Added location
-  verified?: boolean; // Added verified status
 }
 
 interface TaskerProfileContextType {
   taskerProfile: TaskerProfile | null;
-  allTaskerProfiles: TaskerProfile[];
+  allTaskerProfiles: TaskerProfile[]; // Added to store all tasker profiles
   loading: boolean;
   error: string | null;
-  createOrUpdateTaskerProfile: (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating' | 'location' | 'verified'>) => Promise<void>;
+  createOrUpdateTaskerProfile: (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined'>) => Promise<void>;
   isTasker: boolean;
-  fetchTaskerProfileById: (id: string) => Promise<TaskerProfile | null>;
+  fetchTaskerProfileById: (id: string) => Promise<TaskerProfile | null>; // Added for fetching specific tasker
 }
 
 const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>(undefined);
@@ -33,7 +30,7 @@ const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>
 export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [taskerProfile, setTaskerProfile] = useState<TaskerProfile | null>(null);
-  const [allTaskerProfiles, setAllTaskerProfiles] = useState<TaskerProfile[]>([]);
+  const [allTaskerProfiles, setAllTaskerProfiles] = useState<TaskerProfile[]>([]); // New state for all taskers
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isTasker, setIsTasker] = useState(false);
@@ -44,12 +41,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       const docRef = doc(db, 'taskerProfiles', id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        const data = docSnap.data() as TaskerProfile;
-        // Ensure dateJoined is a string
-        if (data.dateJoined && typeof data.dateJoined !== 'string') {
-          data.dateJoined = (data.dateJoined as any).toDate().toISOString();
-        }
-        return data;
+        return docSnap.data() as TaskerProfile;
       }
       return null;
     } catch (err: any) {
@@ -70,75 +62,57 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         {
           taskerId: "U001",
           name: "Juan Dela Cruz",
-          skills: ["Plumbing", "Electrical Repair"],
-          rating: 4.8,
-          location: "Makati",
-          verified: true,
-          photoURL: "https://randomuser.me/api/portraits/men/10.jpg",
-          bio: "Experienced plumber and electrician ready to fix your home issues.",
-          hourlyRate: 350,
+          skills: ["Plumbing", "Electrical Repair", "Home Cleaning"],
+          hourlyRate: 500,
+          bio: "Experienced handyman specializing in plumbing and electrical repairs. Also offers general home cleaning services.",
+          photoURL: "https://randomuser.me/api/portraits/men/75.jpg",
         },
         {
           taskerId: "U002",
           name: "Maria Santos",
-          skills: ["Cleaning", "Housekeeping"],
-          rating: 4.7,
-          location: "Quezon City",
-          verified: true,
-          photoURL: "https://randomuser.me/api/portraits/women/11.jpg",
-          bio: "Dedicated and thorough cleaner for homes and offices.",
-          hourlyRate: 250,
+          skills: ["Cleaning", "Housekeeping", "Laundry"],
+          hourlyRate: 400,
+          bio: "Dedicated and thorough cleaner with years of experience in residential housekeeping. Available for regular cleaning and deep cleans.",
+          photoURL: "https://randomuser.me/api/portraits/women/76.jpg",
         },
         {
           taskerId: "U003",
           name: "Jose Ramirez",
-          skills: ["Carpentry", "Furniture Assembly"],
-          rating: 4.6,
-          location: "Pasig",
-          verified: false,
-          photoURL: "https://randomuser.me/api/portraits/men/12.jpg",
-          bio: "Skilled carpenter for custom furniture and repairs.",
-          hourlyRate: 400,
+          skills: ["Carpentry", "Furniture Assembly", "Minor Repairs"],
+          hourlyRate: 450,
+          bio: "Skilled carpenter and assembler. Can help with custom furniture, repairs, and flat-pack assembly.",
+          photoURL: "https://randomuser.me/api/portraits/men/77.jpg",
         },
         {
           taskerId: "U004",
           name: "Anna Cruz",
-          skills: ["Appliance Repair", "Aircon Cleaning"],
-          rating: 4.9,
-          location: "Taguig",
-          verified: true,
-          photoURL: "https://randomuser.me/api/portraits/women/13.jpg",
-          bio: "Expert in appliance repair and aircon maintenance.",
-          hourlyRate: 300,
+          skills: ["Appliance Repair", "Aircon Cleaning", "Electrical"],
+          hourlyRate: 600,
+          bio: "Expert in appliance repair and air conditioning maintenance. Ensures your home appliances run smoothly.",
+          photoURL: "https://randomuser.me/api/portraits/women/78.jpg",
         },
         {
           taskerId: "U005",
           name: "Mark Villanueva",
-          skills: ["Painting", "Renovation"],
-          rating: 4.5,
-          location: "Mandaluyong",
-          verified: false,
-          photoURL: "https://randomuser.me/api/portraits/men/14.jpg",
-          bio: "Professional painter and renovator for your home improvement projects.",
-          hourlyRate: 450,
-        },
+          skills: ["Painting", "Renovation", "Wall Repair"],
+          hourlyRate: 550,
+          bio: "Professional painter and renovator. Transforms spaces with quality finishes and attention to detail.",
+          photoURL: "https://randomuser.me/api/portraits/men/79.jpg",
+        }
       ];
 
       for (const tasker of initialTaskers) {
-        const docRef = doc(db, 'taskerProfiles', tasker.taskerId);
-        await setDoc(docRef, {
+        const profileData: TaskerProfile = {
           userId: tasker.taskerId,
           displayName: tasker.name,
           photoURL: tasker.photoURL,
           skills: tasker.skills,
           bio: tasker.bio,
           hourlyRate: tasker.hourlyRate,
-          isTasker: true, // All seeded profiles are taskers
-          dateJoined: serverTimestamp(), // Use server timestamp for consistency
-          rating: tasker.rating,
-          location: tasker.location,
-          verified: tasker.verified,
-        });
+          isTasker: true,
+          dateJoined: new Date().toISOString(), // Set current date for seeded profiles
+        };
+        await setDoc(doc(db, 'taskerProfiles', tasker.taskerId), profileData);
       }
       toast.info("Initial tasker profiles added!");
     }
@@ -169,14 +143,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       // Fetch all tasker profiles
       try {
         const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
-        const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => {
-          const data = doc.data() as TaskerProfile;
-          // Ensure dateJoined is a string
-          if (data.dateJoined && typeof data.dateJoined !== 'string') {
-            data.dateJoined = (data.dateJoined as any).toDate().toISOString();
-          }
-          return data;
-        });
+        const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
         setAllTaskerProfiles(profiles);
       } catch (err: any) {
         console.error("Error fetching all tasker profiles:", err);
@@ -190,7 +157,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     loadProfiles();
   }, [isAuthenticated, user, authLoading]); // Re-run when auth state changes
 
-  const createOrUpdateTaskerProfile = async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating' | 'location' | 'verified'>) => {
+  const createOrUpdateTaskerProfile = async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined'>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to manage a tasker profile.");
       return;
@@ -204,7 +171,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         displayName: user.displayName || user.email || "Anonymous Tasker",
         photoURL: user.photoURL || undefined,
         isTasker: true,
-        dateJoined: new Date().toISOString(), // Use current date for new/updated profiles
+        dateJoined: new Date().toISOString(),
         ...data,
       };
 
@@ -214,13 +181,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       toast.success("Tasker profile saved successfully!");
       // Re-fetch all profiles to update the list
       const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
-      const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => {
-        const data = doc.data() as TaskerProfile;
-        if (data.dateJoined && typeof data.dateJoined !== 'string') {
-          data.dateJoined = (data.dateJoined as any).toDate().toISOString();
-        }
-        return data;
-      });
+      const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
       setAllTaskerProfiles(profiles);
     } catch (err: any) {
       console.error("Error saving tasker profile:", err);
@@ -234,12 +195,12 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const value = {
     taskerProfile,
-    allTaskerProfiles,
+    allTaskerProfiles, // Expose all tasker profiles
     loading,
     error,
     createOrUpdateTaskerProfile,
     isTasker,
-    fetchTaskerProfileById,
+    fetchTaskerProfileById, // Expose the utility function
   };
 
   return <TaskerProfileContext.Provider value={value}>{children}</TaskerProfileContext.Provider>;

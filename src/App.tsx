@@ -56,7 +56,7 @@ const App = () => {
                           <Route path="/terms" element={<TermsOfServicePage />} />
                           <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
                           <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                          <Route path="/chat/:taskId/:otherUserId" element={<ChatPage />} /> {/* Updated Chat Route */}
+                          <Route path="/chat" element={<ChatPage />} />
                           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                           <Route path="*" element={<NotFound />} />
                         </Routes>

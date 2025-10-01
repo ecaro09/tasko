@@ -41,9 +41,6 @@ const TaskDetailPage: React.FC = () => {
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
   const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
 
-  const acceptedOffer = taskOffers.find(offer => offer.status === 'accepted');
-  const isAssignedTasker = isAuthenticated && user?.uid === acceptedOffer?.taskerId;
-
   const handleMakeOfferClick = () => {
     if (task) {
       openMakeOfferModal(task);
@@ -84,14 +81,6 @@ const TaskDetailPage: React.FC = () => {
       await withdrawOffer(offerId);
     } catch (error) {
       // Error handled by useOffers hook
-    }
-  };
-
-  const handleChatClick = () => {
-    if (isTaskPoster && acceptedOffer) {
-      navigate(`/chat/${task.id}/${acceptedOffer.taskerId}`);
-    } else if (isAssignedTasker && task) {
-      navigate(`/chat/${task.id}/${task.posterId}`);
     }
   };
 
@@ -160,11 +149,6 @@ const TaskDetailPage: React.FC = () => {
                 {isAuthenticated && !isTasker && !isTaskPoster && (
                   <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>
                 )}
-                {(isTaskPoster && acceptedOffer) || (isAssignedTasker && task.status === 'assigned') ? (
-                  <Button onClick={handleChatClick} className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-4">
-                    <MessageSquare size={20} /> Chat with {isTaskPoster ? 'Tasker' : 'Client'}
-                  </Button>
-                ) : null}
               </div>
             </div>
 
