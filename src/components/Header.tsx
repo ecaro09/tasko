@@ -5,7 +5,6 @@ import { useModal } from './ModalProvider';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
 import { User as UserIcon } from 'lucide-react'; // New import
-import MobileNav from './MobileNav'; // Import the new MobileNav component
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -20,10 +19,6 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center pt-[var(--safe-area-top)]">
       <div className="container mx-auto px-4 flex justify-between items-center w-full">
         <div className="flex items-center gap-2">
-          {/* Mobile Navigation Toggle */}
-          <div className="md:hidden">
-            <MobileNav onSignOut={onSignOut} />
-          </div>
           <h1 className="text-2xl text-[hsl(var(--primary-color))] font-bold">Tasko</h1>
         </div>
         <nav className="hidden md:flex gap-8">
@@ -49,16 +44,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
                   </AvatarFallback>
                 </Avatar>
               </Link>
-              <Button onClick={onSignOut} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white hidden md:inline-flex">
+              <Button onClick={onSignOut} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
                 Sign Out
               </Button>
             </>
           ) : (
             <>
-              <Button onClick={openLoginModal} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white hidden md:inline-flex">
+              <Button onClick={openLoginModal} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
                 Login
               </Button>
-              <Button onClick={openSignupModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] hidden md:inline-flex">
+              <Button onClick={openSignupModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))]">
                 Sign Up
               </Button>
             </>
