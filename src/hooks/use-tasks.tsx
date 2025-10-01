@@ -60,7 +60,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     const snapshot = await getDocs(tasksCollectionRef);
 
     if (snapshot.empty) {
-      console.log("Database is empty, seeding initial marketing tasks...");
+      console.log("Database is empty, seeding initial tasks...");
       const initialTasks = [
         {
           title: "Social Media Manager for Local Business",
@@ -71,9 +71,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterId: "seed-user-1",
           posterName: "Maria Santos",
           posterAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
-          datePosted: serverTimestamp(),
+          datePosted: new Date("2024-07-20").toISOString(),
           status: "open",
-          imageUrl: getTaskImageUrl("marketing"), // Use utility
+          imageUrl: getTaskImageUrl("marketing"),
         },
         {
           title: "Flyer Distribution for Sari-Sari Store",
@@ -84,9 +84,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterId: "seed-user-2",
           posterName: "Juan Dela Cruz",
           posterAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
-          datePosted: serverTimestamp(),
+          datePosted: new Date("2024-07-19").toISOString(),
           status: "open",
-          imageUrl: getTaskImageUrl("marketing"), // Use utility
+          imageUrl: getTaskImageUrl("marketing"),
         },
         {
           title: "Online Content Creator for Pinoy Food Blog",
@@ -97,16 +97,91 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterId: "seed-user-3",
           posterName: "Aling Nena",
           posterAvatar: "https://randomuser.me/api/portraits/women/68.jpg",
-          datePosted: serverTimestamp(),
+          datePosted: new Date("2024-07-18").toISOString(),
           status: "open",
-          imageUrl: getTaskImageUrl("marketing"), // Use utility
+          imageUrl: getTaskImageUrl("marketing"),
+        },
+        {
+          taskId: "T001",
+          title: "Fix my refrigerator",
+          description: "Need someone to repair a Samsung refrigerator that is not cooling.",
+          budget: 1500,
+          location: "Makati City",
+          datePosted: new Date("2025-10-03").toISOString(),
+          status: "open",
+          category: "repairs",
+          posterId: "seed-user-4",
+          posterName: "Carlos Reyes",
+          posterAvatar: "https://randomuser.me/api/portraits/men/1.jpg",
+          imageUrl: getTaskImageUrl("repairs"),
+        },
+        {
+          taskId: "T002",
+          title: "Clean 2-bedroom condo",
+          description: "General cleaning needed for a 2BR condo unit.",
+          budget: 1200,
+          location: "Quezon City",
+          datePosted: new Date("2025-10-04").toISOString(),
+          status: "open",
+          category: "cleaning",
+          posterId: "seed-user-5",
+          posterName: "Sofia Garcia",
+          posterAvatar: "https://randomuser.me/api/portraits/women/2.jpg",
+          imageUrl: getTaskImageUrl("cleaning"),
+        },
+        {
+          taskId: "T003",
+          title: "Plumbing repair",
+          description: "Leaking faucet in the kitchen, need urgent repair.",
+          budget: 800,
+          location: "Pasig City",
+          datePosted: new Date("2025-10-05").toISOString(),
+          status: "open",
+          category: "repairs",
+          posterId: "seed-user-6",
+          posterName: "David Lim",
+          posterAvatar: "https://randomuser.me/api/portraits/men/3.jpg",
+          imageUrl: getTaskImageUrl("repairs"),
+        },
+        {
+          taskId: "T004",
+          title: "Assemble office desk",
+          description: "Bought a new desk, need help with assembly.",
+          budget: 600,
+          location: "Taguig",
+          datePosted: new Date("2025-10-06").toISOString(),
+          status: "open",
+          category: "assembly",
+          posterId: "seed-user-7",
+          posterName: "Isabel Cruz",
+          posterAvatar: "https://randomuser.me/api/portraits/women/4.jpg",
+          imageUrl: getTaskImageUrl("assembly"),
+        },
+        {
+          taskId: "T005",
+          title: "Aircon cleaning",
+          description: "Split-type aircon needs chemical cleaning.",
+          budget: 2000,
+          location: "Mandaluyong",
+          datePosted: new Date("2025-10-07").toISOString(),
+          status: "open",
+          category: "repairs",
+          posterId: "seed-user-8",
+          posterName: "Mark Tan",
+          posterAvatar: "https://randomuser.me/api/portraits/men/5.jpg",
+          imageUrl: getTaskImageUrl("repairs"),
         },
       ];
 
       for (const task of initialTasks) {
-        await addDoc(tasksCollectionRef, task);
+        // Convert datePosted to Firebase serverTimestamp for new tasks
+        const taskToSave = {
+          ...task,
+          datePosted: serverTimestamp(),
+        };
+        await addDoc(tasksCollectionRef, taskToSave);
       }
-      toast.info("Initial marketing tasks added!");
+      toast.info("Initial tasks added!");
     }
   };
 
