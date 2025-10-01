@@ -7,7 +7,7 @@ import { Menu } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import ChatRoomsList from './ChatRoomsList';
 import UserSearchAndChat from './UserSearchAndChat';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+// Removed ResizableHandle, ResizablePanel, ResizablePanelGroup as they are not ideal for mobile sheets
 
 const MobileChatSidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,20 +28,19 @@ const MobileChatSidebar: React.FC = () => {
           <SheetTitle>Chats & Users</SheetTitle>
         </SheetHeader>
         <div className="flex-1 flex flex-col overflow-hidden">
-          <ResizablePanelGroup direction="vertical" className="h-full">
-            <ResizablePanel defaultSize={60} minSize={30}>
-              <Card className="h-full border-none shadow-none">
-                <CardHeader className="p-4 pb-0">
-                  <CardTitle className="text-xl">Your Chats</CardTitle>
-                </CardHeader>
-                <ChatRoomsList onRoomSelect={handleRoomSelect} />
-              </Card>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={40} minSize={20}>
-              <UserSearchAndChat />
-            </ResizablePanel>
-          </ResizablePanelGroup>
+          {/* Directly embedding components for mobile */}
+          <Card className="h-1/2 border-none shadow-none flex flex-col">
+            <CardHeader className="p-4 pb-0">
+              <CardTitle className="text-xl">Your Chats</CardTitle>
+            </CardHeader>
+            <div className="flex-1 overflow-hidden">
+              <ChatRoomsList onRoomSelect={handleRoomSelect} />
+            </div>
+          </Card>
+          <div className="h-2 w-full bg-gray-100 dark:bg-gray-800" /> {/* Simple separator */}
+          <Card className="h-1/2 border-none shadow-none flex flex-col">
+            <UserSearchAndChat />
+          </Card>
         </div>
       </SheetContent>
     </Sheet>
