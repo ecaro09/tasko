@@ -23,6 +23,7 @@ import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
 import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
 import { OffersProvider } from "./hooks/use-offers";
+import { ChatProvider } from "./hooks/use-chat"; // New import for ChatProvider
 import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
@@ -40,27 +41,30 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ModalProvider>
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                          <Route path="/my-tasks" element={<MyTasksPage />} />
-                          <Route path="/my-offers" element={<MyOffersPage />} />
-                          <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
-                          <Route path="/profile" element={<ProfilePage />} />
-                          <Route path="/settings" element={<SettingsPage />} />
-                          <Route path="/dashboard" element={<DashboardPage />} /> {/* New Route for Dashboard */}
-                          <Route path="/faq" element={<FAQPage />} />
-                          <Route path="/contact" element={<ContactPage />} />
-                          <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                          <Route path="/terms" element={<TermsOfServicePage />} />
-                          <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
-                          <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                          <Route path="/chat" element={<ChatPage />} />
-                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </ModalProvider>
+                      <ChatProvider> {/* Wrap with ChatProvider */}
+                        <ModalProvider>
+                          <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                            <Route path="/my-tasks" element={<MyTasksPage />} />
+                            <Route path="/my-offers" element={<MyOffersPage />} />
+                            <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
+                            <Route path="/profile" element={<ProfilePage />} />
+                            <Route path="/settings" element={<SettingsPage />} />
+                            <Route path="/dashboard" element={<DashboardPage />} />
+                            <Route path="/faq" element={<FAQPage />} />
+                            <Route path="/contact" element={<ContactPage />} />
+                            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                            <Route path="/terms" element={<TermsOfServicePage />} />
+                            <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
+                            <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
+                            <Route path="/chat" element={<ChatPage />} /> {/* Route for chat list */}
+                            <Route path="/chat/:chatRoomId" element={<ChatPage />} /> {/* New route for specific chat room */}
+                            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </ModalProvider>
+                      </ChatProvider>
                     </OffersProvider>
                   </TaskerProfileProvider>
                 </TasksProvider>
