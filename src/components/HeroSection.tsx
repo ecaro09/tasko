@@ -19,7 +19,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChang
   return (
     <section className="relative bg-gradient-to-r from-[hsl(var(--primary-color))] to-[#008a25] text-white py-20 md:py-32 overflow-hidden mt-[60px] rounded-b-[20px] mb-6">
       <div className="absolute inset-0 z-0 opacity-20">
-        <img src="/hero-bg.jpg" alt="Background" className="w-full h-full object-cover" />
+        <img src="/hero-bg.jpg" alt="Background" className="w-full h-full object-cover" loading="lazy" />
       </div>
       <div className="container mx-auto px-4 relative z-10 text-center">
         <h2 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 drop-shadow-lg">

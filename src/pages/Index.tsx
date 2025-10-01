@@ -138,7 +138,7 @@ const Index = () => {
               (filteredTasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
+                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
                       {getCategoryName(task.category)}
                     </div>
