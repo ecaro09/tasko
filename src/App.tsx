@@ -15,7 +15,8 @@ import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
-import SettingsPage from "./pages/SettingsPage"; // New import
+import SettingsPage from "./pages/SettingsPage";
+import DashboardPage from "./pages/DashboardPage"; // New import for DashboardPage
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -24,7 +25,7 @@ import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
 import { OffersProvider } from "./hooks/use-offers";
 import React from "react";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "./components/theme-provider"; // New import
+import { ThemeProvider } from "./components/theme-provider";
 
 const queryClient = new QueryClient();
 
@@ -47,7 +48,8 @@ const App = () => {
                           <Route path="/my-offers" element={<MyOffersPage />} />
                           <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
                           <Route path="/profile" element={<ProfilePage />} />
-                          <Route path="/settings" element={<SettingsPage />} /> {/* New Route */}
+                          <Route path="/settings" element={<SettingsPage />} />
+                          <Route path="/dashboard" element={<DashboardPage />} /> {/* New Route for Dashboard */}
                           <Route path="/faq" element={<FAQPage />} />
                           <Route path="/contact" element={<ContactPage />} />
                           <Route path="/privacy" element={<PrivacyPolicyPage />} />

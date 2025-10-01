@@ -5,7 +5,7 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon } from 'lucide-react'; // Added SettingsIcon
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, LayoutDashboard } from 'lucide-react'; // Added LayoutDashboard icon
 import EditProfileSection from '@/components/EditProfileSection';
 
 const ProfilePage: React.FC = () => {
@@ -70,6 +70,12 @@ const ProfilePage: React.FC = () => {
                 <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">My Activities</CardTitle>
               </CardHeader>
               <CardContent className="p-0 space-y-4">
+                <Button
+                  onClick={() => navigate('/dashboard')} // New button to Dashboard
+                  className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                >
+                  <LayoutDashboard size={20} /> View Dashboard
+                </Button>
                 <Button
                   onClick={() => navigate('/my-tasks')}
                   className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6"
