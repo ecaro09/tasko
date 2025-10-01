@@ -1,32 +1,102 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTasks } from '@/hooks/use-tasks';
+import { useAuth } from '@/hooks/use-auth';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
+import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
+import { useModal } from '@/components/ModalProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Tag, DollarSign, User } from 'lucide-react';
+import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tasks, loading, error } = useTasks();
-  const task = tasks.find(t => t.id === id);
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
+  const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
+  const { openMakeOfferModal } = useModal();
 
-  if (loading) {
-    return <div className="container mx-auto p-4 text-center">Loading task details...</div>;
+  const task = tasks.find(t => t.id === id);
+  const taskOffers = offers.filter(offer => offer.taskId === id);
+
+  const isLoading = tasksLoading || authLoading || taskerProfileLoading || offersLoading;
+
+  if (isLoading) {
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading task details...</div>;
   }
 
-  if (error) {
-    return <div className="container mx-auto p-4 text-center text-red-500">Error: {error}</div>;
+  if (tasksError) {
+    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px]">Error: {tasksError}</div>;
   }
 
   if (!task) {
-    return <div className="container mx-auto p-4 text-center">Task not found.</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Task not found.</div>;
   }
 
-  const handleAcceptOffer = () => {
-    toast.info("Accept offer functionality coming soon!");
-    // Implement logic to accept an offer for the task
+  const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
+  const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
+
+  const handleMakeOfferClick = () => {
+    if (task) {
+      openMakeOfferModal(task);
+    }
+  };
+
+  const handleAcceptOffer = async (offerId: string) => {
+    if (!isTaskPoster) {
+      toast.error("You are not authorized to accept offers for this task.");
+      return;
+    }
+    try {
+      await acceptOffer(offerId, task.id);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const handleRejectOffer = async (offerId: string) => {
+    if (!isTaskPoster) {
+      toast.error("You are not authorized to reject offers for this task.");
+      return;
+    }
+    try {
+      await rejectOffer(offerId);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const handleWithdrawOffer = async (offerId: string) => {
+    const offer = taskOffers.find(o => o.id === offerId);
+    if (!isAuthenticated || user?.uid !== offer?.taskerId) {
+      toast.error("You are not authorized to withdraw this offer.");
+      return;
+    }
+    try {
+      await withdrawOffer(offerId);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const getOfferStatusBadge = (status: Offer['status']) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200">Pending</Badge>;
+      case 'accepted':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Rejected</Badge>;
+      case 'withdrawn':
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Withdrawn</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
   };
 
   return (
@@ -68,17 +138,81 @@ const TaskDetailPage: React.FC = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">Task Poster</p>
                   </div>
                 </div>
-                <Button onClick={handleAcceptOffer} className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2">
-                  <User size={20} /> Make an Offer
-                </Button>
+                {canMakeOffer && (
+                  <Button onClick={handleMakeOfferClick} className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2">
+                    <User size={20} /> Make an Offer
+                  </Button>
+                )}
+                {!isAuthenticated && (
+                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer.</p>
+                )}
+                {isAuthenticated && !isTasker && !isTaskPoster && (
+                  <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>
+                )}
               </div>
             </div>
 
-            {/* Placeholder for offers/comments section */}
+            {/* Offers Section */}
             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Offers & Discussion</h3>
-              <p className="text-gray-500 dark:text-gray-400">No offers yet. Be the first to make one!</p>
-              {/* In a real app, this would be a dynamic list of offers/comments */}
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Offers ({taskOffers.length})</h3>
+              {taskOffers.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400">No offers yet. Be the first to make one!</p>
+              ) : (
+                <div className="space-y-4">
+                  {taskOffers.map(offer => (
+                    <Card key={offer.id} className="p-4 shadow-sm">
+                      <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-12 h-12 border-2 border-blue-500">
+                            <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                            <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
+                              {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={20} />}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                              <MessageSquare size={14} /> {offer.message}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end sm:items-center gap-2">
+                          <p className="text-2xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
+                          {getOfferStatusBadge(offer.status)}
+                          {isTaskPoster && offer.status === 'pending' && (
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => handleAcceptOffer(offer.id)}
+                              >
+                                <CheckCircle size={16} className="mr-1" /> Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleRejectOffer(offer.id)}
+                              >
+                                <XCircle size={16} className="mr-1" /> Reject
+                              </Button>
+                            </div>
+                          )}
+                          {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-400 text-gray-700 hover:bg-gray-100 mt-2"
+                              onClick={() => handleWithdrawOffer(offer.id)}
+                            >
+                              <Clock size={16} className="mr-1" /> Withdraw
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
