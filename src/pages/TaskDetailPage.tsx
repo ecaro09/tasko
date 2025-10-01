@@ -27,15 +27,15 @@ const TaskDetailPage: React.FC = () => {
   const isLoading = tasksLoading || authLoading || taskerProfileLoading || offersLoading;
 
   if (isLoading) {
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading task details...</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Loading task details...</div>;
   }
 
   if (tasksError) {
-    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px]">Error: {tasksError}</div>;
+    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Error: {tasksError}</div>;
   }
 
   if (!task) {
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Task not found.</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Task not found.</div>;
   }
 
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
@@ -100,7 +100,7 @@ const TaskDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
       <div className="container mx-auto px-4">
         <Button onClick={() => navigate(-1)} variant="outline" className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
           &larr; Back to Tasks

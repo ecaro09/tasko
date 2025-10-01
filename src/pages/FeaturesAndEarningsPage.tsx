@@ -38,7 +38,7 @@ const FeaturesAndEarningsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text-green-600 mb-6 text-center">Become a Tasker with Tasko!</h1>
         <p className="text-lg text-gray-700 dark:text-gray-300 mb-12 text-center max-w-3xl mx-auto">

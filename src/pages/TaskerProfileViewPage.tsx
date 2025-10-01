@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,19 +37,19 @@ const TaskerProfileViewPage: React.FC = () => {
   }, [id, fetchTaskerProfileById]);
 
   if (loading || globalLoading) {
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading tasker profile...</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Loading tasker profile...</div>;
   }
 
   if (error) {
-    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px]">Error: {error}</div>;
+    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Error: {error}</div>;
   }
 
   if (!tasker) {
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Tasker profile not found.</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Tasker profile not found.</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4 pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
       <div className="container mx-auto max-w-3xl">
         <Button onClick={() => navigate(-1)} variant="outline" className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
           &larr; Back to Taskers

@@ -18,12 +18,12 @@ const DashboardPage: React.FC = () => {
   const isLoading = authLoading || taskerProfileLoading || tasksLoading || offersLoading;
 
   if (isLoading) {
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading dashboard...</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">Loading dashboard...</div>;
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 pt-[60px] px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 pt-[60px] px-4 pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
         <Card className="w-full max-w-md text-center shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Access Denied</CardTitle>
@@ -55,7 +55,7 @@ const DashboardPage: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] pb-[calc(var(--bottom-navigation-height)+var(--safe-area-bottom))] md:pb-12">
       <div className="container mx-auto px-4 max-w-4xl">
         <Button onClick={() => navigate(-1)} variant="outline" className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
           <ArrowLeft size={20} className="mr-2" /> Back

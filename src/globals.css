@@ -62,6 +62,7 @@
     --border-radius: 8px;
     --safe-area-top: env(safe-area-inset-top);
     --safe-area-bottom: env(safe-area-inset-bottom);
+    --bottom-navigation-height: 56px; /* Added for mobile bottom nav */
   }
 
   .dark {
