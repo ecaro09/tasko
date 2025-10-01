@@ -85,7 +85,7 @@ const ChatPage: React.FC = () => {
   const currentChatRoomWithInfo = chatRoomId ? resolvedChatRooms.find(room => room.id === chatRoomId) : null;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col pb-[var(--safe-area-bottom)]">
       <div className="container mx-auto px-4 flex-grow flex flex-col max-w-3xl">
         <div className="flex items-center justify-between mb-6">
           {chatRoomId ? (
@@ -119,8 +119,8 @@ const ChatPage: React.FC = () => {
             otherParticipantAvatar={currentChatRoomWithInfo.otherParticipantAvatar}
           />
         ) : (
-          <Card className="flex-grow flex flex-col shadow-lg rounded-lg overflow-hidden">
-            <CardContent className="flex-grow p-4">
+          <Card className="flex-grow flex flex-col shadow-lg rounded-lg overflow-hidden min-h-0">
+            <CardContent className="flex-grow p-4 flex flex-col min-h-0">
               <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Your Conversations</h2>
               {resolvedChatRooms.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -129,7 +129,7 @@ const ChatPage: React.FC = () => {
                   <p className="text-sm mt-2">Start a chat from a task detail page or a tasker's profile.</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[calc(100vh-250px)]"> {/* Adjust height as needed */}
+                <ScrollArea className="flex-grow">
                   <div className="space-y-3">
                     {resolvedChatRooms.map((room) => (
                         <div
