@@ -23,7 +23,7 @@ const ChatPage: React.FC = () => {
             Your conversations will appear here!
           </p>
           <p className="text-gray-500 dark:text-gray-500">
-            This feature is currently under development. Stay tuned for real-time messaging.
+            This feature is not yet implemented.
           </p>
         </div>
       </div>

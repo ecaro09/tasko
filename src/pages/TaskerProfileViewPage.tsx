@@ -96,9 +96,10 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             </div>
 
-            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
+            {/* Removed "Contact Tasker (Coming Soon)" button */}
+            {/* <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
               Contact Tasker (Coming Soon)
-            </Button>
+            </Button> */}
           </CardContent>
         </Card>
       </div>

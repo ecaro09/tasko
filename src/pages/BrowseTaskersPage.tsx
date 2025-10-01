@@ -31,14 +31,15 @@ const BrowseTaskersPage: React.FC = () => {
           Find the perfect professional for your task. Filter by skills, ratings, price, and location.
         </p>
 
-        <div className="flex justify-center gap-4 mb-12">
+        {/* Removed "Filters (Coming Soon)" and "Search Taskers (Coming Soon)" buttons */}
+        {/* <div className="flex justify-center gap-4 mb-12">
           <Button variant="outline" className="flex items-center gap-2 border-gray-400 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
             <Filter size={20} /> Filters (Coming Soon)
           </Button>
           <Button variant="outline" className="flex items-center gap-2 border-gray-400 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
             <Search size={20} /> Search Taskers (Coming Soon)
           </Button>
-        </div>
+        </div> */}
 
         {allTaskerProfiles.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md text-center">
