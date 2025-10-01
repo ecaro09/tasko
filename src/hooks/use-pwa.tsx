@@ -64,10 +64,10 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then(registration => {
-            console.log('SW registered: ', registration);
+            // console.log('SW registered: ', registration); // Removed
           })
           .catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
+            // console.log('SW registration failed: ', registrationError); // Removed
             toast.error("Failed to register service worker for offline support.");
           });
       });

@@ -71,7 +71,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setAllOffers(fetchedOffers);
       setLoading(false);
     }, (err) => {
-      console.error("Error fetching offers:", err);
+      // console.error("Error fetching offers:", err); // Removed
       setError("Failed to fetch offers.");
       setLoading(false);
       toast.error("Failed to load offers.");
@@ -106,7 +106,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       });
       toast.success("Offer submitted successfully!");
     } catch (err: any) {
-      console.error("Error adding offer:", err);
+      // console.error("Error adding offer:", err); // Removed
       toast.error(`Failed to submit offer: ${err.message}`);
       throw err;
     } finally {
@@ -127,7 +127,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setLoading(true);
     try {
       const offerRef = doc(db, 'offers', offerId);
-      const offerSnap = await getDoc(offerRef); // Fetch the offer to get taskerId
+      const offerSnap = await getDoc(offerRef);
       if (!offerSnap.exists()) {
         toast.error("Offer not found.");
         setLoading(false);
@@ -140,17 +140,16 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         dateUpdated: serverTimestamp(),
       });
 
-      // Update the task status to 'assigned' and set the correct assignedTaskerId
       const taskRef = doc(db, 'tasks', taskId);
       await updateDoc(taskRef, {
         status: 'assigned',
-        assignedTaskerId: offerData.taskerId, // Correctly assign the tasker's ID
+        assignedTaskerId: offerData.taskerId,
         assignedOfferId: offerId,
       });
 
       toast.success("Offer accepted!");
     } catch (err: any) {
-      console.error("Error accepting offer:", err);
+      // console.error("Error accepting offer:", err); // Removed
       toast.error(`Failed to accept offer: ${err.message}`);
       throw err;
     } finally {
@@ -173,7 +172,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       });
       toast.info("Offer rejected.");
     } catch (err: any) {
-      console.error("Error rejecting offer:", err);
+      // console.error("Error rejecting offer:", err); // Removed
       toast.error(`Failed to reject offer: ${err.message}`);
       throw err;
     } finally {
@@ -196,7 +195,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       });
       toast.info("Offer withdrawn.");
     } catch (err: any) {
-      console.error("Error withdrawing offer:", err);
+      // console.error("Error withdrawing offer:", err); // Removed
       toast.error(`Failed to withdraw offer: ${err.message}`);
       throw err;
     } finally {
@@ -206,7 +205,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const value = {
     offers: allOffers,
-    loading: loading || taskerLoading, // Consider tasker profile loading as well
+    loading: loading || taskerLoading,
     error,
     addOffer,
     getOffersForTask,

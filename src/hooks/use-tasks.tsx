@@ -9,8 +9,8 @@ import {
   serverTimestamp,
   DocumentData,
   getDocs,
-  deleteDoc, // Import deleteDoc
-  doc, // Import doc
+  deleteDoc,
+  doc,
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -28,16 +28,16 @@ export interface Task {
   datePosted: string;
   status: 'open' | 'assigned' | 'completed';
   imageUrl?: string;
-  assignedTaskerId?: string; // New field for the assigned tasker's ID
-  assignedOfferId?: string; // New field for the accepted offer's ID
+  assignedTaskerId?: string;
+  assignedOfferId?: string;
 }
 
 interface UseTasksContextType {
-  tasks: Task[]; // This will now be all tasks
+  tasks: Task[];
   loading: boolean;
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => Promise<void>;
-  deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
+  deleteTask: (taskId: string) => Promise<void>;
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -48,12 +48,10 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const [allTasks, setAllTasks] = useState<Task[]>([]
-);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to seed initial tasks
   const seedInitialTasks = async () => {
     const tasksCollectionRef = collection(db, 'tasks');
     const snapshot = await getDocs(tasksCollectionRef);
@@ -132,26 +130,25 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-          assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
-          assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
+          assignedTaskerId: data.assignedTaskerId || undefined,
+          assignedOfferId: data.assignedOfferId || undefined,
         };
       });
       setAllTasks(fetchedTasks);
       setLoading(false);
 
-      // Only seed if no tasks are present after initial fetch
       if (fetchedTasks.length === 0) {
         seedInitialTasks();
       }
     }, (err) => {
-      console.error("Error fetching tasks:", err);
+      // console.error("Error fetching tasks:", err); // Removed
       setError("Failed to fetch tasks.");
       setLoading(false);
       toast.error("Failed to load tasks.");
     });
 
     return () => unsubscribe();
-  }, []); // Empty dependency array to run once on mount
+  }, []);
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => {
     if (!isAuthenticated || !user) {
@@ -167,11 +164,11 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
         datePosted: serverTimestamp(),
         status: 'open',
-        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
       });
       toast.success("Task posted successfully!");
     } catch (err: any) {
-      console.error("Error adding task:", err);
+      // console.error("Error adding task:", err); // Removed
       toast.error(`Failed to post task: ${err.message}`);
       throw err;
     }
@@ -188,14 +185,14 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       await deleteDoc(taskRef);
       toast.success("Task deleted successfully!");
     } catch (err: any) {
-      console.error("Error deleting task:", err);
+      // console.error("Error deleting task:", err); // Removed
       toast.error(`Failed to delete task: ${err.message}`);
       throw err;
     }
   };
 
   const value = {
-    tasks: allTasks, // Expose all tasks
+    tasks: allTasks,
     loading,
     error,
     addTask,

@@ -25,9 +25,6 @@ if (missingKeys.length > 0) {
   throw new Error(errorMessage);
 }
 
-// Log the API key to check if it's being loaded
-console.log("Firebase API Key:", firebaseConfig.apiKey ? "Loaded" : "Not Loaded", firebaseConfig.apiKey);
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
