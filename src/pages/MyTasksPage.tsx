@@ -13,13 +13,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import TaskCard from '@/components/TaskCard';
-import { MessageCircle } from 'lucide-react';
-import { showError } from '@/utils/toast'; // Corrected import for showError
+import { MessageCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { showError } from '@/utils/toast';
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, signInWithGoogle, signOutUser, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
-  const { offers, loading: offersLoading, error: offersError } = useOffers();
+  const { tasks, updateTaskStatus, deleteTask, loading: tasksLoading, error: tasksError } = useTasks();
+  const { offers, withdrawOffer, loading: offersLoading, error: offersError } = useOffers();
   const { createOrGetChatRoom, selectChatRoom } = useChat();
   const navigate = useNavigate();
 
@@ -61,7 +61,23 @@ const MyTasksPage: React.FC = () => {
   }
 
   const myPostedTasks = tasks.filter(task => task.posterId === user?.uid);
+  const myAssignedTasks = tasks.filter(task => task.assignedTaskerId === user?.uid);
   const myMadeOffers = offers.filter(offer => offer.taskerId === user?.uid);
+
+  const getTaskStatusBadge = (status: string) => {
+    switch (status) {
+      case 'open':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200">Open</Badge>;
+      case 'assigned':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200">Assigned</Badge>;
+      case 'completed':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
 
   const getOfferStatusBadge = (status: string) => {
     switch (status) {
@@ -83,7 +99,7 @@ const MyTasksPage: React.FC = () => {
     const task = tasks.find(t => t.id === offer?.taskId);
 
     if (!offer || !task || !user) {
-      showError("Could not find offer or task details to start chat."); // Changed from toast.error to showError
+      showError("Could not find offer or task details to start chat.");
       return;
     }
 
@@ -97,6 +113,80 @@ const MyTasksPage: React.FC = () => {
     if (chatRoomId) {
       selectChatRoom(chatRoomId);
       navigate('/chat');
+    }
+  };
+
+  const handleInitiateChatFromAssignedTask = async (task) => {
+    if (!task || !user) {
+      showError("Could not find task details to start chat.");
+      return;
+    }
+
+    const chatRoomId = await createOrGetChatRoom(
+      [user.uid, task.posterId],
+      [user.displayName || 'You', task.posterName],
+      [user.photoURL || undefined, task.posterAvatar || undefined],
+      task.id
+    );
+
+    if (chatRoomId) {
+      selectChatRoom(chatRoomId);
+      navigate('/chat');
+    }
+  };
+
+  const handleInitiateChatFromPostedTask = async (task) => {
+    if (!task || !user || !task.assignedTaskerId) {
+      showError("Could not find assigned tasker details to start chat.");
+      return;
+    }
+    // For now, we don't have the assigned tasker's display name and avatar directly in the task object.
+    // In a real app, you'd fetch this from the taskerProfiles collection.
+    // For simplicity, we'll use a generic name/avatar for the assigned tasker.
+    const chatRoomId = await createOrGetChatRoom(
+      [user.uid, task.assignedTaskerId],
+      [user.displayName || 'You', 'Assigned Tasker'],
+      [user.photoURL || undefined, undefined], // Placeholder avatar
+      task.id
+    );
+
+    if (chatRoomId) {
+      selectChatRoom(chatRoomId);
+      navigate('/chat');
+    }
+  };
+
+  const handleMarkTaskCompleted = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task?.isDemo) {
+      showError("Cannot update status of sample tasks.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to mark this task as completed?")) {
+      await updateTaskStatus(taskId, 'completed');
+    }
+  };
+
+  const handleCancelTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task?.isDemo) {
+      showError("Cannot update status of sample tasks.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to cancel this task?")) {
+      await updateTaskStatus(taskId, 'cancelled');
+    }
+  };
+
+  const handleWithdrawOffer = async (offerId: string) => {
+    const offer = offers.find(o => o.id === offerId);
+    const task = tasks.find(t => t.id === offer?.taskId);
+    if (task?.isDemo) {
+      showError("Cannot withdraw offers on sample tasks.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to withdraw this offer?")) {
+      await withdrawOffer(offerId);
     }
   };
 
@@ -118,7 +208,136 @@ const MyTasksPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {myPostedTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} />
+                  <Card key={task.id} className="flex flex-col h-full hover:shadow-lg transition-shadow duration-200 ease-in-out">
+                    <Link to={`/tasks/${task.id}`} className="block flex-grow">
+                      <div className="relative">
+                        <img
+                          src={task.imageUrl}
+                          alt={task.title}
+                          className="w-full h-40 object-cover rounded-t-lg"
+                          loading="lazy"
+                        />
+                        {task.isDemo && (
+                          <Badge className="absolute top-2 left-2 bg-blue-500 text-white">Sample Task</Badge>
+                        )}
+                      </div>
+                      <CardHeader className="flex-grow pb-2">
+                        <CardTitle className="text-xl font-semibold mb-1">{task.title}</CardTitle>
+                        <CardDescription className="text-gray-600 dark:text-gray-400 line-clamp-2">
+                          {task.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0 pb-2">
+                        <div className="flex items-center text-gray-700 dark:text-gray-300 mb-1">
+                          {getTaskStatusBadge(task.status)}
+                        </div>
+                      </CardContent>
+                    </Link>
+                    <div className="p-4 border-t flex flex-wrap gap-2">
+                      {task.status === 'open' && !task.isDemo && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/tasks/${task.id}`)}>
+                            View Offers
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleCancelTask(task.id)}>
+                            <XCircle size={16} className="mr-1" /> Cancel
+                          </Button>
+                        </>
+                      )}
+                      {task.status === 'assigned' && !task.isDemo && (
+                        <>
+                          <Button size="sm" onClick={() => handleMarkTaskCompleted(task.id)}>
+                            <CheckCircle size={16} className="mr-1" /> Mark Completed
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleInitiateChatFromPostedTask(task)}
+                            className="flex items-center gap-1"
+                          >
+                            <MessageCircle size={16} /> Chat
+                          </Button>
+                        </>
+                      )}
+                      {(task.status === 'completed' || task.status === 'cancelled') && (
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/tasks/${task.id}`)}>
+                          View Details
+                        </Button>
+                      )}
+                      {task.isDemo && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Actions disabled for sample tasks.</p>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tasks I'm Working On Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-2xl">Tasks I'm Working On</CardTitle>
+            <CardDescription>Tasks you have accepted as a tasker.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {myAssignedTasks.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400 text-center">You haven't been assigned any tasks yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {myAssignedTasks.map((task) => (
+                  <Card key={task.id} className="flex flex-col h-full hover:shadow-lg transition-shadow duration-200 ease-in-out">
+                    <Link to={`/tasks/${task.id}`} className="block flex-grow">
+                      <div className="relative">
+                        <img
+                          src={task.imageUrl}
+                          alt={task.title}
+                          className="w-full h-40 object-cover rounded-t-lg"
+                          loading="lazy"
+                        />
+                        {task.isDemo && (
+                          <Badge className="absolute top-2 left-2 bg-blue-500 text-white">Sample Task</Badge>
+                        )}
+                      </div>
+                      <CardHeader className="flex-grow pb-2">
+                        <CardTitle className="text-xl font-semibold mb-1">{task.title}</CardTitle>
+                        <CardDescription className="text-gray-600 dark:text-gray-400 line-clamp-2">
+                          {task.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0 pb-2">
+                        <div className="flex items-center text-gray-700 dark:text-gray-300 mb-1">
+                          {getTaskStatusBadge(task.status)}
+                        </div>
+                      </CardContent>
+                    </Link>
+                    <div className="p-4 border-t flex flex-wrap gap-2">
+                      {task.status === 'assigned' && !task.isDemo && (
+                        <>
+                          <Button size="sm" onClick={() => handleMarkTaskCompleted(task.id)}>
+                            <CheckCircle size={16} className="mr-1" /> Mark Completed
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleInitiateChatFromAssignedTask(task)}
+                            className="flex items-center gap-1"
+                          >
+                            <MessageCircle size={16} /> Chat with Poster
+                          </Button>
+                        </>
+                      )}
+                      {(task.status === 'completed' || task.status === 'cancelled') && (
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/tasks/${task.id}`)}>
+                          View Details
+                        </Button>
+                      )}
+                      {task.isDemo && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Actions disabled for sample tasks.</p>
+                      )}
+                    </div>
+                  </Card>
                 ))}
               </div>
             )}
@@ -152,6 +371,16 @@ const MyTasksPage: React.FC = () => {
                       </div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                         {getOfferStatusBadge(offer.status)}
+                        {offer.status === 'pending' && taskForOffer && !taskForOffer.isDemo && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleWithdrawOffer(offer.id)}
+                            className="border-gray-600 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1"
+                          >
+                            <XCircle size={16} /> Withdraw
+                          </Button>
+                        )}
                         {offer.status === 'accepted' && taskForOffer && !taskForOffer.isDemo && (
                           <Button
                             onClick={() => handleInitiateChatFromOffer(offer.id)}
