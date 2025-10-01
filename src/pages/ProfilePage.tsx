@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit } from 'lucide-react';
+import { User as UserIcon, Mail, Edit, Briefcase } from 'lucide-react'; // Added Briefcase icon
 import EditProfileSection from '@/components/EditProfileSection';
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Check if user is a tasker
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
 
-  if (authLoading) {
+  if (authLoading || taskerProfileLoading) { // Include taskerProfileLoading
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
   }
 
@@ -74,7 +76,15 @@ const ProfilePage: React.FC = () => {
                 >
                   View My Posted Tasks
                 </Button>
-                {/* Add more buttons for other activities like "My Offers", "Completed Tasks" etc. */}
+                {isTasker && ( // Only show this button if the user is a tasker
+                  <Button
+                    onClick={() => navigate('/my-offers')}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                  >
+                    <Briefcase size={20} /> View My Offers
+                  </Button>
+                )}
+                {/* Add more buttons for other activities like "Completed Tasks" etc. */}
               </CardContent>
             </Card>
           </>
