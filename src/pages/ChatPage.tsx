@@ -1,160 +1,32 @@
-"use client";
-
-import React, { useEffect } from 'react';
-import { useChat } from '@/hooks/use-chat';
-import { useAuth } from '@/hooks/use-auth';
-import Header from '@/components/Header';
-import { MadeWithDyad } from '@/components/made-with-dyad';
-import { Toaster } from '@/components/ui/sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import ChatInterface from '@/components/ChatInterface';
-import UserSearchAndChat from '@/components/UserSearchAndChat'; // Import the new component
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { MessageSquare, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ChatPage: React.FC = () => {
-  const {
-    chatRooms,
-    selectedChatRoomId,
-    selectChatRoom,
-    loading: chatLoading,
-    error: chatError,
-  } = useChat();
-  const { user, isAuthenticated, signInWithGoogle, signOutUser, loading: authLoading } = useAuth();
-
-  const loading = chatLoading || authLoading;
-
-  useEffect(() => {
-    // Automatically select the first chat room if none is selected and rooms exist
-    if (!selectedChatRoomId && chatRooms.length > 0) {
-      selectChatRoom(chatRooms[0].id);
-    }
-  }, [chatRooms, selectedChatRoomId, selectChatRoom]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center">
-        <p>Loading chat...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 pt-[80px]">
-        <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
-        <main className="container mx-auto p-4 text-center">
-          <p className="text-red-500">Please sign in to view your chats.</p>
-        </main>
-        <MadeWithDyad />
-        <Toaster />
-      </div>
-    );
-  }
-
-  if (chatError) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 pt-[80px]">
-        <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
-        <main className="container mx-auto p-4 text-center text-red-500">
-          <p>Error loading chats: {chatError}</p>
-        </main>
-        <MadeWithDyad />
-        <Toaster />
-      </div>
-    );
-  }
-
-  // Determine the other participant's name for the currently selected chat room
-  const currentChatRoom = chatRooms.find(room => room.id === selectedChatRoomId);
-  const otherParticipantName = currentChatRoom
-    ? currentChatRoom.participantNames[currentChatRoom.participants.findIndex(pId => pId !== user?.uid)] || 'Unknown User'
-    : 'Select a Chat';
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
-      <Header isAuthenticated={isAuthenticated} onSignIn={signInWithGoogle} onSignOut={signOutUser} />
-      <main className="flex-1 container mx-auto p-4 pt-8 flex flex-col md:flex-row gap-4">
-        {/* Left Column: Chat Rooms Sidebar and User Search */}
-        <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-4 flex-shrink-0">
-          {/* Chat Rooms Sidebar */}
-          <Card className="flex-1 h-[calc(50vh-75px)]"> {/* Adjusted height */}
-            <CardHeader>
-              <CardTitle className="text-xl">Your Chats</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[calc(50vh-175px)]"> {/* Adjusted height */}
-                {chatRooms.length === 0 ? (
-                  <p className="p-4 text-gray-500 dark:text-gray-400 text-center">No chat rooms yet.</p>
-                ) : (
-                  chatRooms.map((room) => {
-                    // Determine the other participant's info
-                    const otherParticipantIndex = room.participants.findIndex(
-                      (pId) => pId !== user?.uid,
-                    );
-                    const roomOtherParticipantName =
-                      otherParticipantIndex !== -1
-                        ? room.participantNames[otherParticipantIndex]
-                        : 'Unknown User';
-                    const otherParticipantAvatar =
-                      otherParticipantIndex !== -1
-                        ? room.participantAvatars[otherParticipantIndex]
-                        : undefined;
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
+      <div className="container mx-auto px-4">
+        <Button onClick={() => navigate(-1)} variant="outline" className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
+          <ArrowLeft size={20} className="mr-2" /> Back
+        </Button>
+        <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">Chat & Messaging</h1>
+        <p className="text-lg text-gray-700 dark:text-gray-300 mb-12 text-center max-w-3xl mx-auto">
+          Real-time communication with taskers and clients.
+        </p>
 
-                    return (
-                      <div
-                        key={room.id}
-                        onClick={() => selectChatRoom(room.id)}
-                        className={cn(
-                          "flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700",
-                          selectedChatRoomId === room.id && "bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-600"
-                        )}
-                      >
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={otherParticipantAvatar || undefined} alt={roomOtherParticipantName} />
-                          <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                            {roomOtherParticipantName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-800 dark:text-gray-100">{roomOtherParticipantName}</p>
-                          {room.lastMessage && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                              {room.lastMessage}
-                            </p>
-                          )}
-                        </div>
-                        {room.lastMessageTimestamp && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(room.lastMessageTimestamp).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* User Search and Chat */}
-          <UserSearchAndChat />
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md text-center">
+          <MessageSquare size={64} className="text-green-500 mx-auto mb-6" />
+          <p className="text-gray-600 dark:text-gray-400 text-xl mb-4">
+            Your conversations will appear here!
+          </p>
+          <p className="text-gray-500 dark:text-gray-500">
+            This feature is currently under development. Stay tuned for real-time messaging.
+          </p>
         </div>
-
-        {/* Chat Interface */}
-        <div className="flex-1 h-[calc(100vh-150px)]">
-          {selectedChatRoomId ? (
-            <ChatInterface chatRoomId={selectedChatRoomId} otherParticipantName={otherParticipantName} />
-          ) : (
-            <Card className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-              <CardContent>Select a chat or find a new user to start messaging.</CardContent>
-            </Card>
-          )}
-        </div>
-      </main>
-      <MadeWithDyad />
-      <Toaster />
+      </div>
     </div>
   );
 };

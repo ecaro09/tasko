@@ -1,77 +1,82 @@
-"use client";
-
-import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '@/lib/firebase';
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged,
-  User,
-} from 'firebase/auth';
-import { showSuccess, showError } from '@/utils/toast';
+import { GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser, updateProfile } from 'firebase/auth';
+import { toast } from 'sonner'; // Using sonner for toasts
 
-interface AuthContextType {
-  user: User | null;
+interface AuthState {
+  user: FirebaseUser | null;
   isAuthenticated: boolean;
   loading: boolean;
+}
+
+interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
-  signOutUser: () => Promise<void>;
+  logout: () => Promise<void>;
+  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>; // Added updateProfile
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    loading: true,
+  });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsAuthenticated(!!currentUser);
-      setLoading(false);
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setAuthState({
+        user,
+        isAuthenticated: !!user,
+        loading: false,
+      });
     });
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    setLoading(true);
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
     try {
-      const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      showSuccess("Signed in successfully!");
+      toast.success("Signed in successfully!");
     } catch (error: any) {
       console.error("Error signing in with Google:", error);
-      showError(`Failed to sign in: ${error.message}`);
-    } finally {
-      setLoading(false);
+      toast.error(`Failed to sign in: ${error.message}`);
     }
-  }, []);
+  };
 
-  const signOutUser = useCallback(async () => {
-    setLoading(true);
+  const logout = async () => {
     try {
       await signOut(auth);
-      showSuccess("Signed out successfully!");
+      toast.success("Logged out successfully!");
     } catch (error: any) {
       console.error("Error signing out:", error);
-      showError(`Failed to sign out: ${error.message}`);
-    } finally {
-      setLoading(false);
+      toast.error(`Failed to log out: ${error.message}`);
     }
-  }, []);
+  };
 
-  const value = React.useMemo(
-    () => ({
-      user,
-      isAuthenticated,
-      loading,
-      signInWithGoogle,
-      signOutUser,
-    }),
-    [user, isAuthenticated, loading, signInWithGoogle, signOutUser]
-  );
+  const updateUserProfile = async (displayName: string, photoURL?: string) => {
+    if (!authState.user) {
+      toast.error("You must be logged in to update your profile.");
+      return;
+    }
+    try {
+      await updateProfile(authState.user, { displayName, photoURL });
+      // Force a re-fetch of the user to update the state with new profile info
+      setAuthState(prev => ({
+        ...prev,
+        user: auth.currentUser, // auth.currentUser will have the updated info
+      }));
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast.error(`Failed to update profile: ${error.message}`);
+      throw error; // Re-throw to allow calling component to handle loading state
+    }
+  };
+
+  const value = { ...authState, signInWithGoogle, logout, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
