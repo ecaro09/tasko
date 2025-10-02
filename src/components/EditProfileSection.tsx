@@ -64,7 +64,7 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
           <Button onClick={handleSave} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
-        </div>
+        </div
       </CardContent>
     </Card>
   );

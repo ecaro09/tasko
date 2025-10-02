@@ -41,7 +41,7 @@ const AppFooter: React.FC = () => {
 
         {/* Connect With Us & App Downloads */}
         <div>
-          <h3 className="text-white text-lg font-semibold mb-4">Connect With Us</h3>
+          <h3 className="text-white text-lg font-semibold mb-4">Download Our App</h3>
           <div className="flex space-x-4 mb-6">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
               <Facebook size={24} />

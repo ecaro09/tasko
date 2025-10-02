@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
@@ -20,15 +22,13 @@ type CarouselProps = {
 };
 
 type CarouselContextProps = {
-  carouselRef: UseEmblaCarouselType[0];
-  api: UseEmblaCarouselType[1];
-  opts: CarouselOptions | undefined;
-  orientation: "horizontal" | "vertical";
+  carouselRef: ReturnType<typeof useEmblaCarousel>[0];
+  api: ReturnType<typeof useEmblaCarousel>[1];
   scrollPrev: () => void;
   scrollNext: () => void;
   canScrollPrev: boolean;
   canScrollNext: boolean;
-};
+} & CarouselProps;
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
@@ -48,10 +48,10 @@ const Carousel = React.forwardRef<
 >(
   (
     {
-      orientation = "horizontal",
       opts,
-      setApi,
       plugins,
+      orientation = "horizontal",
+      setApi,
       className,
       children,
       ...props
@@ -118,8 +118,7 @@ const Carousel = React.forwardRef<
           carouselRef,
           api: api,
           opts,
-          orientation:
-            orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
+          orientation,
           scrollPrev,
           scrollNext,
           canScrollPrev,
@@ -153,24 +152,20 @@ Carousel.displayName = "Carousel";
 
 const CarouselItem = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const { orientation } = useCarousel();
-
-  return (
-    <div
-      ref={ref}
-      role="group"
-      aria-roledescription="slide"
-      className={cn(
-        "min-w-0 shrink-0 grow-0 basis-full",
-        orientation === "horizontal" ? "pl-4" : "pt-4",
-        className,
-      )}
-      {...props}
-    />
-  );
-});
+  React.HTMLAttributes<HTMLDivElement> & { orientation?: "horizontal" | "vertical" }
+>(({ className, orientation = "horizontal", ...props }, ref) => (
+  <div
+    ref={ref}
+    role="group"
+    aria-roledescription="slide"
+    className={cn(
+      "min-w-0 shrink-0 grow-0 basis-full",
+      orientation === "horizontal" ? "pl-4" : "pt-4",
+      className,
+    )}
+    {...props}
+  />
+));
 CarouselItem.displayName = "CarouselItem";
 
 const CarouselPrevious = React.forwardRef<
@@ -233,8 +228,8 @@ CarouselNext.displayName = "CarouselNext";
 
 export {
   Carousel,
-  CarouselItem,
   CarouselContent,
+  CarouselItem,
   CarouselPrevious,
   CarouselNext,
   type CarouselApi,

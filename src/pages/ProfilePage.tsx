@@ -5,7 +5,7 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon } from 'lucide-react'; // Added SettingsIcon
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon } from 'lucide-react';
 import EditProfileSection from '@/components/EditProfileSection';
 
 const ProfilePage: React.FC = () => {

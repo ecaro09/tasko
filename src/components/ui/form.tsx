@@ -2,22 +2,15 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import {
   Controller,
-  type ControllerProps,
-  type FieldPath,
-  type FieldValues,
+  ControllerProps,
+  FieldPath,
+  FieldValues,
+  useFormContext,
 } from "react-hook-form";
-
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 
-const Form = <
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
->(
-  props: ControllerProps<TFieldValues, TName>,
-) => {
-  return <Controller {...props} />;
-};
+const Form = useFormContext;
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -46,7 +39,6 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-
   const { getFieldState, formState } = useFormContext();
 
   const fieldState = getFieldState(fieldContext.name, formState);
@@ -150,7 +142,7 @@ const FormMessage = React.forwardRef<
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField();
-  const body = error ? error.message?.toString() : children; // Changed to .toString()
+  const body = error ? String(error?.message) : children;
 
   if (!body) {
     return null;
@@ -170,8 +162,8 @@ const FormMessage = React.forwardRef<
 FormMessage.displayName = "FormMessage";
 
 export {
-  useFormContext,
-  FormField,
+  useFormField,
+  Form,
   FormItem,
   FormLabel,
   FormControl,
