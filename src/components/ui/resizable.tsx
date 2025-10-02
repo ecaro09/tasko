@@ -2,7 +2,7 @@
 
 import { GripVertical } from "lucide-react";
 import * as ResizablePrimitive from "react-resizable-panels";
-import * as React from "react"; // Added missing React import
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -22,8 +22,8 @@ const ResizablePanelGroup = ({
 const ResizablePanel = ResizablePrimitive.Panel;
 
 const ResizableHandle = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof ResizablePrimitive.PanelHandle> // Corrected type
+  React.ElementRef<typeof ResizablePrimitive.PanelHandle>, // Corrected ref type
+  React.ComponentPropsWithoutRef<typeof ResizablePrimitive.PanelHandle>
 >(({ className, withHandle, children, ...props }, ref) => (
   <ResizablePrimitive.PanelHandle // Corrected component name
     ref={ref}
@@ -43,6 +43,6 @@ const ResizableHandle = React.forwardRef<
     {children}
   </ResizablePrimitive.PanelHandle>
 ));
-ResizableHandle.displayName = "ResizableHandle"; // Corrected displayName
+ResizableHandle.displayName = "ResizableHandle";
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle };

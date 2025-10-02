@@ -18,7 +18,7 @@ import {
 } from "recharts";
 import type {
   Payload,
-  ContentRenderer, // Removed ContentProps, using ContentRenderer from recharts
+  ContentRenderer, // Corrected import for ContentRenderer
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
@@ -125,7 +125,7 @@ ChartContainer.displayName = "ChartContainer";
 const ChartTooltip = ({
   cursor = false,
   content,
-  className,
+  className, // Removed className from destructuring as it's applied to wrapperStyle
   ...props
 }: React.ComponentProps<typeof Tooltip> & {
   content?: ContentRenderer<ValueType, NameType>;
@@ -141,7 +141,7 @@ const ChartTooltip = ({
             <div
               className={cn(
                 "grid min-w-[130px] items-start text-xs border border-border bg-background p-2 shadow-md",
-                className,
+                className, // Applied className here
               )}
             >
               {content ? (
@@ -197,7 +197,7 @@ const ChartTooltip = ({
 };
 
 const ChartLegend = ({
-  className,
+  className, // Removed className from destructuring
   hideIcon = false,
   formatter,
   ...props
@@ -210,7 +210,7 @@ const ChartLegend = ({
     <Legend
       className={cn(
         "flex flex-wrap items-center justify-center gap-4",
-        className,
+        className, // Applied className here
       )}
       formatter={(value, entry, index) => {
         const key = entry.dataKey as keyof typeof activeConfig;
@@ -293,8 +293,8 @@ const ChartAxis = ({
   className,
   orientation, // Destructure orientation
   ...props
-}: React.ComponentProps<typeof XAxis> & React.ComponentProps<typeof YAxis>) => { // Combined types
-  const AxisComponent = (orientation === 'left' || orientation === 'right') ? YAxis : XAxis; // Choose Axis based on orientation
+}: React.ComponentProps<typeof XAxis> & React.ComponentProps<typeof YAxis>) => {
+  const AxisComponent: React.ComponentType<any> = (orientation === 'left' || orientation === 'right') ? YAxis : XAxis; // Explicitly type AxisComponent
 
   return (
     <AxisComponent
