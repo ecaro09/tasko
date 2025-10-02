@@ -15,10 +15,10 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
+  TooltipProps, // Corrected import for TooltipProps
 } from "recharts";
 import type {
   Payload,
-  ContentRenderer, // Corrected import for ContentRenderer
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
@@ -128,7 +128,7 @@ const ChartTooltip = ({
   className, // Removed className from destructuring as it's applied to wrapperStyle
   ...props
 }: React.ComponentProps<typeof Tooltip> & {
-  content?: ContentRenderer<ValueType, NameType>;
+  content?: TooltipProps<ValueType, NameType>['content']; // Corrected type for content
 }) => {
   const { activeConfig } = useChart();
 
@@ -190,14 +190,14 @@ const ChartTooltip = ({
 
         return null;
       }}
-      wrapperStyle={{ outline: "none" }} // Added wrapperStyle to prevent className conflict
+      wrapperStyle={{ outline: "none" }} // Removed className from wrapperStyle
       {...props}
     />
   );
 };
 
 const ChartLegend = ({
-  className, // Removed className from destructuring
+  className, // Destructure className here
   hideIcon = false,
   formatter,
   ...props
@@ -212,6 +212,7 @@ const ChartLegend = ({
         "flex flex-wrap items-center justify-center gap-4",
         className, // Applied className here
       )}
+      wrapperStyle={{ outline: "none" }} // Removed className from wrapperStyle
       formatter={(value, entry, index) => {
         const key = entry.dataKey as keyof typeof activeConfig;
         const config = key ? activeConfig[key] : undefined;
@@ -232,7 +233,6 @@ const ChartLegend = ({
           </div>
         );
       }}
-      wrapperStyle={{ outline: "none" }} // Added wrapperStyle to prevent className conflict
       {...props}
     />
   );
