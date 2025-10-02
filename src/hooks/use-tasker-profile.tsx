@@ -29,11 +29,11 @@ const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>
 
 export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [taskerProfile, setTaskerProfile] = useState<TaskerProfile | null>(null);
-  const [allTaskerProfiles, setAllTaskerProfiles] = useState<TaskerProfile[]>([]); // New state for all taskers
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isTasker, setIsTasker] = useState(false);
+  const [taskerProfile, setTaskerProfile] = React.useState<TaskerProfile | null>(null);
+  const [allTaskerProfiles, setAllTaskerProfiles] = React.useState<TaskerProfile[]>([]); // New state for all taskers
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [isTasker, setIsTasker] = React.useState(false);
 
   // Function to fetch a single tasker profile by ID (can be used outside the hook context)
   const fetchTaskerProfileById = async (id: string): Promise<TaskerProfile | null> => {
@@ -51,7 +51,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const loadProfiles = async () => {
       setLoading(true);
       setError(null);

@@ -17,20 +17,23 @@ import {
   Legend,
 } from "recharts";
 import type {
-  ContentProps,
   Payload,
+  ContentRenderer, // Removed ContentProps, using ContentRenderer from recharts
+  NameType,
+  ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
 import { cn } from "@/lib/utils";
 
-const ChartContext = React.createContext<ChartContextProps | null>(null);
+// Can't use a Record here since the keys are dynamic.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ChartConfigPayload = { [key: string]: any };
 
 type ChartContextProps = {
-  config: ChartConfig;
-  /**
-   * The currently active main color for the chart.
-   */
-  activeConfig: ChartConfig[keyof ChartConfig];
+  config: ChartConfigPayload;
+  activeConfig: ChartConfigPayload;
 };
+
+const ChartContext = React.createContext<ChartContextProps | null>(null);
 
 function useChart() {
   const context = React.useContext(ChartContext);
@@ -52,40 +55,14 @@ type ChartConfig = {
   );
 };
 
-type ChartContainerProps = React.ComponentProps<"div"> & {
-  config: ChartConfig;
-  children: React.ReactNode;
-};
+const THEMES = {
+  light: "",
+  dark: ".dark",
+} as const;
 
-const ChartContainer = React.forwardRef<
-  HTMLDivElement,
-  ChartContainerProps
->(({ config, className, children, ...props }, ref) => {
-  const uniqueId = React.useId();
-  const chartId = `chart-${uniqueId.replace(/:/g, "")}`;
-
-  return (
-    <ChartContext.Provider value={{ config, activeConfig: {} }}>
-      <div
-        data-chart={chartId}
-        ref={ref}
-        className={cn(
-          "flex aspect-video justify-center text-foreground",
-          className,
-        )}
-        {...props}
-      >
-        <ChartStyle id={chartId} config={config} />
-        {children}
-      </div>
-    </ChartContext.Provider>
-  );
-});
-ChartContainer.displayName = "ChartContainer";
-
-const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
   const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color,
+    ([_, itemConfig]) => itemConfig.theme || itemConfig.color,
   );
 
   if (!colorConfig.length) {
@@ -104,6 +81,7 @@ ${prefix} [data-chart=${id}] {
       const color = itemConfig.theme?.[theme] || itemConfig.color;
       return color ? `--color-${key}: ${color};` : null;
     })
+    .filter(Boolean)
     .join("\n")}
 }
 `,
@@ -112,172 +90,153 @@ ${prefix} [data-chart=${id}] {
       }}
     />
   );
-};
+}
+
+const ChartContainer = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<typeof ResponsiveContainer> & {
+    config: ChartConfig;
+    id?: string;
+    children: React.ReactNode;
+  }
+>(({ id, className, children, config, ...props }, ref) => {
+  const uniqueId = React.useId();
+  const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+
+  return (
+    <ChartContext.Provider value={{ config, activeConfig: {} }}>
+      <ChartStyle id={chartId} config={config} />
+      <ResponsiveContainer
+        id={chartId}
+        ref={ref}
+        className={cn(
+          "flex h-96 w-full flex-col items-center justify-center [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-dot]:fill-primary [&_.recharts-active-dot]:fill-background [&_.recharts-active-dot]:stroke-primary [&_.recharts-tooltip-cursor]:fill-accent [&_.recharts-brush-bg]:fill-border [&_.recharts-brush-slider]:stroke-border [&_.recharts-brush-thumb]:fill-background [&_.recharts-brush-thumb]:stroke-primary [&_.recharts-reference-line-line]:stroke-border [&_.recharts-sector]:stroke-background [&_.recharts-sector]:fill-icon [&_.recharts-surface]:fill-background [&_.recharts-tooltip-wrapper_.recharts-tooltip-item]:text-foreground",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </ResponsiveContainer>
+    </ChartContext.Provider>
+  );
+});
+ChartContainer.displayName = "ChartContainer";
 
 const ChartTooltip = ({
-  className,
+  cursor = false,
   content,
+  className,
   ...props
 }: React.ComponentProps<typeof Tooltip> & {
-  content?: React.ComponentProps<typeof ChartTooltipContent>["content"];
+  content?: ContentRenderer<ValueType, NameType>;
 }) => {
   const { activeConfig } = useChart();
 
   return (
     <Tooltip
-      cursor={{ stroke: "hsl(var(--chart-foreground))", strokeOpacity: 0.15 }}
-      wrapperStyle={{ outline: "none" }}
-      content={({ active, payload, label }) => (
-        <ChartTooltipContent
-          active={active}
-          payload={payload}
-          label={label}
-          content={content}
-          activeConfig={activeConfig}
-        />
-      )}
-      className={className}
+      cursor={cursor}
+      content={({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+          return (
+            <div
+              className={cn(
+                "grid min-w-[130px] items-start text-xs border border-border bg-background p-2 shadow-md",
+                className,
+              )}
+            >
+              {content ? (
+                content({ active, payload, label })
+              ) : (
+                <>
+                  {label && (
+                    <div className="border-b border-border pb-2 text-muted-foreground">
+                      {label}
+                    </div>
+                  )}
+                  <div className="grid gap-1 pt-2">
+                    {payload.map((item, index) => {
+                      const key = item.dataKey as keyof typeof activeConfig;
+                      const config = key ? activeConfig[key] : undefined;
+
+                      return (
+                        <div
+                          key={item.dataKey as React.Key} // Cast to React.Key
+                          className="flex items-center justify-between gap-4"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "flex h-3 w-3 shrink-0 rounded-full",
+                                item.color && `bg-[${item.color}]`,
+                              )}
+                              style={{
+                                backgroundColor: item.color,
+                              }}
+                            />
+                            {config?.label || item.name}:
+                          </div>
+                          <span className="font-mono font-medium text-foreground">
+                            {item.value as React.ReactNode}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        }
+
+        return null;
+      }}
+      wrapperStyle={{ outline: "none" }} // Added wrapperStyle to prevent className conflict
       {...props}
     />
   );
 };
 
-type ChartTooltipContentProps = ContentProps<any, any> & {
-  activeConfig: ChartContextProps["activeConfig"];
-  content?: React.ComponentProps<typeof ChartTooltipContent>["content"];
-};
-
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  ChartTooltipContentProps
->(
-  (
-    { active, payload, content, activeConfig, className, ...props },
-    ref,
-  ) => {
-    if (!active || !payload || !payload.length) {
-      return null;
-    }
-
-    const defaultContent = (
-      <div
-        className={cn(
-          "grid min-w-[130px] gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-xl",
-          className,
-        )}
-        {...props}
-      >
-        <p className="text-muted-foreground">{payload[0].name}</p>
-        {payload.map((item, index) => {
-          const activeColor = activeConfig?.[item.dataKey as keyof typeof activeConfig]?.color;
-          return (
-            <div
-              key={item.dataKey}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center">
-                <span
-                  className="mr-2 h-3 w-3 rounded-full"
-                  style={{
-                    backgroundColor: activeColor || item.color,
-                  }}
-                />
-                {item.name}
-              </div>
-              {item.value}
-            </div>
-          );
-        })}
-      </div>
-    );
-
-    return (
-      <div ref={ref}>
-        {content ? content({ active, payload, label: payload[0].name }) : defaultContent}
-      </div>
-    );
-  },
-);
-ChartTooltipContent.displayName = "ChartTooltipContent";
-
 const ChartLegend = ({
   className,
-  content,
+  hideIcon = false,
+  formatter,
   ...props
 }: React.ComponentProps<typeof Legend> & {
-  content?: React.ComponentProps<typeof ChartLegendContent>["content"];
+  hideIcon?: boolean;
 }) => {
   const { activeConfig } = useChart();
 
   return (
     <Legend
-      content={({ payload }) => (
-        <ChartLegendContent
-          payload={payload}
-          content={content}
-          activeConfig={activeConfig}
-        />
+      className={cn(
+        "flex flex-wrap items-center justify-center gap-4",
+        className,
       )}
-      className={className}
+      formatter={(value, entry, index) => {
+        const key = entry.dataKey as keyof typeof activeConfig;
+        const config = key ? activeConfig[key] : undefined;
+        return (
+          <div className="flex items-center gap-2">
+            {!hideIcon && (
+              <span
+                className={cn(
+                  "flex h-3 w-3 shrink-0 rounded-full",
+                  entry.color && `bg-[${entry.color}]`,
+                )}
+                style={{
+                  backgroundColor: entry.color,
+                }}
+              />
+            )}
+            {config?.label || value}
+          </div>
+        );
+      }}
+      wrapperStyle={{ outline: "none" }} // Added wrapperStyle to prevent className conflict
       {...props}
     />
   );
 };
-
-type ChartLegendContentProps = React.ComponentProps<"div"> &
-  Pick<React.ComponentProps<typeof Legend>, "payload" | "verticalAlign"> & {
-    activeConfig: ChartContextProps["activeConfig"];
-    content?: (props: { payload?: Payload[] }) => React.ReactNode;
-    hideIcon?: boolean;
-  };
-
-const ChartLegendContent = React.forwardRef<
-  HTMLDivElement,
-  ChartLegendContentProps
->(
-  (
-    { payload, content, activeConfig, className, hideIcon = false, ...props },
-    ref,
-  ) => {
-    if (!payload || !payload.length) {
-      return null;
-    }
-
-    const defaultContent = (
-      <div
-        ref={ref}
-        className={cn(
-          "flex flex-wrap items-center justify-center gap-4",
-          className,
-        )}
-        {...props}
-      >
-        {payload.map((item) => {
-          const activeColor = activeConfig?.[item.dataKey as keyof typeof activeConfig]?.color;
-          return (
-            <div
-              key={item.dataKey}
-              className="flex items-center gap-1.5"
-            >
-              {!hideIcon && (
-                <span
-                  className="h-3 w-3 rounded-full"
-                  style={{
-                    backgroundColor: activeColor || item.color,
-                  }}
-                />
-              )}
-              {item.value}
-            </div>
-          );
-        })}
-      </div>
-    );
-
-    return <div ref={ref}>{content ? content({ payload }) : defaultContent}</div>;
-  },
-);
-ChartLegendContent.displayName = "ChartLegendContent";
 
 const ChartCrosshair = ({
   className,
@@ -332,13 +291,17 @@ ChartGrid.displayName = "ChartGrid";
 
 const ChartAxis = ({
   className,
+  orientation, // Destructure orientation
   ...props
-}: React.ComponentProps<typeof XAxis> | React.ComponentProps<typeof YAxis>) => {
+}: React.ComponentProps<typeof XAxis> & React.ComponentProps<typeof YAxis>) => { // Combined types
+  const AxisComponent = (orientation === 'left' || orientation === 'right') ? YAxis : XAxis; // Choose Axis based on orientation
+
   return (
-    <XAxis
+    <AxisComponent
       axisLine={false}
       tickLine={false}
       className={cn("text-sm text-muted-foreground", className)}
+      orientation={orientation} // Pass orientation to the component
       {...props}
     />
   );
@@ -358,11 +321,6 @@ const ChartDotProvider = ChartContext.Provider;
 const ChartGridProvider = ChartContext.Provider;
 
 const ChartAxisProvider = ChartContext.Provider;
-
-const THEMES = {
-  light: "[data-theme=light]",
-  dark: "[data-theme=dark]",
-} as const;
 
 export {
   ChartContainer,

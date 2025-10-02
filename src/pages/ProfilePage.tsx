@@ -12,7 +12,7 @@ const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
 
   if (authLoading || taskerProfileLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;

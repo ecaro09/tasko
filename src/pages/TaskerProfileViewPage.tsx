@@ -11,11 +11,11 @@ const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
-  const [tasker, setTasker] = useState<TaskerProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tasker, setTasker] = React.useState<TaskerProfile | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const loadTasker = async () => {
       if (!id) {
         setError("Tasker ID is missing.");

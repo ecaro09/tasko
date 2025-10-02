@@ -1,10 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks, Task } from '@/hooks/use-tasks'; // Import Task interface
 import { toast } from 'sonner';
@@ -26,12 +22,12 @@ interface ModalContextType {
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
 export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-  const [isPostTaskModalOpen, setIsPostTaskModalOpen] = useState(false);
-  const [isTaskerRegistrationModalOpen, setIsTaskerRegistrationModalOpen] = useState(false);
-  const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = useState(false); // New state
-  const [selectedTaskForOffer, setSelectedTaskForOffer] = useState<Task | null>(null); // State to hold the task for the offer modal
+  const [isLoginModalOpen, setIsLoginModalOpen] = React.useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = React.useState(false);
+  const [isPostTaskModalOpen, setIsPostTaskModalOpen] = React.useState(false);
+  const [isTaskerRegistrationModalOpen, setIsTaskerRegistrationModalOpen] = React.useState(false);
+  const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = React.useState(false); // New state
+  const [selectedTaskForOffer, setSelectedTaskForOffer] = React.useState<Task | null>(null); // State to hold the task for the offer modal
 
   const { isAuthenticated } = useAuth();
 

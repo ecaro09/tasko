@@ -15,12 +15,12 @@ interface PostTaskModalProps {
 
 const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
   const { addTask } = useTasks();
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDescription, setTaskDescription] = useState('');
-  const [taskLocation, setTaskLocation] = useState('');
-  const [taskBudget, setTaskBudget] = useState('');
-  const [taskCategory, setTaskCategory] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [taskTitle, setTaskTitle] = React.useState('');
+  const [taskDescription, setTaskDescription] = React.useState('');
+  const [taskLocation, setTaskLocation] = React.useState('');
+  const [taskBudget, setTaskBudget] = React.useState('');
+  const [taskCategory, setTaskCategory] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handlePostTask = async () => {
     if (!taskTitle || !taskDescription || !taskLocation || !taskBudget || !taskCategory) {

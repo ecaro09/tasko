@@ -40,11 +40,11 @@ const OffersContext = createContext<OffersContextType | undefined>(undefined);
 export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const { taskerProfile, isTasker, loading: taskerLoading } = useTaskerProfile();
-  const [allOffers, setAllOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [allOffers, setAllOffers] = React.useState<Offer[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setLoading(true);
     setError(null);
 

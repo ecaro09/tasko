@@ -21,12 +21,12 @@ const availableSkills = [
 
 const TaskerRegistrationModal: React.FC<TaskerRegistrationModalProps> = ({ isOpen, onClose }) => {
   const { taskerProfile, createOrUpdateTaskerProfile, loading: profileLoading } = useTaskerProfile();
-  const [skills, setSkills] = useState<string[]>([]);
-  const [bio, setBio] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [skills, setSkills] = React.useState<string[]>([]);
+  const [bio, setBio] = React.useState('');
+  const [hourlyRate, setHourlyRate] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (taskerProfile) {
       setSkills(taskerProfile.skills || []);
       setBio(taskerProfile.bio || '');

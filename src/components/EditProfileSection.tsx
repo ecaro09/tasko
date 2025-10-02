@@ -13,10 +13,10 @@ interface EditProfileSectionProps {
 
 const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSaveSuccess }) => {
   const { user, updateUserProfile } = useAuth();
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
-  const [isLoading, setIsLoading] = useState(false);
+  const [displayName, setDisplayName] = React.useState(user?.displayName || '');
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setDisplayName(user?.displayName || '');
   }, [user]);
 
@@ -64,7 +64,7 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
           <Button onClick={handleSave} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
-        </div
+        </div>
       </CardContent>
     </Card>
   );

@@ -16,9 +16,9 @@ interface LoginModalProps {
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const { loginWithEmailPassword, signInWithGoogle } = useAuth(); // Destructure signInWithGoogle
   const { openSignupModal } = useModal();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleEmailPasswordLogin = async () => {
     if (!email || !password) {

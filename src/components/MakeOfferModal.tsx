@@ -21,11 +21,11 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ isOpen, onClose, task }
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { addOffer, loading: offersLoading } = useOffers();
 
-  const [offerAmount, setOfferAmount] = useState('');
-  const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [offerAmount, setOfferAmount] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen) {
       setOfferAmount('');
       setMessage('');

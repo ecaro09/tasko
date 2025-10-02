@@ -26,8 +26,8 @@ const MyTasksPage: React.FC = () => {
   const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
   const navigate = useNavigate();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
 
   if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;

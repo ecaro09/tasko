@@ -48,10 +48,10 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const [allTasks, setAllTasks] = useState<Task[]>([]
+  const [allTasks, setAllTasks] = React.useState<Task[]>([]
 );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Function to seed initial tasks
   const seedInitialTasks = async () => {
@@ -109,7 +109,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     setLoading(true);
     setError(null);
 
@@ -131,7 +131,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
         };

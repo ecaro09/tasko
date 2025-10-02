@@ -28,13 +28,13 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
+  const [authState, setAuthState] = React.useState<AuthState>({
     user: null,
     isAuthenticated: false,
     loading: true,
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setAuthState({
         user,

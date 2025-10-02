@@ -14,7 +14,7 @@ const PWAContext = React.createContext<PWAContextType | undefined>(undefined);
 export const PWAPROVIDER_SPLASH_SCREEN_DELAY = 2000; // 2 seconds
 
 export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+  const [isOnline, setIsOnline] = React.useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [deferredPrompt, setDeferredPrompt] = React.useState<Event | null>(null);
   const [showInstallPromptState, setShowInstallPromptState] = React.useState(false);
   const [showSplashScreen, setShowSplashScreen] = React.useState(true);
@@ -35,9 +35,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error("You are currently offline.");
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
     // Before install prompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -49,7 +46,6 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }, 3000); // Delay showing the prompt
       }
     };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // App installed event
     const handleAppInstalled = () => {
@@ -57,32 +53,41 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setShowInstallPromptState(false);
       toast.success("Tasko installed successfully!");
     };
-    window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('SW registered: ', registration);
-          })
-          .catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
-            toast.error("Failed to register service worker for offline support.");
-          });
-      });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.addEventListener('appinstalled', handleAppInstalled);
+
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+              toast.error("Failed to register service worker for offline support.");
+            });
+        });
+      }
     }
 
     return () => {
       clearTimeout(splashTimer);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.removeEventListener('appinstalled', handleAppInstalled);
+      }
     };
-  }, []);
+  }, []); // Empty dependency array to ensure listeners are added/removed once
 
   const isAppInstalled = () => {
+    if (typeof window === 'undefined') return false;
     return window.matchMedia('(display-mode: standalone)').matches ||
            (window.navigator as any).standalone === true;
   };
