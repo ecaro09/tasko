@@ -15,7 +15,6 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
-  TooltipProps, // Corrected import for TooltipProps
 } from "recharts";
 import type {
   Payload,
@@ -105,7 +104,6 @@ const ChartContainer = React.forwardRef<
 
   return (
     <ChartContext.Provider value={{ config, activeConfig: {} }}>
-      <ChartStyle id={chartId} config={config} />
       <ResponsiveContainer
         id={chartId}
         ref={ref}
@@ -125,10 +123,10 @@ ChartContainer.displayName = "ChartContainer";
 const ChartTooltip = ({
   cursor = false,
   content,
-  className, // Removed className from destructuring as it's applied to wrapperStyle
+  className,
   ...props
 }: React.ComponentProps<typeof Tooltip> & {
-  content?: TooltipProps<ValueType, NameType>['content']; // Corrected type for content
+  className?: string;
 }) => {
   const { activeConfig } = useChart();
 
@@ -141,10 +139,10 @@ const ChartTooltip = ({
             <div
               className={cn(
                 "grid min-w-[130px] items-start text-xs border border-border bg-background p-2 shadow-md",
-                className, // Applied className here
+                className,
               )}
             >
-              {content ? (
+              {typeof content === 'function' ? ( // Type guard to check if content is a function
                 content({ active, payload, label })
               ) : (
                 <>
@@ -160,7 +158,7 @@ const ChartTooltip = ({
 
                       return (
                         <div
-                          key={item.dataKey as React.Key} // Cast to React.Key
+                          key={item.dataKey as React.Key}
                           className="flex items-center justify-between gap-4"
                         >
                           <div className="flex items-center gap-2">
@@ -190,51 +188,50 @@ const ChartTooltip = ({
 
         return null;
       }}
-      wrapperStyle={{ outline: "none" }} // Removed className from wrapperStyle
+      wrapperStyle={{ outline: "none" }}
       {...props}
     />
   );
 };
 
 const ChartLegend = ({
-  className, // Destructure className here
+  className,
   hideIcon = false,
   formatter,
   ...props
-}: React.ComponentProps<typeof Legend> & {
+}: Omit<React.ComponentProps<typeof Legend>, 'ref'> & { // Omit ref from props
+  className?: string;
   hideIcon?: boolean;
 }) => {
   const { activeConfig } = useChart();
 
   return (
-    <Legend
-      className={cn(
-        "flex flex-wrap items-center justify-center gap-4",
-        className, // Applied className here
-      )}
-      wrapperStyle={{ outline: "none" }} // Removed className from wrapperStyle
-      formatter={(value, entry, index) => {
-        const key = entry.dataKey as keyof typeof activeConfig;
-        const config = key ? activeConfig[key] : undefined;
-        return (
-          <div className="flex items-center gap-2">
-            {!hideIcon && (
-              <span
-                className={cn(
-                  "flex h-3 w-3 shrink-0 rounded-full",
-                  entry.color && `bg-[${entry.color}]`,
-                )}
-                style={{
-                  backgroundColor: entry.color,
-                }}
-              />
-            )}
-            {config?.label || value}
-          </div>
-        );
-      }}
-      {...props}
-    />
+    <div className={cn("flex flex-wrap items-center justify-center gap-4", className)}>
+      <Legend
+        formatter={(value, entry, index) => {
+          const key = entry.dataKey as keyof typeof activeConfig;
+          const config = key ? activeConfig[key] : undefined;
+          return (
+            <div className="flex items-center gap-2">
+              {!hideIcon && (
+                <span
+                  className={cn(
+                    "flex h-3 w-3 shrink-0 rounded-full",
+                    entry.color && `bg-[${entry.color}]`,
+                  )}
+                  style={{
+                    backgroundColor: entry.color,
+                  }}
+                />
+              )}
+              {config?.label || value}
+            </div>
+          );
+        }}
+        wrapperStyle={{ outline: "none" }}
+        {...props}
+      />
+    </div>
   );
 };
 
@@ -291,17 +288,17 @@ ChartGrid.displayName = "ChartGrid";
 
 const ChartAxis = ({
   className,
-  orientation, // Destructure orientation
+  orientation,
   ...props
 }: React.ComponentProps<typeof XAxis> & React.ComponentProps<typeof YAxis>) => {
-  const AxisComponent: React.ComponentType<any> = (orientation === 'left' || orientation === 'right') ? YAxis : XAxis; // Explicitly type AxisComponent
+  const AxisComponent: React.ComponentType<any> = (orientation === 'left' || orientation === 'right') ? YAxis : XAxis;
 
   return (
     <AxisComponent
       axisLine={false}
       tickLine={false}
       className={cn("text-sm text-muted-foreground", className)}
-      orientation={orientation} // Pass orientation to the component
+      orientation={orientation}
       {...props}
     />
   );
