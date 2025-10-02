@@ -16,7 +16,7 @@ interface ResizableHandleProps extends React.ComponentPropsWithRef<typeof Resiza
 const ResizableHandle = React.forwardRef<
   React.ElementRef<typeof ResizablePanelHandle>, // Correct ref type for PanelResizeHandle
   ResizableHandleProps
->(({ className, withHandle, children, ...props }, ref) => (
+>(({ className, withHandle, ...props }, ref) => (
   <ResizablePanelHandle
     ref={ref} // Pass the ref directly to the underlying component
     className={cn(
@@ -41,7 +41,6 @@ const ResizableHandle = React.forwardRef<
         </svg>
       </div>
     )}
-    {children}
   </ResizablePanelHandle>
 ));
 

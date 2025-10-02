@@ -91,6 +91,7 @@ interface ChartTooltipContentProps extends TooltipProps<ValueType, NameType> {
   className?: string; // Custom prop for styling the shadcn/ui TooltipContent wrapper
   customContent?: React.ReactNode | ((props: TooltipProps<ValueType, NameType>) => React.ReactNode);
   payload?: ExtendedPayload[]; // Use ExtendedPayload
+  formatter?: (value: ValueType, name: NameType, props: Payload<ValueType, NameType>, index: number) => React.ReactNode;
 }
 
 const ChartTooltipContent = ({
@@ -125,7 +126,7 @@ const ChartTooltipContent = ({
                 className="text-sm font-bold"
                 style={{ color: entry.color }}
               >
-                {/* Correctly invoke formatter with 4 arguments */}
+                {/* This formatter call is correct for TooltipProps['formatter'] (4 arguments) */}
                 {formatter ? formatter(entry.value, entry.name, entry, i) : entry.value}
               </span>
             </div>
@@ -141,7 +142,7 @@ ChartTooltipContent.displayName = "ChartTooltipContent";
 // ChartLegendContent
 interface ChartLegendContentProps {
   className?: string; // Custom prop for styling the ul wrapper inside content
-  formatter?: (value: ValueType, name: NameType, entry: ExtendedPayload, index: number) => React.ReactNode;
+  formatter?: (value: ValueType, entry: ExtendedPayload, index: number) => React.ReactNode; // Corrected formatter signature (3 arguments)
   payload?: ExtendedPayload[]; // Use ExtendedPayload
 }
 
@@ -165,11 +166,9 @@ const ChartLegendContent = ({ className, formatter, payload }: ChartLegendConten
               backgroundColor: entry.color,
             }}
           />
-          {/* Correctly invoke formatter with 3 arguments for Legend */}
+          {/* Corrected call for Legend formatter (3 arguments) */}
           {formatter ? (
-            formatter(entry.value, entry.name, entry, index) // Pass 4 arguments, but Legend's formatter expects 3.
-                                                              // Recharts Legend formatter signature is (value, entry, index)
-                                                              // Let's adjust the formatter type to match LegendProps['formatter']
+            formatter(entry.value, entry, index)
           ) : (
             <span className="text-muted-foreground">{entry.value}</span>
           )}
