@@ -86,12 +86,15 @@ function ChartContainer({
   );
 }
 
+// Define a specific type for Recharts Tooltip formatter (4 arguments)
+type RechartsTooltipFormatter = (value: ValueType, name: NameType, props: Payload<ValueType, NameType>, index: number) => React.ReactNode;
+
 // ChartTooltipContent
 interface ChartTooltipContentProps extends TooltipProps<ValueType, NameType> {
   className?: string; // Custom prop for styling the shadcn/ui TooltipContent wrapper
   customContent?: React.ReactNode | ((props: TooltipProps<ValueType, NameType>) => React.ReactNode);
   payload?: ExtendedPayload[]; // Use ExtendedPayload
-  formatter?: TooltipProps<ValueType, NameType>['formatter']; // Explicitly use Recharts' formatter type
+  formatter?: RechartsTooltipFormatter; // Use the specific type for formatter
 }
 
 const ChartTooltipContent = ({

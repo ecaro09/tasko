@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import * as React from "react";
 
 interface ResizableHandleProps extends React.ComponentPropsWithRef<typeof ResizablePanelHandle> {
-  withHandle?: boolean;
+  withHandle?: boolean; // Custom prop
 }
 
 const ResizableHandle = React.forwardRef<
