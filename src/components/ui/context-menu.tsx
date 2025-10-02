@@ -54,7 +54,7 @@ ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName;
 
 const ContextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
-  React.ComponentPropsWithRef<typeof ContextMenuPrimitive.Content> // Use ComponentPropsWithRef directly
+  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content> & { sideOffset?: number } // Explicitly add sideOffset
 >(({ className, sideOffset = 4, ...props }, ref) => (
   <ContextMenuPrimitive.Content
     ref={ref}
