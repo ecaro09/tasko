@@ -52,8 +52,9 @@ const ContextMenuSubContent = React.forwardRef<
 ));
 ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName;
 
-interface ContextMenuContentProps extends React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content> {
-  sideOffset?: number;
+interface ContextMenuContentProps extends React.ComponentPropsWithRef<typeof ContextMenuPrimitive.Content> {
+  // sideOffset is already included in ComponentPropsWithRef, but we can make it optional if needed
+  // sideOffset?: number; 
 }
 
 const ContextMenuContent = React.forwardRef<

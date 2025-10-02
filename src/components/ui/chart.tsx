@@ -91,6 +91,7 @@ interface ChartTooltipContentProps extends TooltipProps<ValueType, NameType> {
   className?: string; // Custom prop for styling the shadcn/ui TooltipContent wrapper
   customContent?: React.ReactNode | ((props: TooltipProps<ValueType, NameType>) => React.ReactNode);
   payload?: ExtendedPayload[]; // Use ExtendedPayload
+  formatter?: TooltipProps<ValueType, NameType>['formatter']; // Explicitly match Recharts Tooltip formatter type
 }
 
 const ChartTooltipContent = ({
@@ -103,6 +104,9 @@ const ChartTooltipContent = ({
   ...props
 }: ChartTooltipContentProps) => {
   if (!active || !payload || payload.length === 0) return null;
+
+  // The `data` argument for the formatter is typically the array of all payloads
+  const dataArray = payload; 
 
   return (
     <TooltipPrimitiveContent
@@ -125,8 +129,8 @@ const ChartTooltipContent = ({
                 className="text-sm font-bold"
                 style={{ color: entry.color }}
               >
-                {/* Correctly invoke formatter with 4 arguments */}
-                {formatter ? formatter(entry.value, entry.name, entry, i) : entry.value}
+                {/* Correctly invoke formatter with 5 arguments */}
+                {formatter ? formatter(entry.value, entry.name, entry, i, dataArray) : entry.value}
               </span>
             </div>
           ))}
@@ -141,7 +145,7 @@ ChartTooltipContent.displayName = "ChartTooltipContent";
 // ChartLegendContent
 interface ChartLegendContentProps {
   className?: string; // Custom prop for styling the ul wrapper inside content
-  formatter?: (value: ValueType, name: NameType, entry: ExtendedPayload, index: number) => React.ReactNode;
+  formatter?: LegendProps['formatter']; // Explicitly match Recharts Legend formatter type (without generics)
   payload?: ExtendedPayload[]; // Use ExtendedPayload
 }
 
@@ -167,9 +171,7 @@ const ChartLegendContent = ({ className, formatter, payload }: ChartLegendConten
           />
           {/* Correctly invoke formatter with 3 arguments for Legend */}
           {formatter ? (
-            formatter(entry.value, entry.name, entry, index) // Pass 4 arguments, but Legend's formatter expects 3.
-                                                              // Recharts Legend formatter signature is (value, entry, index)
-                                                              // Let's adjust the formatter type to match LegendProps['formatter']
+            formatter(entry.value, entry, index)
           ) : (
             <span className="text-muted-foreground">{entry.value}</span>
           )}
