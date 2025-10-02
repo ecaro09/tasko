@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
-interface ResizableHandleProps extends React.ComponentPropsWithRef<typeof ResizablePanelHandle> {
+interface ResizableHandleProps extends Omit<React.ComponentPropsWithoutRef<typeof ResizablePanelHandle>, 'ref'> {
   withHandle?: boolean; // Custom prop
 }
 
