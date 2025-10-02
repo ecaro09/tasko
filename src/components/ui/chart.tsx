@@ -91,7 +91,7 @@ interface ChartTooltipContentProps extends TooltipProps<ValueType, NameType> {
   className?: string; // Custom prop for styling the shadcn/ui TooltipContent wrapper
   customContent?: React.ReactNode | ((props: TooltipProps<ValueType, NameType>) => React.ReactNode);
   payload?: ExtendedPayload[]; // Use ExtendedPayload
-  formatter?: (value: ValueType, name: NameType, props: Payload<ValueType, NameType>, index: number) => React.ReactNode;
+  formatter?: TooltipProps<ValueType, NameType>['formatter']; // Explicitly use Recharts' formatter type
 }
 
 const ChartTooltipContent = ({
