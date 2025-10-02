@@ -9,13 +9,13 @@ import {
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
-type ResizableHandleProps = React.ComponentPropsWithRef<typeof ResizablePanelHandle> & {
+type ResizableHandleProps = React.ComponentPropsWithoutRef<typeof ResizablePanelHandle> & {
   withHandle?: boolean; // Custom prop
 };
 
 const ResizableHandle = React.forwardRef<
-  React.ElementRef<typeof ResizablePanelHandle>, // Correct ref type for PanelResizeHandle
-  ResizableHandleProps // Use the explicit type here
+  React.ElementRef<typeof ResizablePanelHandle>,
+  ResizableHandleProps
 >(({ className, withHandle, ...props }, ref) => (
   <ResizablePanelHandle
     ref={ref} // Pass the ref directly to the underlying component
