@@ -1,26 +1,43 @@
 "use client";
 
+import * as React from "react";
 import {
-  Panel as ResizablePanel,
-  PanelGroup as ResizablePanelGroup,
-  PanelResizeHandle as ResizablePanelHandle,
+  PanelGroup,
+  Panel,
+  PanelResizeHandle,
 } from "react-resizable-panels";
 
 import { cn } from "@/lib/utils";
-import * as React from "react";
 
-interface ResizableHandleProps extends React.ComponentPropsWithRef<typeof ResizablePanelHandle> {
+const ResizablePanelGroup = ({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof PanelGroup>) => (
+  <PanelGroup
+    className={cn(
+      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
+      className
+    )}
+    {...props}
+  />
+);
+
+const ResizablePanel = Panel;
+
+interface ResizableHandleProps extends React.ComponentPropsWithoutRef<typeof PanelResizeHandle> {
   withHandle?: boolean;
 }
 
 const ResizableHandle = React.forwardRef<
-  HTMLDivElement, // Explicitly set ref type to HTMLDivElement as PanelResizeHandle renders a div
+  React.ElementRef<typeof PanelResizeHandle>,
   ResizableHandleProps
 >(({ className, withHandle, children, ...props }, ref) => (
-  <ResizablePanelHandle
+  <PanelResizeHandle
     ref={ref}
     className={cn(
-      "relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0",
+      "flex w-px items-center justify-center bg-border",
+      withHandle &&
+        "after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 after:bg-primary after:opacity-0 after:transition-all after:hover:opacity-100",
       className
     )}
     {...props}
@@ -28,23 +45,22 @@ const ResizableHandle = React.forwardRef<
     {withHandle && (
       <div className="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
         <svg
-          className="h-2.5 w-2.5"
+          xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="h-2.5 w-2.5"
         >
-          <path d="M8 12h8" />
-          <path d="M12 8v8" />
+          <path d="M9 18l6-6-6-6" />
         </svg>
       </div>
     )}
     {children}
-  </ResizablePanelHandle>
+  </PanelResizeHandle>
 ));
-
 ResizableHandle.displayName = "ResizableHandle";
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
