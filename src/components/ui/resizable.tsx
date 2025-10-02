@@ -1,47 +1,48 @@
 "use client";
 
-import * as React from "react";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import {
+  Panel as ResizablePanel,
+  PanelGroup as ResizablePanelGroup,
+  PanelResizeHandle as ResizablePanelHandle,
+} from "react-resizable-panels";
 
 import { cn } from "@/lib/utils";
+import * as React from "react";
 
-const ResizablePanelGroup = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof PanelGroup>) => (
-  <PanelGroup
-    className={cn(
-      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
-      className,
-    )}
-    {...props}
-  />
-);
-
-const ResizablePanel = Panel;
-
-interface ResizableHandleProps extends React.ComponentPropsWithRef<typeof PanelResizeHandle> { // Changed to ComponentPropsWithRef
+interface ResizableHandleProps extends React.ComponentPropsWithRef<typeof ResizablePanelHandle> {
   withHandle?: boolean;
 }
 
 const ResizableHandle = React.forwardRef<
-  React.ElementRef<typeof PanelResizeHandle>,
+  React.ElementRef<typeof ResizablePanelHandle>, // Correct ref type for PanelResizeHandle
   ResizableHandleProps
 >(({ className, withHandle, children, ...props }, ref) => (
-  <PanelResizeHandle
-    ref={ref}
+  <ResizablePanelHandle
+    ref={ref} // Pass the ref directly to the underlying component
     className={cn(
-      "relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0 [&[data-panel-group-direction=vertical]>div]:!hidden [&[data-panel-group-direction=vertical]]:!bg-transparent [&[data-panel-group-direction=vertical]]:after:!bg-primary",
-      className,
+      "relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0",
+      className
     )}
-    {...props}
+    {...props} // Spread the rest of the props
   >
     {withHandle && (
-      <div className="z-10 flex h-4 w-4 items-center justify-center rounded-full border bg-background">
-        {children}
+      <div className="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
+        <svg
+          className="h-2.5 w-2.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M8 12h8" />
+          <path d="M12 8v8" />
+        </svg>
       </div>
     )}
-  </PanelResizeHandle>
+    {children}
+  </ResizablePanelHandle>
 ));
 
 ResizableHandle.displayName = "ResizableHandle";
