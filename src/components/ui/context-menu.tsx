@@ -59,7 +59,7 @@ interface ContextMenuContentProps extends React.ComponentPropsWithoutRef<typeof 
 
 const ContextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
-  ContextMenuContentProps
+  ContextMenuContentProps // Use the explicit interface
 >(({ className, sideOffset = 4, ...props }, ref) => (
   <ContextMenuPrimitive.Content
     ref={ref}
