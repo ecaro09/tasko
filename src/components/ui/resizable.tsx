@@ -14,8 +14,8 @@ type ResizableHandleProps = React.ComponentPropsWithRef<typeof ResizablePanelHan
 };
 
 const ResizableHandle = React.forwardRef<
-  React.ElementRef<typeof ResizablePanelHandle>, // Correct ref type for PanelResizeHandle
-  ResizableHandleProps // Use the explicit type here
+  React.ElementRef<typeof ResizablePanelHandle>,
+  ResizableHandleProps
 >(({ className, withHandle, ...props }, ref) => (
   <ResizablePanelHandle
     ref={ref} // Pass the ref directly to the underlying component
