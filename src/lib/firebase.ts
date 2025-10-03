@@ -3,6 +3,9 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { toast } from 'sonner'; // Import toast for error messages
 
+// Log all environment variables for debugging
+console.log("All VITE_ environment variables:", import.meta.env);
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
