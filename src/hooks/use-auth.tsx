@@ -8,6 +8,8 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
 } from 'firebase/auth';
 import { toast } from 'sonner';
 
@@ -35,6 +37,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   React.useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        // Attempt to get the redirect result
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User successfully signed in from redirect
+          setAuthState({
+            user: result.user,
+            isAuthenticated: true,
+            loading: false, // Set loading to false on successful redirect
+          });
+          toast.success("Logged in with Google successfully!");
+          console.log(`[Auth Log] Redirect login successful (Google) for user: ${result.user.email} at ${new Date().toISOString()}`);
+        }
+      } catch (error: any) {
+        console.error("Error during Google redirect sign-in:", error);
+        let errorMessage = "Failed to sign in with Google after redirect.";
+        if (error.message) {
+          errorMessage = error.message;
+        }
+        toast.error(errorMessage);
+        // Important: Reset loading state if there's an error during redirect handling
+        setAuthState(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    // Call this function when the component mounts to check for redirect results
+    handleRedirectResult();
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setAuthState({
         user,
@@ -125,9 +156,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      toast.success("Logged in with Google successfully!");
-      console.log(`[Auth Log] Login successful (Google) for user: ${auth.currentUser?.email} at ${new Date().toISOString()}`);
+      // Set loading to true before initiating the redirect
+      setAuthState(prev => ({ ...prev, loading: true }));
+      await signInWithRedirect(auth, provider);
+      console.log(`[Auth Log] Initiating Google sign-in redirect at ${new Date().toISOString()}`);
     } catch (error: any) {
       console.error("Auth error caught during Google sign-in:", error);
       console.log(`[Auth Log] Login failed (Google) at ${new Date().toISOString()} - Error: ${error.message}`);
@@ -138,6 +170,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         errorMessage = error.message;
       }
       toast.error(errorMessage);
+      // Reset loading state if an error occurs before redirect completes
+      setAuthState(prev => ({ ...prev, loading: false }));
       throw error;
     }
   };
