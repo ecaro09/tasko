@@ -33,7 +33,7 @@ const AppFooter: React.FC = () => {
           <ul className="space-y-2">
             <li><Link to="/faq" className="text-sm hover:text-green-400 transition-colors">FAQ</Link></li>
             <li><Link to="/contact" className="text-sm hover:text-green-400 transition-colors">Contact Us</Link></li>
-            <li><Link to="/chat" className="text-sm hover:text-green-400 transition-colors">Chat</Link></li> {/* New Link */}
+            <li><Link to="/chat" className="text-sm hover:text-green-400 transition-colors">Chat</Link></li>
             <li><Link to="/privacy" className="text-sm hover:text-green-400 transition-colors">Privacy Policy</Link></li>
             <li><Link to="/terms" className="text-sm hover:text-green-400 transition-colors">Terms of Service</Link></li>
           </ul>
@@ -41,7 +41,7 @@ const AppFooter: React.FC = () => {
 
         {/* Connect With Us & App Downloads */}
         <div>
-          <h3 className="text-white text-lg font-semibold mb-4">Download Our App</h3>
+          <h3 className="text-white text-lg font-semibold mb-4">Connect With Us</h3>
           <div className="flex space-x-4 mb-6">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
               <Facebook size={24} />
@@ -58,10 +58,10 @@ const AppFooter: React.FC = () => {
           </div>
           <h3 className="text-white text-lg font-semibold mb-4">Download Our App</h3>
           <div className="flex space-x-4">
-            <a href="https://play.google.com/store" target="_blank" rel="noopener noreferrer">
+            <a href="https://play.google.com/store/apps/details?id=com.example.tasko" target="_blank" rel="noopener noreferrer">
               <img src="/google-play-badge.png" alt="Get it on Google Play" className="h-10" />
             </a>
-            <a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer">
+            <a href="https://apps.apple.com/us/app/tasko/id1234567890" target="_blank" rel="noopener noreferrer">
               <img src="/app-store-badge.png" alt="Download on the App Store" className="h-10" />
             </a>
           </div>
