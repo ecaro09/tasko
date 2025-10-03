@@ -16,7 +16,7 @@ import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
-import TaskerDashboardPage from "./pages/TaskerDashboardPage"; // New import
+import TaskerDashboardPage from "./pages/TaskerDashboardPage";
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -41,8 +41,8 @@ const App = () => {
               <PWAProvider>
                 <TasksProvider>
                   <TaskerProfileProvider>
-                    <OffersProvider>
-                      <ChatProvider>
+                    <ChatProvider> {/* ChatProvider is now here */}
+                      <OffersProvider> {/* OffersProvider is now inside ChatProvider */}
                         <ChatSessionProvider>
                           <ModalProvider>
                             <div className="min-h-screen w-full flex flex-col items-center">
@@ -61,15 +61,15 @@ const App = () => {
                                 <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
                                 <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
                                 <Route path="/chat" element={<ChatPage />} />
-                                <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} /> {/* New Route */}
+                                <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} />
                                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                                 <Route path="*" element={<NotFound />} />
                               </Routes>
                             </div>
                           </ModalProvider>
                         </ChatSessionProvider>
-                      </ChatProvider>
-                    </OffersProvider>
+                      </OffersProvider>
+                    </ChatProvider>
                   </TaskerProfileProvider>
                 </TasksProvider>
               </PWAProvider>
