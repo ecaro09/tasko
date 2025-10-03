@@ -11,7 +11,7 @@ import {
   getRedirectResult,
 } from 'firebase/auth';
 import { toast } from 'sonner';
-import { useSupabaseProfile } from './use-supabase-profile'; // Import new Supabase profile hook
+// Removed: import { useSupabaseProfile } from './use-supabase-profile'; // This import is no longer needed here
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: false,
     loading: true,
   });
-  const { profile, loadingProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Use the new hook
+  // Removed: const { profile, loadingProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // No longer directly used here
 
   React.useEffect(() => {
     const handleRedirectResult = async () => {
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           });
           toast.success("Logged in with Google successfully!");
           console.log(`[Auth Log] Redirect login successful (Google) for user: ${result.user.email} at ${new Date().toISOString()}`);
-          // Supabase profile will be fetched/created by SupabaseProfileProvider
+          // Supabase profile will be handled by SupabaseProfileProvider's useEffect
         }
       } catch (error: any) {
         console.error("Error during Google redirect sign-in:", error);
@@ -91,15 +91,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         photoURL: null, // Can be updated later
       });
 
-      // Create Supabase profile using the new hook's function
-      await updateSupabaseProfile(
-        userCredential.user.uid,
-        firstName || null,
-        lastName || null,
-        phone || null,
-        null, // No avatar initially
-        'user' // Default role
-      );
+      // Supabase profile creation will be handled by SupabaseProfileProvider's useEffect
+      // when firebaseUser prop changes.
+      // The initial profile data (firstName, lastName, phone, role) can be passed
+      // to SupabaseProfileProvider if needed, or handled by a separate explicit call
+      // from the SignupModal component itself. For now, relying on SupabaseProfileProvider's useEffect.
 
       toast.success("Account created successfully! You are now logged in.");
       console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
@@ -164,15 +160,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const newDisplayName = `${firstName} ${lastName}`.trim();
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
 
-      // Update Supabase profile using the new hook's function
-      await updateSupabaseProfile(
-        authState.user.uid,
-        firstName,
-        lastName,
-        phone,
-        photoURL || null,
-        profile?.role || 'user' // Keep existing role or default to 'user'
-      );
+      // Supabase profile update will be handled by EditProfileSection directly calling useSupabaseProfile's updateProfile.
+      // Or by SupabaseProfileProvider's useEffect if it detects changes in Firebase user's display name/photoURL.
 
       toast.success("Profile updated successfully!");
       console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
@@ -205,7 +194,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, profile, loading: authState.loading || loadingProfile, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

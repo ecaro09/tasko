@@ -24,7 +24,7 @@ interface TaskerProfileContextType {
 const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>(undefined);
 
 export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Removed profile: authProfile
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { profile: supabaseProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Use useSupabaseProfile
   const [taskerProfile, setTaskerProfile] = React.useState<TaskerProfile | null>(null);
   const [allTaskerProfiles, setAllTaskerProfiles] = React.useState<TaskerProfile[]>([]);
