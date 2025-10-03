@@ -23,7 +23,7 @@ export interface Task {
   posterAvatar: string;
   datePosted: string;
   status: 'open' | 'assigned' | 'completed';
-  imageUrl?: string;
+  imageUrl?: string; // Made optional
   assignedTaskerId?: string;
   assignedOfferId?: string;
   rating?: number;
@@ -31,7 +31,7 @@ export interface Task {
 }
 
 export const addTaskFirestore = async (
-  newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'>,
+  newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }, // Allow imageUrl
   user: FirebaseUser
 ) => {
   try {
@@ -42,7 +42,7 @@ export const addTaskFirestore = async (
       posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
       datePosted: serverTimestamp(),
       status: 'open',
-      imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Use provided image or default
     });
     toast.success("Task posted successfully!");
   } catch (err: any) {
