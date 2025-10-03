@@ -9,6 +9,7 @@ import {
   fetchAllTaskerProfilesFirestore,
 } from '@/lib/tasker-profile-firestore'; // Import new utility functions
 import { seedInitialTaskerProfiles } from '@/lib/seed-tasker-profiles'; // Import seed function from new location
+import { createOrUpdateUserProfileSupabase } from '@/lib/user-profile-supabase'; // New import for Supabase profile update
 
 interface TaskerProfileContextType {
   taskerProfile: TaskerProfile | null;
@@ -80,6 +81,17 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       const updatedProfile = await createOrUpdateTaskerProfileFirestore(data, user);
       setTaskerProfile(updatedProfile);
       setIsTasker(true);
+
+      // Also update the user's role in Supabase to 'tasker'
+      await createOrUpdateUserProfileSupabase(
+        user.uid,
+        user.displayName?.split(' ')[0] || null,
+        user.displayName?.split(' ').slice(1).join(' ') || null,
+        null, // Phone is managed in the main profile, not necessarily here
+        user.photoURL || null,
+        'tasker' // Set role to 'tasker'
+      );
+
       // Re-fetch all profiles to update the list
       const profiles = await fetchAllTaskerProfilesFirestore();
       setAllTaskerProfiles(profiles);
