@@ -5,7 +5,7 @@ import { getStorage } from 'firebase/storage';
 import { toast } from 'sonner';
 
 // Log all environment variables for debugging
-console.log("All VITE_ environment variables:", import.meta.env);
+// console.log("All VITE_ environment variables:", import.meta.env); // Removed for security
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -37,7 +37,7 @@ if (missingKeys.length > 0) {
 }
 
 // Log the API key to check if it's being loaded
-console.log("Firebase API Key:", firebaseConfig.apiKey ? "Loaded" : "Not Loaded", firebaseConfig.apiKey);
+// console.log("Firebase API Key:", firebaseConfig.apiKey ? "Loaded" : "Not Loaded", firebaseConfig.apiKey); // Removed for security
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
