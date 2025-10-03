@@ -11,18 +11,11 @@ import {
   getRedirectResult,
 } from 'firebase/auth';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
-
-// Define the structure for the Supabase profile
-export interface UserProfile {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  phone: string | null;
-  role: string; // 'user' or 'tasker'
-  updated_at: string;
-}
+import {
+  UserProfile,
+  fetchUserProfileSupabase,
+  createOrUpdateUserProfileSupabase,
+} from '@/lib/user-profile-supabase'; // Import Supabase profile utilities
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -51,41 +44,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Function to fetch user profile from Supabase
   const fetchUserProfile = React.useCallback(async (firebaseUser: FirebaseUser) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', firebaseUser.uid)
-        .single();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
-        throw error;
+    const supabaseProfile = await fetchUserProfileSupabase(firebaseUser.uid);
+    if (supabaseProfile) {
+      setAuthState(prev => ({ ...prev, profile: supabaseProfile }));
+    } else {
+      // Fallback: if no profile exists, create a basic one
+      console.warn("No Supabase profile found for user, creating a fallback profile.");
+      const newProfile = await createOrUpdateUserProfileSupabase(
+        firebaseUser.uid,
+        firebaseUser.displayName?.split(' ')[0] || null,
+        firebaseUser.displayName?.split(' ').slice(1).join(' ') || null,
+        null, // No phone initially
+        firebaseUser.photoURL || null,
+        'user'
+      );
+      if (newProfile) {
+        setAuthState(prev => ({ ...prev, profile: newProfile }));
       }
-
-      if (data) {
-        setAuthState(prev => ({ ...prev, profile: data as UserProfile }));
-      } else {
-        // If no profile exists, create a basic one (should be handled by handle_new_user trigger, but as a fallback)
-        console.warn("No Supabase profile found for user, creating a fallback profile.");
-        const { data: newProfile, error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: firebaseUser.uid,
-            first_name: firebaseUser.displayName?.split(' ')[0] || null,
-            last_name: firebaseUser.displayName?.split(' ').slice(1).join(' ') || null,
-            avatar_url: firebaseUser.photoURL || null,
-            phone: null,
-            role: 'user',
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        setAuthState(prev => ({ ...prev, profile: newProfile as UserProfile }));
-      }
-    } catch (error: any) {
-      console.error("Error fetching/creating Supabase profile:", error);
-      toast.error(`Failed to load user profile: ${error.message}`);
     }
   }, []);
 
@@ -141,24 +116,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const displayName = `${firstName || ''} ${lastName || ''}`.trim();
       await updateProfile(userCredential.user, {
-        displayName: `${firstName || ''} ${lastName || ''}`.trim(),
+        displayName: displayName,
         photoURL: null, // Can be updated later
       });
 
-      // Manually insert into Supabase profiles table if trigger doesn't fire immediately or for additional data
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userCredential.user.uid,
-          first_name: firstName || null,
-          last_name: lastName || null,
-          avatar_url: null,
-          phone: phone || null,
-          role: 'user', // Default role
-        });
-
-      if (insertError) throw insertError;
+      // Create Supabase profile
+      await createOrUpdateUserProfileSupabase(
+        userCredential.user.uid,
+        firstName || null,
+        lastName || null,
+        phone || null,
+        null, // No avatar initially
+        'user' // Default role
+      );
 
       toast.success("Account created successfully! You are now logged in.");
       console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
@@ -224,21 +196,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
 
       // Update Supabase profile
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          phone: phone,
-          avatar_url: photoURL,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', authState.user.uid);
+      const updatedSupabaseProfile = await createOrUpdateUserProfileSupabase(
+        authState.user.uid,
+        firstName,
+        lastName,
+        phone,
+        photoURL || null,
+        authState.profile?.role || 'user' // Keep existing role or default to 'user'
+      );
 
-      if (error) throw error;
-
-      // Re-fetch profile to update state with latest Supabase data
-      await fetchUserProfile(authState.user);
+      if (updatedSupabaseProfile) {
+        setAuthState(prev => ({ ...prev, profile: updatedSupabaseProfile }));
+      }
 
       toast.success("Profile updated successfully!");
       console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
