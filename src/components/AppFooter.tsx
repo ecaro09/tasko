@@ -10,7 +10,7 @@ const AppFooter = () => {
         <div>
           <h3 className="text-xl font-semibold text-white mb-4">About Us</h3>
           <p className="text-sm leading-relaxed">
-            Taskly connects you with skilled taskers for all your needs, from home repairs to personal errands.
+            Tasko connects you with skilled taskers for all your needs, from home repairs to personal errands.
             We're dedicated to making your life easier and more efficient.
           </p>
         </div>
@@ -40,7 +40,7 @@ const AppFooter = () => {
         {/* Download Our App & Social Media */}
         <div>
           <h3 className="text-xl font-semibold text-white mb-4">Download Our App</h3>
-          <p className="text-sm mb-4">Get the full Taskly experience on your mobile device.</p>
+          <p className="text-sm mb-4">Get the full Tasko experience on your mobile device.</p>
           <div className="flex flex-col space-y-3 mb-6">
             <a href="#" target="_blank" rel="noopener noreferrer">
               <img
@@ -77,7 +77,7 @@ const AppFooter = () => {
       </div>
 
       <div className="border-t border-gray-700 mt-10 pt-8 text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} Taskly. All rights reserved.
+        &copy; {new Date().getFullYear()} Tasko. All rights reserved.
       </div>
     </footer>
   );
