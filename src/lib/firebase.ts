@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage'; // New import for Firebase Storage
 import { toast } from 'sonner'; // Import toast for error messages
 
 // Log all environment variables for debugging
@@ -37,6 +38,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app); // Export Firebase Storage
 
 // Enable Firestore offline persistence
 enableIndexedDbPersistence(db)
