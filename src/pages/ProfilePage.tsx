@@ -114,6 +114,12 @@ const ProfilePage: React.FC = () => {
                   >
                     <Edit size={18} /> Edit Tasker Profile
                   </Button>
+                  <Button
+                    onClick={() => navigate('/tasker-dashboard')}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Briefcase size={20} /> View Tasker Dashboard
+                  </Button>
                 </CardContent>
               </Card>
             )}
