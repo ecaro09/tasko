@@ -12,27 +12,27 @@ const onboardingSteps = [
   {
     title: "Welcome to Tasko!",
     description: "Your go-to platform for finding reliable help and getting tasks done efficiently.",
-    image: "/pwa-192x192.png", // Using the PWA icon from public folder
+    image: "https://images.unsplash.com/photo-1522071820075-efceb6a63d43?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Image of people collaborating, representing a platform
   },
   {
     title: "Find Skilled Taskers",
     description: "Browse through a wide range of categories and connect with verified professionals near you.",
-    image: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    image: "https://images.unsplash.com/photo-1552664730-d307ca8849d1?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Image of diverse professionals or people working
   },
   {
     title: "Post Your Tasks",
     description: "Need something done? Post your task, set your budget, and let taskers bid on it.",
-    image: "https://images.unsplash.com/photo-1504384308090-c894fd24153e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    image: "https://images.unsplash.com/photo-1504384308090-c894fd24153e?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Image of someone writing a task or using a laptop
   },
   {
     title: "Earn Money as a Tasker",
     description: "Offer your skills, find tasks that match your expertise, and start earning on your own terms.",
-    image: "https://images.unsplash.com/photo-1521737711867-ee1ab9279f17?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    image: "https://images.unsplash.com/photo-1556740738-b63629034c2f?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Image of someone earning or a financial transaction
   },
   {
     title: "Secure & Transparent",
     description: "Enjoy secure payments, transparent pricing, and reliable support every step of the way.",
-    image: "https://images.unsplash.com/photo-1556740738-b63629034c2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    image: "https://images.unsplash.com/photo-1579621970563-cd787c538e76?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Image representing security or trust
   },
 ];
 
