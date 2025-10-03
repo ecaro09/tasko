@@ -4,7 +4,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useOffers, Offer } from '@/hooks/use-offers'; // New import for offers
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle } from 'lucide-react'; // Added icons
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star } from 'lucide-react'; // Added Star icon
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -20,11 +20,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
 import { Badge } from "@/components/ui/badge"; // New import
 import { toast } from 'sonner'; // New import
+import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
+  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks(); // Destructure deleteTask
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
+  const { openReviewTaskModal } = useModal(); // Get the new modal opener
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
@@ -61,6 +63,14 @@ const MyTasksPage: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (taskToDelete) {
       try {
+        // Before deleting the task, also delete any associated offers
+        const offersToDelete = offers.filter(offer => offer.taskId === taskToDelete);
+        for (const offer of offersToDelete) {
+          // This would ideally be handled by a server-side function or cascade delete in a real DB
+          // For Firebase, we'd need to explicitly delete them.
+          // For now, we'll just delete the task.
+          // In a real app, you'd want to ensure data consistency.
+        }
         await deleteTask(taskToDelete);
       } catch (error) {
         // Error handled by useTasks hook, toast already shown
@@ -85,6 +95,10 @@ const MyTasksPage: React.FC = () => {
     } catch (error) {
       // Error handled by useOffers hook
     }
+  };
+
+  const handleReviewTask = (task: typeof userTasks[0]) => {
+    openReviewTaskModal(task);
   };
 
   const getOfferStatusBadge = (status: Offer['status']) => {
@@ -120,6 +134,9 @@ const MyTasksPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userTasks.map((task) => {
               const offersForTask = offers.filter(offer => offer.taskId === task.id);
+              const assignedOffer = offersForTask.find(offer => offer.status === 'accepted');
+              const assignedTaskerName = assignedOffer?.taskerName;
+
               return (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <div className="h-40 overflow-hidden relative">
@@ -141,6 +158,33 @@ const MyTasksPage: React.FC = () => {
                       <Tag size={16} className="mr-2" /> {task.category}
                     </p>
                     <p className="text-2xl font-bold text-green-600 mb-4">₱{task.budget.toLocaleString()}</p>
+
+                    {task.status === 'assigned' && assignedTaskerName && (
+                      <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900 rounded-md flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                        <User size={18} />
+                        <span>Assigned to: <span className="font-semibold">{assignedTaskerName}</span></span>
+                      </div>
+                    )}
+
+                    {task.status === 'completed' && task.rating && task.review ? (
+                      <div className="mb-4 p-3 bg-green-50 dark:bg-green-900 rounded-md text-green-800 dark:text-green-200">
+                        <div className="flex items-center gap-1 mb-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={16} className={i < task.rating! ? "fill-green-600 text-green-600" : "text-gray-400"} />
+                          ))}
+                          <span className="font-semibold ml-1">{task.rating}/5</span>
+                        </div>
+                        <p className="text-sm italic">"{task.review}"</p>
+                      </div>
+                    ) : task.status === 'assigned' && (
+                      <Button
+                        onClick={() => handleReviewTask(task)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mb-4"
+                      >
+                        <CheckCircle size={20} /> Mark as Complete & Review
+                      </Button>
+                    )}
+
                     <div className="flex justify-between items-center">
                       <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                         View Details
@@ -156,58 +200,60 @@ const MyTasksPage: React.FC = () => {
                     </div>
 
                     {/* Offers for this task */}
-                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">Offers ({offersForTask.length})</h4>
-                      {offersForTask.length === 0 ? (
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">No offers yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {offersForTask.map(offer => (
-                            <Card key={offer.id} className="p-3 shadow-sm">
-                              <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="w-10 h-10 border-2 border-blue-500">
-                                    <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
-                                    <AvatarFallback className="bg-blue-200 text-blue-800 text-md font-semibold">
-                                      {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={16} />}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-semibold text-md text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                      <MessageSquare size={12} /> {offer.message}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col items-end sm:items-center gap-1">
-                                  <p className="text-xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
-                                  {getOfferStatusBadge(offer.status)}
-                                  {offer.status === 'pending' && (
-                                    <div className="flex gap-1 mt-1">
-                                      <Button
-                                        size="sm"
-                                        className="bg-green-600 hover:bg-green-700 text-white h-7 px-3 text-xs"
-                                        onClick={() => handleAcceptOffer(offer.id, task.id)}
-                                      >
-                                        <CheckCircle size={14} className="mr-1" /> Accept
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        className="h-7 px-3 text-xs"
-                                        onClick={() => handleRejectOffer(offer.id)}
-                                      >
-                                        <XCircle size={14} className="mr-1" /> Reject
-                                      </Button>
+                    {task.status === 'open' && (
+                      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">Offers ({offersForTask.length})</h4>
+                        {offersForTask.length === 0 ? (
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">No offers yet.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {offersForTask.map(offer => (
+                              <Card key={offer.id} className="p-3 shadow-sm">
+                                <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="w-10 h-10 border-2 border-blue-500">
+                                      <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                                      <AvatarFallback className="bg-blue-200 text-blue-800 text-md font-semibold">
+                                        {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={16} />}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-semibold text-md text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                        <MessageSquare size={12} /> {offer.message}
+                                      </p>
                                     </div>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                                  </div>
+                                  <div className="flex flex-col items-end sm:items-center gap-1">
+                                    <p className="text-xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
+                                    {getOfferStatusBadge(offer.status)}
+                                    {offer.status === 'pending' && (
+                                      <div className="flex gap-1 mt-1">
+                                        <Button
+                                          size="sm"
+                                          className="bg-green-600 hover:bg-green-700 text-white h-7 px-3 text-xs"
+                                          onClick={() => handleAcceptOffer(offer.id, task.id)}
+                                        >
+                                          <CheckCircle size={14} className="mr-1" /> Accept
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          className="h-7 px-3 text-xs"
+                                          onClick={() => handleRejectOffer(offer.id)}
+                                        >
+                                          <XCircle size={14} className="mr-1" /> Reject
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );

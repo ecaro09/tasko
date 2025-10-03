@@ -9,13 +9,15 @@ import SignupModal from './SignupModal';
 import PostTaskModal from './PostTaskModal';
 import TaskerRegistrationModal from './TaskerRegistrationModal';
 import MakeOfferModal from './MakeOfferModal'; // Import new modal
+import ReviewTaskModal from './ReviewTaskModal'; // New import
 
 interface ModalContextType {
   openLoginModal: () => void;
   openSignupModal: () => void;
   openPostTaskModal: () => void;
   openTaskerRegistrationModal: () => void;
-  openMakeOfferModal: (task: Task) => void; // New function
+  openMakeOfferModal: (task: Task) => void;
+  openReviewTaskModal: (task: Task) => void; // New function
   closeAllModals: () => void;
 }
 
@@ -26,10 +28,13 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isSignupModalOpen, setIsSignupModalOpen] = React.useState(false);
   const [isPostTaskModalOpen, setIsPostTaskModalOpen] = React.useState(false);
   const [isTaskerRegistrationModalOpen, setIsTaskerRegistrationModalOpen] = React.useState(false);
-  const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = React.useState(false); // New state
-  const [selectedTaskForOffer, setSelectedTaskForOffer] = React.useState<Task | null>(null); // State to hold the task for the offer modal
+  const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = React.useState(false);
+  const [isReviewTaskModalOpen, setIsReviewTaskModalOpen] = React.useState(false); // New state
+  const [selectedTaskForOffer, setSelectedTaskForOffer] = React.useState<Task | null>(null);
+  const [selectedTaskForReview, setSelectedTaskForReview] = React.useState<Task | null>(null); // New state
 
   const { isAuthenticated } = useAuth();
+  const { completeTaskWithReview } = useTasks(); // Get the completeTaskWithReview function
 
   const openLoginModal = () => {
     if (isAuthenticated) {
@@ -67,7 +72,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsTaskerRegistrationModalOpen(true);
   };
 
-  const openMakeOfferModal = (task: Task) => { // New function
+  const openMakeOfferModal = (task: Task) => {
     if (!isAuthenticated) {
       toast.error("Please log in to make an offer.");
       openLoginModal();
@@ -78,13 +83,34 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsMakeOfferModalOpen(true);
   };
 
+  const openReviewTaskModal = (task: Task) => { // New function
+    if (!isAuthenticated) {
+      toast.error("Please log in to review a task.");
+      openLoginModal();
+      return;
+    }
+    closeAllModals();
+    setSelectedTaskForReview(task);
+    setIsReviewTaskModalOpen(true);
+  };
+
+  const handleReviewSubmit = async (rating: number, review: string) => {
+    if (selectedTaskForReview && selectedTaskForReview.assignedTaskerId) {
+      await completeTaskWithReview(selectedTaskForReview.id, rating, review);
+    } else {
+      toast.error("Cannot submit review: Task or assigned tasker information is missing.");
+    }
+  };
+
   const closeAllModals = () => {
     setIsLoginModalOpen(false);
     setIsSignupModalOpen(false);
     setIsPostTaskModalOpen(false);
     setIsTaskerRegistrationModalOpen(false);
-    setIsMakeOfferModalOpen(false); // Close new modal
-    setSelectedTaskForOffer(null); // Clear selected task
+    setIsMakeOfferModalOpen(false);
+    setIsReviewTaskModalOpen(false); // Close new modal
+    setSelectedTaskForOffer(null);
+    setSelectedTaskForReview(null); // Clear selected task for review
   };
 
   const value = {
@@ -92,7 +118,8 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     openSignupModal,
     openPostTaskModal,
     openTaskerRegistrationModal,
-    openMakeOfferModal, // Add to context value
+    openMakeOfferModal,
+    openReviewTaskModal, // Add to context value
     closeAllModals,
   };
 
@@ -104,6 +131,12 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <PostTaskModal isOpen={isPostTaskModalOpen} onClose={closeAllModals} />
       <TaskerRegistrationModal isOpen={isTaskerRegistrationModalOpen} onClose={closeAllModals} />
       <MakeOfferModal isOpen={isMakeOfferModalOpen} onClose={closeAllModals} task={selectedTaskForOffer} />
+      <ReviewTaskModal
+        isOpen={isReviewTaskModalOpen}
+        onClose={closeAllModals}
+        onReviewSubmit={handleReviewSubmit}
+        taskTitle={selectedTaskForReview?.title || ''}
+      />
     </ModalContext.Provider>
   );
 };

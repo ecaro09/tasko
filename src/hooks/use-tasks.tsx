@@ -11,6 +11,7 @@ import {
   getDocs,
   deleteDoc, // Import deleteDoc
   doc, // Import doc
+  updateDoc, // Import updateDoc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -40,6 +41,7 @@ interface UseTasksContextType {
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
+  completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>; // New function
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -540,12 +542,34 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
+  const completeTaskWithReview = async (taskId: string, rating: number, review: string) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to complete and review a task.");
+      return;
+    }
+
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+      await updateDoc(taskRef, {
+        status: 'completed',
+        rating: rating,
+        review: review,
+      });
+      toast.success("Task marked as completed and reviewed!");
+    } catch (err: any) {
+      console.error("Error completing task with review:", err);
+      toast.error(`Failed to complete task and add review: ${err.message}`);
+      throw err;
+    }
+  };
+
   const value = {
     tasks: allTasks, // Expose all tasks
     loading,
     error,
     addTask,
     deleteTask,
+    completeTaskWithReview, // Expose new function
   };
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;
