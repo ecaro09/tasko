@@ -11,6 +11,20 @@
     <link rel="apple-touch-icon" href="/pwa-192x192.png">
     <!-- Font Awesome is replaced by Lucide React in components, but keeping for any potential global use if needed -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Added Content Security Policy (CSP) meta tag -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googleapis.com;
+      style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+      img-src 'self' data: https:;
+      font-src 'self' https://cdnjs.cloudflare.com;
+      connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://securetoken.googleapis.com https://firestore.googleapis.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+      upgrade-insecure-requests;
+    ">
   </head>
 
   <body>
