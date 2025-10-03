@@ -13,7 +13,9 @@ import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import BottomNavigation from '@/components/BottomNavigation';
 import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
-import TaskFiltersSection from '@/components/TaskFiltersSection'; // New import
+import TaskFiltersSection from '@/components/TaskFiltersSection';
+import FeaturedTasksSection from '@/components/FeaturedTasksSection'; // New import
+import AvailableTasksSection from '@/components/AvailableTasksSection'; // New import
 import { usePWA } from '@/hooks/use-pwa';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
@@ -25,22 +27,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from '@/components/ui/skeleton';
-
-const getCategoryName = (category: string) => {
-  const names: { [key: string]: string } = {
-    all: 'All Services',
-    cleaning: 'Cleaning',
-    moving: 'Moving',
-    assembly: 'Assembly',
-    repairs: 'Repairs',
-    delivery: 'Delivery',
-    mounting: 'Mounting',
-    painting: 'Painting',
-    marketing: 'Marketing',
-    other: 'Other'
-  };
-  return names[category] || 'Task';
-};
 
 const Index = () => {
   const { isOnline, showInstallPrompt, installApp, closeInstallPrompt, showSplashScreen } = usePWA();
@@ -165,7 +151,7 @@ const Index = () => {
           onCategorySelect={handleCategorySelect}
         />
 
-        <TaskFiltersSection // Using the new component
+        <TaskFiltersSection
           minBudget={minBudget}
           setMinBudget={setMinBudget}
           maxBudget={maxBudget}
@@ -176,123 +162,18 @@ const Index = () => {
           onResetFilters={handleResetFilters}
         />
 
-        <section id="featured-tasks" className="py-8">
-          <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))] mb-8 text-center">✨ Featured Tasks</h2>
-          {tasksLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i} className="shadow-lg rounded-[var(--border-radius)] overflow-hidden">
-                  <Skeleton className="h-40 w-full" />
-                  <CardContent className="p-4">
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2 mb-2" />
-                    <Skeleton className="h-6 w-1/3 mb-4" />
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <Skeleton className="h-4 w-20" />
-                      </div>
-                      <Skeleton className="h-10 w-24 rounded-md" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : featuredTasks.length === 0 ? (
-            <p className="text-center text-gray-500 italic py-8">No featured tasks available right now.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredTasks.map((task) => (
-                <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
-                  <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      {getCategoryName(task.category)}
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="text-xl font-semibold mb-2">{task.title}</h3>
-                    <p className="text-[hsl(var(--text-light))] flex items-center mb-2">
-                      <MapPin size={16} className="mr-2" /> {task.location}
-                    </p>
-                    <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
-                        <span className="font-medium">{task.posterName}</span>
-                      </div>
-                      <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>
+        <FeaturedTasksSection
+          tasks={featuredTasks}
+          loading={tasksLoading}
+          onViewTaskDetails={handleViewTaskDetails}
+        />
 
-        <section id="tasks" className="py-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))]">📋 Available Tasks Near You</h2>
-            <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-2">
-              <Plus size={20} /> Post a Task
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
-            {tasksLoading && (
-              // Skeleton for Available Tasks
-              [...Array(6)].map((_, i) => (
-                <Card key={i} className="shadow-lg rounded-[var(--border-radius)] overflow-hidden">
-                  <Skeleton className="h-40 w-full" />
-                  <CardContent className="p-4">
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2 mb-2" />
-                    <Skeleton className="h-6 w-1/3 mb-4" />
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <Skeleton className="h-4 w-20" />
-                      </div>
-                      <Skeleton className="h-10 w-24 rounded-md" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-            {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
-              <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found matching your criteria. Try adjusting your filters!</p>
-            ) : (
-              !tasksLoading && (filteredTasks || []).map((task) => (
-                <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
-                  <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      {getCategoryName(task.category)}
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="text-xl font-semibold mb-2">{task.title}</h3>
-                    <p className="text-[hsl(var(--text-light))] flex items-center mb-2">
-                      <MapPin size={16} className="mr-2" /> {task.location}
-                    </p>
-                    <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
-                        <span className="font-medium">{task.posterName}</span>
-                      </div>
-                      <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </section>
+        <AvailableTasksSection
+          tasks={filteredTasks}
+          loading={tasksLoading}
+          error={tasksError}
+          onViewTaskDetails={handleViewTaskDetails}
+        />
 
         <section id="top-taskers" className="py-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg my-8 p-6">
           <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))] mb-8 text-center">⭐ Top Taskers</h2>
