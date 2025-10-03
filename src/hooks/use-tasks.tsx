@@ -15,8 +15,8 @@ import {
   editTaskFirestore,
   deleteTaskFirestore,
   completeTaskWithReviewFirestore,
-  seedInitialTasks, // Import seed function
 } from '@/lib/task-firestore'; // Import new utility functions
+import { seedInitialTasks } from '@/lib/seed-data'; // Import seed function from new location
 
 interface UseTasksContextType {
   tasks: Task[];
@@ -62,16 +62,17 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
           datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-          assignedTaskerId: data.assignedTaskerId || undefined,
-          assignedOfferId: data.assignedOfferId || undefined,
-          rating: data.rating || undefined,
-          review: data.review || undefined,
+          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+          assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
+          assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
+          rating: data.rating || undefined, // Include rating
+          review: data.review || undefined, // Include review
         };
       });
       setAllTasks(fetchedTasks);
       setLoading(false);
 
+      // Only seed if no tasks are present after initial fetch
       if (fetchedTasks.length === 0) {
         seedInitialTasks();
       }
@@ -83,7 +84,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Empty dependency array to run once on mount
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'>) => {
     if (!isAuthenticated || !user) {
