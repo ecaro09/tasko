@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import logo from '@/assets/logo.svg'; // Import the logo
+// Removed: import logo from '@/assets/logo.svg'; // Import the logo
 
 interface OnboardingWalkthroughProps {
   onClose: () => void;
@@ -12,7 +12,7 @@ const onboardingSteps = [
   {
     title: "Welcome to Tasko!",
     description: "Your go-to platform for finding reliable help and getting tasks done efficiently.",
-    image: logo, // Use the imported logo
+    image: "/pwa-192x192.png", // Using the PWA icon from public folder
   },
   {
     title: "Find Skilled Taskers",
