@@ -12,7 +12,7 @@ import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import BottomNavigation from '@/components/BottomNavigation';
-import OnboardingWalkthrough from '@/components/OnboardingWalkthrough'; // New import
+import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import { usePWA } from '@/hooks/use-pwa';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from '@/components/ui/skeleton'; // New import
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -53,12 +54,11 @@ const Index = () => {
   const [minBudget, setMinBudget] = React.useState('');
   const [maxBudget, setMaxBudget] = React.useState('');
   const [filterLocation, setFilterLocation] = React.useState('');
-  const [showOnboarding, setShowOnboarding] = React.useState(false); // State for onboarding visibility
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
 
   React.useEffect(() => {
-    // Check if onboarding has been seen before
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    if (!hasSeenOnboarding) {
+    const hasSeenWalkthrough = localStorage.getItem('hasSeenOnboarding');
+    if (!hasSeenWalkthrough) {
       setShowOnboarding(true);
     }
   }, []);
@@ -89,7 +89,6 @@ const Index = () => {
     setFilterLocation('');
   };
 
-  // Perform filtering locally in Index.tsx using React.useMemo for efficiency
   const filteredTasks = React.useMemo(() => {
     let currentFilteredTasks = tasks;
 
@@ -130,12 +129,10 @@ const Index = () => {
     return currentFilteredTasks;
   }, [tasks, searchTerm, selectedCategory, minBudget, maxBudget, filterLocation]);
 
-  // Select 5 featured tasks (e.g., the first 5 open tasks)
   const featuredTasks = React.useMemo(() => {
     return tasks.filter(task => task.status === 'open').slice(0, 5);
   }, [tasks]);
 
-  // Select 3 top taskers (e.g., the first 3 from allTaskerProfiles)
   const topTaskers = React.useMemo(() => {
     return allTaskerProfiles.slice(0, 3);
   }, [allTaskerProfiles]);
@@ -143,7 +140,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--bg-light))] dark:bg-gray-900 text-[hsl(var(--text-dark))] dark:text-gray-100 pb-16 md:pb-0">
-      {/* SplashScreen is now always rendered, but its visibility is controlled by CSS */}
       <div className={cn(
         "fixed inset-0 z-[9999] transition-opacity duration-500",
         showSplashScreen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -168,7 +164,6 @@ const Index = () => {
           onCategorySelect={handleCategorySelect}
         />
 
-        {/* Filter Section */}
         <section className="py-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg my-8 p-6">
           <h2 className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-6">Refine Your Search</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -216,11 +211,28 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Featured Tasks Section */}
         <section id="featured-tasks" className="py-8">
           <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))] mb-8 text-center">✨ Featured Tasks</h2>
           {tasksLoading ? (
-            <p className="text-center text-gray-500 italic py-8">Loading featured tasks...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="shadow-lg rounded-[var(--border-radius)] overflow-hidden">
+                  <Skeleton className="h-40 w-full" />
+                  <CardContent className="p-4">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <Skeleton className="h-6 w-1/3 mb-4" />
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <Skeleton className="h-10 w-24 rounded-md" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : featuredTasks.length === 0 ? (
             <p className="text-center text-gray-500 italic py-8">No featured tasks available right now.</p>
           ) : (
@@ -255,7 +267,6 @@ const Index = () => {
           )}
         </section>
 
-        {/* Tasks Section (Existing) */}
         <section id="tasks" className="py-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))]">📋 Available Tasks Near You</h2>
@@ -265,11 +276,30 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
-            {tasksLoading && <p className="col-span-full text-center text-gray-500 italic py-8">Loading tasks...</p>}
+            {tasksLoading && (
+              // Skeleton for Available Tasks
+              [...Array(6)].map((_, i) => (
+                <Card key={i} className="shadow-lg rounded-[var(--border-radius)] overflow-hidden">
+                  <Skeleton className="h-40 w-full" />
+                  <CardContent className="p-4">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <Skeleton className="h-6 w-1/3 mb-4" />
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <Skeleton className="h-10 w-24 rounded-md" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
             {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found matching your criteria. Try adjusting your filters!</p>
             ) : (
-              (filteredTasks || []).map((task) => (
+              !tasksLoading && (filteredTasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
                     <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
@@ -299,11 +329,27 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Top Taskers Section */}
         <section id="top-taskers" className="py-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg my-8 p-6">
           <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))] mb-8 text-center">⭐ Top Taskers</h2>
           {taskerProfilesLoading ? (
-            <p className="text-center text-gray-500 italic py-8">Loading top taskers...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="shadow-md rounded-[var(--border-radius)]">
+                  <CardContent className="p-4 flex flex-col items-center text-center">
+                    <Skeleton className="w-20 h-20 rounded-full mb-3" />
+                    <Skeleton className="h-6 w-3/4 mb-1" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <Skeleton className="h-4 w-1/3 mb-3" />
+                    <div className="flex flex-wrap justify-center gap-2 mb-4">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-10 w-32 rounded-md" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : topTaskers.length === 0 ? (
             <p className="text-center text-gray-500 italic py-8">No top taskers available yet. Be the first to register!</p>
           ) : (
@@ -344,7 +390,6 @@ const Index = () => {
           )}
         </section>
 
-        {/* Gamification Badges Placeholder */}
         <section id="gamification" className="py-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg my-8 p-6 text-center">
           <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))] mb-8">🏆 Earn Badges!</h2>
           <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
@@ -369,7 +414,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Referral Promo Placeholder */}
         <section id="referral-promo" className="py-8 bg-[hsl(var(--primary-color))] text-white rounded-lg shadow-lg my-8 p-6 text-center">
           <h2 className="text-4xl font-bold mb-4">🤝 Invite Friends & Earn!</h2>
           <p className="text-lg mb-6">
