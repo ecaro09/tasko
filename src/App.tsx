@@ -13,21 +13,21 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
-import ChatPage from "./pages/ChatPage";
+// import ChatPage from "./pages/ChatPage"; // Removed ChatPage import
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
-import TaskerDashboardPage from "./pages/TaskerDashboardPage"; // New import
+import TaskerDashboardPage from "./pages/TaskerDashboardPage";
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
 import { TaskerProfileProvider } from "./hooks/use-tasker-profile";
 import { OffersProvider } from "./hooks/use-offers";
-import { ChatProvider } from "./hooks/use-chat";
+// import { ChatProvider } from "./hooks/use-chat"; // Removed ChatProvider import
 import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
-import { ChatSessionProvider } from "./hooks/use-chat-session";
+// import { ChatSessionProvider } from "./hooks/use-chat-session"; // Removed ChatSessionProvider import
 
 const queryClient = new QueryClient();
 
@@ -42,8 +42,8 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ChatProvider>
-                        <ChatSessionProvider>
+                      {/* Removed ChatProvider */}
+                      {/* Removed ChatSessionProvider */}
                           <ModalProvider>
                             <div className="min-h-screen w-full flex flex-col items-center">
                               <Routes>
@@ -60,15 +60,15 @@ const App = () => {
                                 <Route path="/terms" element={<TermsOfServicePage />} />
                                 <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
                                 <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                                <Route path="/chat" element={<ChatPage />} />
-                                <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} /> {/* New Route */}
+                                {/* Removed ChatPage route */}
+                                <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} />
                                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                                 <Route path="*" element={<NotFound />} />
                               </Routes>
                             </div>
                           </ModalProvider>
-                        </ChatSessionProvider>
-                      </ChatProvider>
+                      {/* End Removed ChatSessionProvider */}
+                      {/* End Removed ChatProvider */}
                     </OffersProvider>
                   </TaskerProfileProvider>
                 </TasksProvider>

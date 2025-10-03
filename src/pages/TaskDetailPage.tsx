@@ -8,11 +8,11 @@ import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offe
 import { useModal } from '@/components/ModalProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { MapPin, Calendar, Tag, DollarSign, User, CheckCircle, XCircle, Clock } from 'lucide-react'; // Removed MessageSquare
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
-import { useChat } from '@/hooks/use-chat'; // New import for useChat
+// import { useChat } from '@/hooks/use-chat'; // Removed import for useChat
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +22,7 @@ const TaskDetailPage: React.FC = () => {
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { createChatRoom } = useChat(); // Use createChatRoom from useChat
+  // const { createChatRoom } = useChat(); // Removed useChat hook
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -43,7 +43,7 @@ const TaskDetailPage: React.FC = () => {
 
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
   const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
-  const canChatWithPoster = isAuthenticated && user?.uid !== task.posterId; // Can chat if authenticated and not the poster
+  // const canChatWithPoster = isAuthenticated && user?.uid !== task.posterId; // Removed chat condition
 
   const handleMakeOfferClick = () => {
     if (task) {
@@ -52,27 +52,28 @@ const TaskDetailPage: React.FC = () => {
   };
 
   const handleChatWithPoster = async () => {
-    if (!user || !task) {
-      toast.error("User or task information is missing.");
+    if (!isAuthenticated || !user || !task) {
+      toast.error("Chat feature is currently disabled.");
       return;
     }
-    if (user.uid === task.posterId) {
-      toast.info("You cannot chat with yourself.");
-      return;
-    }
+    // Removed chat room creation logic
+    // if (user.uid === task.posterId) {
+    //   toast.info("You cannot chat with yourself.");
+    //   return;
+    // }
 
-    try {
-      const roomId = await createChatRoom(
-        [user.uid, task.posterId],
-        [user.displayName || user.email || "You", task.posterName]
-      );
-      if (roomId) {
-        navigate('/chat'); // Navigate to the chat page
-      }
-    } catch (error) {
-      console.error("Failed to create or navigate to chat room:", error);
-      toast.error("Failed to start chat.");
-    }
+    // try {
+    //   const roomId = await createChatRoom(
+    //     [user.uid, task.posterId],
+    //     [user.displayName || user.email || "You", task.posterName]
+    //   );
+    //   if (roomId) {
+    //     navigate('/chat'); // Navigate to the chat page
+    //   }
+    // } catch (error) {
+    //   console.error("Failed to create or navigate to chat room:", error);
+    //   toast.error("Failed to start chat.");
+    // }
   };
 
   const handleAcceptOffer = async (offerId: string) => {
@@ -171,11 +172,12 @@ const TaskDetailPage: React.FC = () => {
                     <User size={20} /> Make an Offer
                   </Button>
                 )}
-                {canChatWithPoster && (
+                {/* Removed Chat with Poster button */}
+                {/* {canChatWithPoster && (
                   <Button onClick={handleChatWithPoster} variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center gap-2">
                     <MessageSquare size={20} /> Chat with Poster
                   </Button>
-                )}
+                )} */}
                 {!isAuthenticated && (
                   <p className="text-sm text-gray-500 mt-2">Log in to make an offer or chat.</p>
                 )}
@@ -205,7 +207,7 @@ const TaskDetailPage: React.FC = () => {
                           <div>
                             <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
                             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                              <MessageSquare size={14} /> {offer.message}
+                              {/* Removed MessageSquare icon */} {offer.message}
                             </p>
                           </div>
                         </div>

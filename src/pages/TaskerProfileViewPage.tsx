@@ -6,11 +6,11 @@ import { useTasks } from '@/hooks/use-tasks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star, MessageSquare } from 'lucide-react';
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star } from 'lucide-react'; // Removed MessageSquare
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
-import { useChat } from '@/hooks/use-chat';
+// import { useChat } from '@/hooks/use-chat'; // Removed import for useChat
 import { toast } from 'sonner';
 
 const TaskerProfileViewPage: React.FC = () => {
@@ -19,7 +19,7 @@ const TaskerProfileViewPage: React.FC = () => {
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
   const { tasks, loading: tasksLoading } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { createChatRoom } = useChat();
+  // const { createChatRoom } = useChat(); // Removed useChat hook
 
   const [tasker, setTasker] = React.useState<TaskerProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -75,18 +75,20 @@ const TaskerProfileViewPage: React.FC = () => {
       return;
     }
 
-    try {
-      const roomId = await createChatRoom(
-        [user.uid, tasker.userId],
-        [user.displayName || user.email || "You", tasker.displayName]
-      );
-      if (roomId) {
-        navigate('/chat');
-      }
-    } catch (error) {
-      console.error("Failed to create or navigate to chat room:", error);
-      toast.error("Failed to start chat with tasker.");
-    }
+    // Removed chat room creation logic
+    toast.info("Chat feature is currently disabled.");
+    // try {
+    //   const roomId = await createChatRoom(
+    //     [user.uid, tasker.userId],
+    //     [user.displayName || user.email || "You", tasker.displayName]
+    //   );
+    //   if (roomId) {
+    //     navigate('/chat');
+    //   }
+    // } catch (error) {
+    //   console.error("Failed to create or navigate to chat room:", error);
+    //   toast.error("Failed to start chat with tasker.");
+    // }
   };
 
   if (loading || globalLoading || tasksLoading || authLoading) {
@@ -200,20 +202,14 @@ const TaskerProfileViewPage: React.FC = () => {
 
             <Button
               onClick={handleContactTasker}
-              disabled={!isAuthenticated || isCurrentUserTasker}
+              disabled={true} // Always disabled as chat is deferred
               className={cn(
                 "mt-6 text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2",
-                !isAuthenticated || isCurrentUserTasker
-                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700 text-white"
+                "bg-gray-400 text-gray-700 cursor-not-allowed" // Always show disabled style
               )}
             >
-              <MessageSquare size={24} />
-              {isCurrentUserTasker
-                ? "This is your profile"
-                : isAuthenticated
-                  ? "Contact Tasker"
-                  : "Login to Contact Tasker"}
+              {/* Removed MessageSquare icon */}
+              Chat (Disabled)
             </Button>
           </CardContent>
         </Card>
