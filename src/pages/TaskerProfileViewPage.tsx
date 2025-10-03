@@ -1,24 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
-import { useTasks } from '@/hooks/use-tasks';
+import { useTasks } from '@/hooks/use-tasks'; // New import for tasks
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star, MessageSquare } from 'lucide-react'; // Added MessageSquare icon
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star } from 'lucide-react'; // Added Star icon
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth'; // New import
-import { useChat } from '@/hooks/use-chat'; // New import
-import { toast } from 'sonner'; // New import
+import { cn } from '@/lib/utils'; // Import cn for conditional class names
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
-  const { tasks, loading: tasksLoading } = useTasks();
-  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Use auth hook
-  const { createChatRoom } = useChat(); // Use chat hook
+  const { tasks, loading: tasksLoading } = useTasks(); // Get all tasks
   const [tasker, setTasker] = React.useState<TaskerProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -57,35 +52,7 @@ const TaskerProfileViewPage: React.FC = () => {
     return (totalRating / taskerReviews.length).toFixed(1);
   }, [taskerReviews]);
 
-  const handleChatWithTasker = async () => {
-    if (!isAuthenticated || !user) {
-      toast.error("Please log in to chat with the tasker.");
-      return;
-    }
-    if (!tasker) {
-      toast.error("Tasker information is missing.");
-      return;
-    }
-    if (user.uid === tasker.userId) {
-      toast.info("You cannot chat with yourself.");
-      return;
-    }
-
-    try {
-      const roomId = await createChatRoom(
-        [user.uid, tasker.userId],
-        [user.displayName || user.email || "You", tasker.displayName]
-      );
-      if (roomId) {
-        navigate('/chat'); // Navigate to the chat page
-      }
-    } catch (chatError) {
-      console.error("Failed to create or navigate to chat room:", chatError);
-      toast.error("Failed to start chat.");
-    }
-  };
-
-  if (loading || globalLoading || tasksLoading || authLoading) { // Include authLoading
+  if (loading || globalLoading || tasksLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading tasker profile...</div>;
   }
 
@@ -194,11 +161,8 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             )}
 
-            <Button
-              onClick={handleChatWithTasker}
-              className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2 mx-auto"
-            >
-              <MessageSquare size={24} /> Chat with Tasker
+            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
+              Contact Tasker (Coming Soon)
             </Button>
           </CardContent>
         </Card>
