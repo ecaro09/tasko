@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks, Task } from '@/hooks/use-tasks'; // Import Task interface
+import { useTasks } from '@/hooks/use-tasks'; // Import useTasks
+import { Task } from '@/lib/task-firestore'; // Import Task interface from new location
 import { toast } from 'sonner';
 import LoginModal from './LoginModal';
 import SignupModal from './SignupModal';

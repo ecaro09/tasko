@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTasks, Task } from '@/hooks/use-tasks';
+import { useTasks } from '@/hooks/use-tasks';
+import { Task } from '@/lib/task-firestore'; // Import Task interface from new location
 import { toast } from 'sonner';
 
 interface EditTaskModalProps {
