@@ -13,21 +13,24 @@ interface SignupModalProps {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
-  const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Get authLoading
+  const { signupWithEmailPassword, loading: authLoading } = useAuth();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  const [isLoadingLocal, setIsLoadingLocal] = React.useState(false);
 
-  const isFormDisabled = isLoadingLocal || authLoading; // Combine local and global auth loading
+  const isFormDisabled = isLoadingLocal || authLoading;
 
   const handleEmailPasswordSignup = async () => {
-    if (!email || !password) {
-      toast.error("Please enter both email and password.");
+    if (!email || !password || !firstName || !lastName) {
+      toast.error("Please fill in all required fields (Email, Password, First Name, Last Name).");
       return;
     }
     setIsLoadingLocal(true);
     try {
-      await signupWithEmailPassword(email, password);
+      await signupWithEmailPassword(email, password, firstName, lastName, phone);
       onClose();
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
@@ -38,7 +41,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
 
   const handleSwitchToLogin = () => {
     onClose();
-    onSwitchToLogin(); // Use the prop
+    onSwitchToLogin();
   };
 
   return (
@@ -51,6 +54,28 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input
+              id="firstName"
+              type="text"
+              placeholder="Juan"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              disabled={isFormDisabled}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              type="text"
+              placeholder="Dela Cruz"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              disabled={isFormDisabled}
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -69,6 +94,17 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isFormDisabled}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="phone">Phone Number (Optional)</Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="+639171234567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               disabled={isFormDisabled}
             />
           </div>
