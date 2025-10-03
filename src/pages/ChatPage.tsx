@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, ArrowLeft, Send, User as UserIcon } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
 import { useNavigate } from 'react-router-dom';
 import { useChat, ChatRoom, ChatMessage } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
@@ -155,6 +155,15 @@ const ChatPage: React.FC = () => {
                   </Avatar>
                   <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getParticipantName(selectedRoom)}</h3>
                 </div>
+
+                {/* Scam Detection Alert Banner */}
+                <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 p-3 flex items-center gap-2 text-sm">
+                  <AlertTriangle size={20} />
+                  <span>
+                    <span className="font-semibold">Scam Alert:</span> Be cautious of requests for off-platform payments or personal info. Report suspicious activity.
+                  </span>
+                </div>
+
                 <ScrollArea className="flex-grow p-4 space-y-4">
                   {loadingMessages ? (
                     <p className="text-center text-gray-500 dark:text-gray-400">Loading messages...</p>

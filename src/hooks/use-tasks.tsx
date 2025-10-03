@@ -30,13 +30,15 @@ export interface Task {
   imageUrl?: string;
   assignedTaskerId?: string; // New field for the assigned tasker's ID
   assignedOfferId?: string; // New field for the accepted offer's ID
+  rating?: number; // New field for task rating
+  review?: string; // New field for task review
 }
 
 interface UseTasksContextType {
   tasks: Task[]; // This will now be all tasks
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
 }
 
@@ -271,7 +273,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           assignedTaskerId: "seed-tasker-1", // Assigned to a dummy tasker
           assignedOfferId: "dummy-offer-1",
         },
-        // Example of a completed task (for future review feature)
+        // Example of a completed task with rating and review
         {
           title: "Repair broken cabinet door",
           category: "repairs",
@@ -286,6 +288,161 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           imageUrl: "https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
           assignedTaskerId: "seed-tasker-2", // Assigned to a dummy tasker
           assignedOfferId: "dummy-offer-2",
+          rating: 5,
+          review: "⭐⭐⭐⭐⭐ Solid si Kuya! Mabilis gumawa, sulit bayad. Highly recommended!",
+        },
+        {
+          title: "Deep Clean Kitchen",
+          category: "cleaning",
+          description: "Thorough deep cleaning of kitchen including oven, fridge, and cabinets.",
+          location: "Taguig City, Metro Manila",
+          budget: 1500,
+          posterId: "seed-client-8",
+          posterName: "Coco Martin",
+          posterAvatar: "https://randomuser.me/api/portraits/men/12.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-2",
+          assignedOfferId: "dummy-offer-3",
+          rating: 4,
+          review: "⭐⭐⭐⭐ Magaling maglinis, medyo matagal lang dumating. Pero overall, satisfied!",
+        },
+        {
+          title: "Assemble IKEA Bookshelf",
+          category: "assembly",
+          description: "Need help assembling a large IKEA bookshelf. All tools provided.",
+          location: "Quezon City, Metro Manila",
+          budget: 800,
+          posterId: "seed-client-9",
+          posterName: "Angel Locsin",
+          posterAvatar: "https://randomuser.me/api/portraits/women/14.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-1",
+          assignedOfferId: "dummy-offer-4",
+          rating: 5,
+          review: "⭐⭐⭐⭐⭐ Ang bilis at ang galing mag-assemble! Walang problema. Salamat!",
+        },
+        {
+          title: "Dog Walking (Daily for a week)",
+          category: "other",
+          description: "Need someone to walk my golden retriever daily for one week, 30 mins each walk.",
+          location: "Mandaluyong City, Metro Manila",
+          budget: 1000,
+          posterId: "seed-client-10",
+          posterName: "Vice Ganda",
+          posterAvatar: "https://randomuser.me/api/portraits/men/16.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1599669454699-248893623440?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-10",
+          assignedOfferId: "dummy-offer-5",
+          rating: 5,
+          review: "⭐⭐⭐⭐⭐ Super bait sa aso ko! Very reliable. Will book again!",
+        },
+        {
+          title: "Fix Leaky Faucet in Bathroom",
+          category: "repairs",
+          description: "Bathroom faucet is constantly dripping. Need a quick fix.",
+          location: "Pasig City, Metro Manila",
+          budget: 400,
+          posterId: "seed-client-1",
+          posterName: "Aling Nena",
+          posterAvatar: "https://randomuser.me/api/portraits/women/68.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-1",
+          assignedOfferId: "dummy-offer-6",
+          rating: 5,
+          review: "⭐⭐⭐⭐⭐ Mabilis at maayos ang paggawa. Salamat po!",
+        },
+        {
+          title: "Install Wall-Mounted TV",
+          category: "assembly",
+          description: "Need help mounting a 55-inch TV on a concrete wall. Bracket provided.",
+          location: "Makati City, Metro Manila",
+          budget: 700,
+          posterId: "seed-client-2",
+          posterName: "Mang Tonyo",
+          posterAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-7",
+          assignedOfferId: "dummy-offer-7",
+          rating: 4,
+          review: "⭐⭐⭐⭐ Okay ang service, medyo late lang ng 15 mins. Pero maganda ang pagkakabit.",
+        },
+        {
+          title: "Personal Shopper for Clothes",
+          category: "other",
+          description: "Need a personal shopper to help pick out clothes for an event. 3 hours.",
+          location: "BGC, Taguig City",
+          budget: 1200,
+          posterId: "seed-client-3",
+          posterName: "Liza Soberano",
+          posterAvatar: "https://randomuser.me/api/portraits/women/2.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-6",
+          assignedOfferId: "dummy-offer-8",
+          rating: 5,
+          review: "⭐⭐⭐⭐⭐ Super galing pumili! Ang daming magagandang options. Thank you!",
+        },
+        {
+          title: "Car Wash (Home Service)",
+          category: "cleaning",
+          description: "Full exterior and interior car wash for a sedan. Home service needed.",
+          location: "Paranaque City, Metro Manila",
+          budget: 600,
+          posterId: "seed-client-4",
+          posterName: "Daniel Padilla",
+          posterAvatar: "https://randomuser.me/api/portraits/men/4.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-2",
+          assignedOfferId: "dummy-offer-9",
+          rating: 4,
+          review: "⭐⭐⭐⭐ Malinis ang kotse ko, pero medyo matagal matapos. Still good!",
+        },
+        {
+          title: "Repair Broken Window Pane",
+          category: "repairs",
+          description: "Small window pane is cracked, needs replacement. Glass will be provided.",
+          location: "Quezon City, Metro Manila",
+          budget: 700,
+          posterId: "seed-client-5",
+          posterName: "Kathryn Bernardo",
+          posterAvatar: "https://randomuser.me/api/portraits/women/6.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1581093458791-8a6b5d174d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-1",
+          assignedOfferId: "dummy-offer-10",
+          rating: 5,
+          review: "⭐⭐⭐⭐⭐ Very professional at mabilis mag-ayos. Safe na ulit ang bahay!",
+        },
+        {
+          title: "Move Small Furniture",
+          category: "moving",
+          description: "Move a small sofa and a coffee table from 1st floor to 2nd floor. Within the same house.",
+          location: "Pasig City, Metro Manila",
+          budget: 500,
+          posterId: "seed-client-6",
+          posterName: "Alden Richards",
+          posterAvatar: "https://randomuser.me/api/portraits/men/8.jpg",
+          datePosted: serverTimestamp(),
+          status: "completed",
+          imageUrl: "https://images.unsplash.com/photo-1541976590-713941681591?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          assignedTaskerId: "seed-tasker-9",
+          assignedOfferId: "dummy-offer-11",
+          rating: 5,
+          review: "⭐⭐⭐⭐⭐ Malakas at maingat sa gamit. Salamat sa tulong!",
         },
       ];
 
@@ -321,6 +478,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
+          rating: data.rating || undefined, // Include rating
+          review: data.review || undefined, // Include review
         };
       });
       setAllTasks(fetchedTasks);
@@ -340,7 +499,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;

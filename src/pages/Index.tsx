@@ -7,21 +7,22 @@ import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus, Star, Award, Gift, User as UserIcon, DollarSign } from 'lucide-react'; // Added UserIcon, DollarSign
+import { MapPin, Plus, Star, Award, Gift, User as UserIcon, DollarSign } from 'lucide-react';
 import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import BottomNavigation from '@/components/BottomNavigation';
+import OnboardingWalkthrough from '@/components/OnboardingWalkthrough'; // New import
 import { usePWA } from '@/hooks/use-pwa';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
-import { Input } from '@/components/ui/input'; // Import Input for new filters
-import { Badge } from '@/components/ui/badge'; // Import Badge for gamification
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -45,13 +46,22 @@ const Index = () => {
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
-  const { allTaskerProfiles, loading: taskerProfilesLoading } = useTaskerProfile(); // Get all tasker profiles
+  const { allTaskerProfiles, loading: taskerProfilesLoading } = useTaskerProfile();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
   const [minBudget, setMinBudget] = React.useState('');
   const [maxBudget, setMaxBudget] = React.useState('');
   const [filterLocation, setFilterLocation] = React.useState('');
+  const [showOnboarding, setShowOnboarding] = React.useState(false); // State for onboarding visibility
+
+  React.useEffect(() => {
+    // Check if onboarding has been seen before
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await logout();
@@ -381,6 +391,8 @@ const Index = () => {
         onClose={closeInstallPrompt}
       />
       <BottomNavigation />
+
+      {showOnboarding && <OnboardingWalkthrough onClose={() => setShowOnboarding(false)} />}
     </div>
   );
 };
