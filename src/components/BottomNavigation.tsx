@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, LayoutGrid, ListTodo, User, Briefcase } from 'lucide-react'; // Removed MessageSquare
+import { Home, LayoutGrid, ListTodo, User, MessageSquare, Briefcase } from 'lucide-react'; // New import for Briefcase icon
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -66,8 +66,8 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
             <span>Dashboard</span>
           </NavLink>
         )}
-        {/* Removed NavLink for Chat */}
-        {/* <NavLink
+        {/* New NavLink for Chat */}
+        <NavLink
           to="/chat"
           className={({ isActive }) => cn(
             "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
@@ -76,7 +76,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
         >
           <MessageSquare size={20} className="mb-1" />
           <span>Chat</span>
-        </NavLink> */}
+        </NavLink>
         <button
           onClick={handleProfileClick}
           className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"

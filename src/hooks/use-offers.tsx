@@ -4,7 +4,7 @@ import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, upd
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // To check if user is a tasker
-// import { useChat } from './use-chat'; // Removed import for useChat
+import { useChat } from './use-chat'; // New import for useChat
 import {
   Offer,
   addOfferFirestore,
@@ -35,7 +35,7 @@ const OffersContext = createContext<OffersContextType | undefined>(undefined);
 export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const { taskerProfile, isTasker, loading: taskerLoading, fetchTaskerProfileById } = useTaskerProfile(); // Added fetchTaskerProfileById
-  // const { createChatRoom } = useChat(); // Removed useChat hook
+  const { createChatRoom } = useChat(); // Use createChatRoom from useChat
   const [allOffers, setAllOffers] = React.useState<Offer[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -95,15 +95,17 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (result) {
         const { taskerId, clientId } = result;
 
-        // Removed chat room creation logic
-        // const taskerProfileForChat = await fetchTaskerProfileById(taskerId);
-        // const taskerDisplayName = taskerProfileForChat?.displayName || "Tasker";
-        // const clientDisplayName = user.displayName || user.email || "Client";
-        // const roomId = await createChatRoom(
-        //   [clientId, taskerId],
-        //   [clientDisplayName, taskerDisplayName]
-        // );
-        // return roomId; // Return the roomId for navigation
+        // Fetch tasker's profile to get display name for chat
+        const taskerProfileForChat = await fetchTaskerProfileById(taskerId);
+        const taskerDisplayName = taskerProfileForChat?.displayName || "Tasker";
+        const clientDisplayName = user.displayName || user.email || "Client";
+
+        // Create or get chat room
+        const roomId = await createChatRoom(
+          [clientId, taskerId],
+          [clientDisplayName, taskerDisplayName]
+        );
+        return roomId; // Return the roomId for navigation
       }
       return null;
     } catch (err) {
