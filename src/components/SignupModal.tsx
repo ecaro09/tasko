@@ -13,25 +13,27 @@ interface SignupModalProps {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
-  const { signupWithEmailPassword } = useAuth();
+  const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Get authLoading
   const { openLoginModal } = useModal();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
+
+  const isFormDisabled = isLoadingLocal || authLoading; // Combine local and global auth loading
 
   const handleEmailPasswordSignup = async () => {
     if (!email || !password) {
       toast.error("Please enter both email and password.");
       return;
     }
-    setIsLoading(true);
+    setIsLoadingLocal(true);
     try {
       await signupWithEmailPassword(email, password);
       onClose();
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
     } finally {
-      setIsLoading(false);
+      setIsLoadingLocal(false);
     }
   };
 
@@ -58,7 +60,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
               placeholder="m@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
+              disabled={isFormDisabled}
             />
           </div>
           <div className="grid gap-2">
@@ -68,15 +70,15 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
+              disabled={isFormDisabled}
             />
           </div>
           <Button
             onClick={handleEmailPasswordSignup}
-            disabled={isLoading}
+            disabled={isFormDisabled}
             className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
           >
-            {isLoading ? 'Signing Up...' : 'Sign Up with Email'}
+            {isLoadingLocal ? 'Signing Up...' : 'Sign Up with Email'}
           </Button>
         </div>
         <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">

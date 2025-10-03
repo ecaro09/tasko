@@ -32,10 +32,18 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { isAuthenticated } = useAuth();
 
   const openLoginModal = () => {
+    if (isAuthenticated) {
+      toast.info("You are already logged in.");
+      return;
+    }
     closeAllModals();
     setIsLoginModalOpen(true);
   };
   const openSignupModal = () => {
+    if (isAuthenticated) {
+      toast.info("You are already logged in.");
+      return;
+    }
     closeAllModals();
     setIsSignupModalOpen(true);
   };

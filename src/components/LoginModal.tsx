@@ -14,30 +14,32 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { loginWithEmailPassword, signInWithGoogle } = useAuth();
+  const { loginWithEmailPassword, signInWithGoogle, loading: authLoading } = useAuth(); // Get authLoading
   const { openSignupModal } = useModal();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
+
+  const isFormDisabled = isLoadingLocal || authLoading; // Combine local and global auth loading
 
   const handleEmailPasswordLogin = async () => {
     if (!email || !password) {
       toast.error("Please enter both email and password.");
       return;
     }
-    setIsLoading(true);
+    setIsLoadingLocal(true);
     try {
       await loginWithEmailPassword(email, password);
       onClose();
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
     } finally {
-      setIsLoading(false);
+      setIsLoadingLocal(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
+    setIsLoadingLocal(true); // Set local loading for immediate feedback
     try {
       onClose(); // Close the modal immediately before initiating the redirect
       await signInWithGoogle();
@@ -46,7 +48,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
       // If an error occurs before redirect, ensure loading state is reset
-      setIsLoading(false);
+      setIsLoadingLocal(false);
     }
   };
 
@@ -73,7 +75,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               placeholder="m@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
+              disabled={isFormDisabled}
             />
           </div>
           <div className="grid gap-2">
@@ -83,15 +85,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
+              disabled={isFormDisabled}
             />
           </div>
           <Button
             onClick={handleEmailPasswordLogin}
-            disabled={isLoading}
+            disabled={isFormDisabled}
             className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
           >
-            {isLoading ? 'Logging In...' : 'Login with Email'}
+            {isLoadingLocal ? 'Logging In...' : 'Login with Email'}
           </Button>
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
@@ -105,11 +107,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           </div>
           <Button
             onClick={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={isFormDisabled}
             variant="outline"
             className="w-full flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
           >
-            <Chrome size={20} /> {isLoading ? 'Signing In...' : 'Sign in with Google'}
+            <Chrome size={20} /> {isFormDisabled ? 'Signing In...' : 'Sign in with Google'}
           </Button>
         </div>
         <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
