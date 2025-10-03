@@ -16,7 +16,7 @@ import {
   deleteTaskFirestore,
   completeTaskWithReviewFirestore,
 } from '@/lib/task-firestore'; // Import new utility functions
-import { seedInitialTasks } from '@/lib/seed-data'; // Import seed function from new location
+import { seedInitialTasks } from '@/lib/seed-tasks'; // Import seed function from new location
 
 interface UseTasksContextType {
   tasks: Task[];

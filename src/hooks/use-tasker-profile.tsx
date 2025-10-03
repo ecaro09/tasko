@@ -8,7 +8,7 @@ import {
   createOrUpdateTaskerProfileFirestore,
   fetchAllTaskerProfilesFirestore,
 } from '@/lib/tasker-profile-firestore'; // Import new utility functions
-import { seedInitialTaskerProfiles } from '@/lib/seed-data'; // Import seed function from new location
+import { seedInitialTaskerProfiles } from '@/lib/seed-tasker-profiles'; // Import seed function from new location
 
 interface TaskerProfileContextType {
   taskerProfile: TaskerProfile | null;
