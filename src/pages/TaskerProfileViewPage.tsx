@@ -1,19 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
-import { useTasks } from '@/hooks/use-tasks'; // New import for tasks
+import { useTasks } from '@/hooks/use-tasks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star } from 'lucide-react'; // Added Star icon
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth'; // New import
+import { useChat } from '@/hooks/use-chat'; // New import
+import { toast } from 'sonner'; // New import
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
-  const { tasks, loading: tasksLoading } = useTasks(); // Get all tasks
+  const { tasks, loading: tasksLoading } = useTasks();
+  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Get current user info
+  const { createChatRoom } = useChat(); // Get chat room creation function
+
   const [tasker, setTasker] = React.useState<TaskerProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -52,7 +58,37 @@ const TaskerProfileViewPage: React.FC = () => {
     return (totalRating / taskerReviews.length).toFixed(1);
   }, [taskerReviews]);
 
-  if (loading || globalLoading || tasksLoading) {
+  const isCurrentUserTasker = isAuthenticated && user?.uid === tasker?.userId;
+
+  const handleContactTasker = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to contact this tasker.");
+      return;
+    }
+    if (!tasker) {
+      toast.error("Tasker information is missing.");
+      return;
+    }
+    if (isCurrentUserTasker) {
+      toast.info("You are viewing your own profile.");
+      return;
+    }
+
+    try {
+      const roomId = await createChatRoom(
+        [user.uid, tasker.userId],
+        [user.displayName || user.email || "You", tasker.displayName]
+      );
+      if (roomId) {
+        navigate('/chat'); // Navigate to the chat page
+      }
+    } catch (error) {
+      console.error("Failed to create or navigate to chat room:", error);
+      toast.error("Failed to start chat with tasker.");
+    }
+  };
+
+  if (loading || globalLoading || tasksLoading || authLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading tasker profile...</div>;
   }
 
@@ -161,8 +197,22 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             )}
 
-            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
-              Contact Tasker (Coming Soon)
+            <Button
+              onClick={handleContactTasker}
+              disabled={!isAuthenticated || isCurrentUserTasker}
+              className={cn(
+                "mt-6 text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2",
+                !isAuthenticated || isCurrentUserTasker
+                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              )}
+            >
+              <MessageSquare size={24} />
+              {isCurrentUserTasker
+                ? "This is your profile"
+                : isAuthenticated
+                  ? "Contact Tasker"
+                  : "Login to Contact Tasker"}
             </Button>
           </CardContent>
         </Card>
