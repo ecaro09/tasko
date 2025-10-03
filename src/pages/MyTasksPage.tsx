@@ -84,7 +84,10 @@ const MyTasksPage: React.FC = () => {
 
   const handleAcceptOffer = async (offerId: string, taskId: string) => {
     try {
-      await acceptOffer(offerId, taskId);
+      const roomId = await acceptOffer(offerId, taskId);
+      if (roomId) {
+        navigate('/chat'); // Navigate to the chat page after accepting the offer
+      }
     } catch (error) {
       // Error handled by useOffers hook
     }

@@ -45,20 +45,20 @@ export const addOfferFirestore = async (
   }
 };
 
-export const acceptOfferFirestore = async (offerId: string, taskId: string, user: FirebaseUser) => {
+export const acceptOfferFirestore = async (offerId: string, taskId: string, user: FirebaseUser): Promise<{ taskerId: string; clientId: string } | null> => {
   try {
     const offerRef = doc(db, 'offers', offerId);
     const offerSnap = await getDoc(offerRef);
     if (!offerSnap.exists()) {
       toast.error("Offer not found.");
-      return;
+      return null;
     }
     const offerData = offerSnap.data() as Offer;
 
     // Ensure the current user is the client of the task
     if (offerData.clientId !== user.uid) {
       toast.error("You are not authorized to accept this offer.");
-      return;
+      return null;
     }
 
     await updateDoc(offerRef, {
@@ -75,6 +75,7 @@ export const acceptOfferFirestore = async (offerId: string, taskId: string, user
     });
 
     toast.success("Offer accepted!");
+    return { taskerId: offerData.taskerId, clientId: offerData.clientId };
   } catch (err: any) {
     console.error("Error accepting offer:", err);
     toast.error(`Failed to accept offer: ${err.message}`);
