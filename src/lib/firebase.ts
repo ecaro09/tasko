@@ -1,8 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage'; // New import for Firebase Storage
-import { toast } from 'sonner'; // Import toast for error messages
+import { getStorage } from 'firebase/storage';
+import { toast } from 'sonner';
 
 // Log all environment variables for debugging
 console.log("All VITE_ environment variables:", import.meta.env);
@@ -18,7 +18,14 @@ const firebaseConfig = {
 };
 
 // Validate Firebase configuration
-const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+const requiredConfigKeys = [
+  'apiKey',
+  'authDomain',
+  'projectId',
+  'appId',
+  'storageBucket', // Added for validation
+  'messagingSenderId', // Added for validation
+];
 const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
 
 if (missingKeys.length > 0) {
@@ -38,7 +45,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app); // Export Firebase Storage
+export const storage = getStorage(app);
 
 // Enable Firestore offline persistence
 enableIndexedDbPersistence(db)
