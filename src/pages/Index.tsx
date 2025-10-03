@@ -13,6 +13,7 @@ import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import BottomNavigation from '@/components/BottomNavigation';
 import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
+import TaskFiltersSection from '@/components/TaskFiltersSection'; // New import
 import { usePWA } from '@/hooks/use-pwa';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
@@ -23,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from '@/components/ui/skeleton'; // New import
+import { Skeleton } from '@/components/ui/skeleton';
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -164,52 +165,16 @@ const Index = () => {
           onCategorySelect={handleCategorySelect}
         />
 
-        <section className="py-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg my-8 p-6">
-          <h2 className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-6">Refine Your Search</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label htmlFor="filterLocation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-              <Input
-                id="filterLocation"
-                type="text"
-                placeholder="e.g., 'Makati City'"
-                value={filterLocation}
-                onChange={(e) => setFilterLocation(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label htmlFor="minBudget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min Budget (₱)</label>
-              <Input
-                id="minBudget"
-                type="number"
-                placeholder="e.g., 500"
-                value={minBudget}
-                onChange={(e) => setMinBudget(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label htmlFor="maxBudget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Budget (₱)</label>
-              <Input
-                id="maxBudget"
-                type="number"
-                placeholder="e.g., 2000"
-                value={maxBudget}
-                onChange={(e) => setMaxBudget(e.target.value)}
-                className="w-full"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button onClick={handleResetFilters} variant="outline" className="border-gray-400 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-              Reset Filters
-            </Button>
-            <Button onClick={handleSearchSubmit} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))]">
-              Apply Filters
-            </Button>
-          </div>
-        </section>
+        <TaskFiltersSection // Using the new component
+          minBudget={minBudget}
+          setMinBudget={setMinBudget}
+          maxBudget={maxBudget}
+          setMaxBudget={setMaxBudget}
+          filterLocation={filterLocation}
+          setFilterLocation={setFilterLocation}
+          onApplyFilters={handleSearchSubmit}
+          onResetFilters={handleResetFilters}
+        />
 
         <section id="featured-tasks" className="py-8">
           <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))] mb-8 text-center">✨ Featured Tasks</h2>
