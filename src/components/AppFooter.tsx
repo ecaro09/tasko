@@ -44,14 +44,14 @@ const AppFooter = () => {
           <div className="flex flex-col space-y-3 mb-6">
             <a href="#" target="_blank" rel="noopener noreferrer">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                src="/google-play-badge.png"
                 alt="Get it on Google Play"
                 className="h-10 w-auto object-contain"
               />
             </a>
             <a href="#" target="_blank" rel="noopener noreferrer">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
+                src="/app-store-badge.png"
                 alt="Download on the App Store"
                 className="h-10 w-auto object-contain"
               />
