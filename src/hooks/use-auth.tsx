@@ -7,23 +7,35 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
 } from 'firebase/auth';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+
+// Define the structure for the Supabase profile
+export interface UserProfile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  phone: string | null;
+  role: string; // 'user' or 'tasker'
+  updated_at: string;
+}
 
 interface AuthState {
   user: FirebaseUser | null;
+  profile: UserProfile | null; // Add Supabase profile
   isAuthenticated: boolean;
   loading: boolean;
 }
 
 interface AuthContextType extends AuthState {
-  signupWithEmailPassword: (email: string, password: string) => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => Promise<void>;
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
+  updateUserProfile: (firstName: string, lastName: string, phone: string, photoURL?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
 }
 
@@ -32,24 +44,65 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = React.useState<AuthState>({
     user: null,
+    profile: null,
     isAuthenticated: false,
     loading: true,
   });
 
+  // Function to fetch user profile from Supabase
+  const fetchUserProfile = React.useCallback(async (firebaseUser: FirebaseUser) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', firebaseUser.uid)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
+        throw error;
+      }
+
+      if (data) {
+        setAuthState(prev => ({ ...prev, profile: data as UserProfile }));
+      } else {
+        // If no profile exists, create a basic one (should be handled by handle_new_user trigger, but as a fallback)
+        console.warn("No Supabase profile found for user, creating a fallback profile.");
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: firebaseUser.uid,
+            first_name: firebaseUser.displayName?.split(' ')[0] || null,
+            last_name: firebaseUser.displayName?.split(' ').slice(1).join(' ') || null,
+            avatar_url: firebaseUser.photoURL || null,
+            phone: null,
+            role: 'user',
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setAuthState(prev => ({ ...prev, profile: newProfile as UserProfile }));
+      }
+    } catch (error: any) {
+      console.error("Error fetching/creating Supabase profile:", error);
+      toast.error(`Failed to load user profile: ${error.message}`);
+    }
+  }, []);
+
   React.useEffect(() => {
     const handleRedirectResult = async () => {
       try {
-        // Attempt to get the redirect result
         const result = await getRedirectResult(auth);
         if (result) {
-          // User successfully signed in from redirect
           setAuthState({
             user: result.user,
+            profile: null, // Will be fetched below
             isAuthenticated: true,
-            loading: false, // Set loading to false on successful redirect
+            loading: false,
           });
           toast.success("Logged in with Google successfully!");
           console.log(`[Auth Log] Redirect login successful (Google) for user: ${result.user.email} at ${new Date().toISOString()}`);
+          await fetchUserProfile(result.user); // Fetch profile after successful login
         }
       } catch (error: any) {
         console.error("Error during Google redirect sign-in:", error);
@@ -58,27 +111,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           errorMessage = error.message;
         }
         toast.error(errorMessage);
-        // Important: Reset loading state if there's an error during redirect handling
         setAuthState(prev => ({ ...prev, loading: false }));
       }
     };
 
-    // Call this function when the component mounts to check for redirect results
     handleRedirectResult();
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setAuthState({
-        user,
-        isAuthenticated: !!user,
-        loading: false,
-      });
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        setAuthState({
+          user,
+          profile: null, // Reset profile, will be fetched
+          isAuthenticated: true,
+          loading: false,
+        });
+        await fetchUserProfile(user); // Fetch profile for existing sessions
+      } else {
+        setAuthState({
+          user: null,
+          profile: null,
+          isAuthenticated: false,
+          loading: false,
+        });
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [fetchUserProfile]);
 
-  const signupWithEmailPassword = async (email: string, password: string) => {
+  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, {
+        displayName: `${firstName || ''} ${lastName || ''}`.trim(),
+        photoURL: null, // Can be updated later
+      });
+
+      // Manually insert into Supabase profiles table if trigger doesn't fire immediately or for additional data
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userCredential.user.uid,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          avatar_url: null,
+          phone: phone || null,
+          role: 'user', // Default role
+        });
+
+      if (insertError) throw insertError;
+
       toast.success("Account created successfully! You are now logged in.");
       console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
     } catch (error: any) {
@@ -132,17 +213,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateUserProfile = async (displayName: string, photoURL?: string) => {
+  const updateUserProfile = async (firstName: string, lastName: string, phone: string, photoURL?: string) => {
     if (!authState.user) {
       toast.error("You must be logged in to update your profile.");
       return;
     }
     try {
-      await updateProfile(authState.user, { displayName, photoURL });
-      setAuthState(prev => ({
-        ...prev,
-        user: auth.currentUser,
-      }));
+      // Update Firebase Auth profile
+      const newDisplayName = `${firstName} ${lastName}`.trim();
+      await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
+
+      // Update Supabase profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone,
+          avatar_url: photoURL,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', authState.user.uid);
+
+      if (error) throw error;
+
+      // Re-fetch profile to update state with latest Supabase data
+      await fetchUserProfile(authState.user);
+
       toast.success("Profile updated successfully!");
       console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
     } catch (error: any) {
@@ -156,7 +253,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      // Set loading to true before initiating the redirect
       setAuthState(prev => ({ ...prev, loading: true }));
       await signInWithRedirect(auth, provider);
       console.log(`[Auth Log] Initiating Google sign-in redirect at ${new Date().toISOString()}`);
@@ -170,7 +266,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         errorMessage = error.message;
       }
       toast.error(errorMessage);
-      // Reset loading state if an error occurs before redirect completes
       setAuthState(prev => ({ ...prev, loading: false }));
       throw error;
     }
