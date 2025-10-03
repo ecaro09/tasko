@@ -4,7 +4,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useOffers } from '@/hooks/use-offers';
-import { Offer } from '@/lib/offer-firestore'; // Import Offer interface from its new location
+import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offer interface
 import { useModal } from '@/components/ModalProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

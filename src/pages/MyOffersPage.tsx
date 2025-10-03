@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useOffers } from '@/hooks/use-offers';
-import { Offer } from '@/lib/offer-firestore'; // Import Offer interface from its new location
+import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offer interface
 import { useTasks } from '@/hooks/use-tasks'; // To get task details for each offer
 import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // To check if user is a tasker
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
