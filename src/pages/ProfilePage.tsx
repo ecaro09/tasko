@@ -5,12 +5,15 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone } from 'lucide-react'; // Added Phone icon
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, DollarSign, Star } from 'lucide-react'; // Added DollarSign, Star icons
 import EditProfileSection from '@/components/EditProfileSection';
+import { useModal } from '@/components/ModalProvider'; // Import useModal
+import { Badge } from '@/components/ui/badge'; // Import Badge
 
 const ProfilePage: React.FC = () => {
-  const { user, profile, isAuthenticated, loading: authLoading } = useAuth(); // Get profile from useAuth
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
+  const { user, profile, isAuthenticated, loading: authLoading } = useAuth();
+  const { taskerProfile, isTasker, loading: taskerProfileLoading } = useTaskerProfile();
+  const { openTaskerRegistrationModal } = useModal(); // Get the modal opener
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = React.useState(false);
 
@@ -73,6 +76,47 @@ const ProfilePage: React.FC = () => {
                 </Button>
               </CardContent>
             </Card>
+
+            {isTasker && taskerProfile && (
+              <Card className="shadow-lg p-6 mb-8">
+                <CardHeader className="p-0 mb-4">
+                  <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <Briefcase size={24} /> Tasker Profile
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Bio:</h3>
+                    <p className="text-gray-600 dark:text-gray-400">{taskerProfile.bio}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <DollarSign size={18} /> Hourly Rate:
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">₱{taskerProfile.hourlyRate.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <Star size={18} /> Skills:
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {taskerProfile.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 px-3 py-1 rounded-full">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={openTaskerRegistrationModal}
+                    className="mt-6 w-full border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+                  >
+                    <Edit size={18} /> Edit Tasker Profile
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="shadow-lg p-6">
               <CardHeader className="p-0 mb-4">
