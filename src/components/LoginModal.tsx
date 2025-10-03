@@ -14,7 +14,7 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
-  const { loginWithEmailPassword, signInWithGoogle } = useAuth(); // Destructure signInWithGoogle
+  const { loginWithEmailPassword, signInWithGoogle } = useAuth();
   const { openSignupModal } = useModal();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -39,11 +39,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
+      onClose(); // Close the modal immediately before initiating the redirect
       await signInWithGoogle();
-      onClose();
+      // No onClose() here, as the page will redirect.
+      // The AuthProvider's useEffect will handle the post-redirect state.
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
-    } finally {
+      // If an error occurs before redirect, ensure loading state is reset
       setIsLoading(false);
     }
   };
