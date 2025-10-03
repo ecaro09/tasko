@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
+import { TaskerProfile } from '@/lib/tasker-profile-firestore'; // Corrected import path for TaskerProfile
 import { useTasks } from '@/hooks/use-tasks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,17 +9,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth'; // New import
-import { useChat } from '@/hooks/use-chat'; // New import
-import { toast } from 'sonner'; // New import
+import { useAuth } from '@/hooks/use-auth';
+import { useChat } from '@/hooks/use-chat';
+import { toast } from 'sonner';
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
   const { tasks, loading: tasksLoading } = useTasks();
-  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Get current user info
-  const { createChatRoom } = useChat(); // Get chat room creation function
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { createChatRoom } = useChat();
 
   const [tasker, setTasker] = React.useState<TaskerProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -80,7 +81,7 @@ const TaskerProfileViewPage: React.FC = () => {
         [user.displayName || user.email || "You", tasker.displayName]
       );
       if (roomId) {
-        navigate('/chat'); // Navigate to the chat page
+        navigate('/chat');
       }
     } catch (error) {
       console.error("Failed to create or navigate to chat room:", error);
@@ -117,7 +118,7 @@ const TaskerProfileViewPage: React.FC = () => {
             </Avatar>
             <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">{tasker.displayName}</h1>
             <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
-              <Mail size={18} /> {tasker.userId} {/* Using userId as a placeholder for email/contact */}
+              <Mail size={18} /> {tasker.userId}
             </p>
 
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
