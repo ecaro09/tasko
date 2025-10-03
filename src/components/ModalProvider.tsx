@@ -99,8 +99,8 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <ModalContext.Provider value={value}>
       {children}
-      <LoginModal isOpen={isLoginModalOpen} onClose={closeAllModals} />
-      <SignupModal isOpen={isSignupModalOpen} onClose={closeAllModals} />
+      <LoginModal isOpen={isLoginModalOpen} onClose={closeAllModals} onSwitchToSignup={openSignupModal} />
+      <SignupModal isOpen={isSignupModalOpen} onClose={closeAllModals} onSwitchToLogin={openLoginModal} />
       <PostTaskModal isOpen={isPostTaskModalOpen} onClose={closeAllModals} />
       <TaskerRegistrationModal isOpen={isTaskerRegistrationModalOpen} onClose={closeAllModals} />
       <MakeOfferModal isOpen={isMakeOfferModalOpen} onClose={closeAllModals} task={selectedTaskForOffer} />

@@ -5,16 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { useModal } from './ModalProvider';
 
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSwitchToLogin: () => void; // New prop
 }
 
-const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
+const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
   const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Get authLoading
-  const { openLoginModal } = useModal();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
@@ -39,7 +38,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose }) => {
 
   const handleSwitchToLogin = () => {
     onClose();
-    openLoginModal();
+    onSwitchToLogin(); // Use the prop
   };
 
   return (

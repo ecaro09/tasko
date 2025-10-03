@@ -5,17 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { useModal } from './ModalProvider';
 import { Chrome } from 'lucide-react'; // Import Google icon
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSwitchToSignup: () => void; // New prop
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSignup }) => {
   const { loginWithEmailPassword, signInWithGoogle, loading: authLoading } = useAuth(); // Get authLoading
-  const { openSignupModal } = useModal();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
@@ -54,7 +53,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
   const handleSwitchToSignup = () => {
     onClose();
-    openSignupModal();
+    onSwitchToSignup(); // Use the prop
   };
 
   return (
