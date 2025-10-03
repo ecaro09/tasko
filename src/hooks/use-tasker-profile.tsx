@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { collection, getDocs } from 'firebase/firestore'; // Only getDocs needed for initial fetch of all profiles
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
+import { useSupabaseProfile } from './use-supabase-profile'; // New import
 import {
   TaskerProfile,
   fetchTaskerProfileByIdFirestore,
@@ -9,7 +10,6 @@ import {
   fetchAllTaskerProfilesFirestore,
 } from '@/lib/tasker-profile-firestore'; // Import new utility functions
 import { seedInitialTaskerProfiles } from '@/lib/seed-tasker-profiles'; // Import seed function from new location
-import { createOrUpdateUserProfileSupabase } from '@/lib/user-profile-supabase'; // New import for Supabase profile update
 
 interface TaskerProfileContextType {
   taskerProfile: TaskerProfile | null;
@@ -24,7 +24,8 @@ interface TaskerProfileContextType {
 const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>(undefined);
 
 export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Removed profile: authProfile
+  const { profile: supabaseProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Use useSupabaseProfile
   const [taskerProfile, setTaskerProfile] = React.useState<TaskerProfile | null>(null);
   const [allTaskerProfiles, setAllTaskerProfiles] = React.useState<TaskerProfile[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -82,12 +83,12 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       setTaskerProfile(updatedProfile);
       setIsTasker(true);
 
-      // Also update the user's role in Supabase to 'tasker'
-      await createOrUpdateUserProfileSupabase(
+      // Also update the user's role in Supabase to 'tasker' using useSupabaseProfile
+      await updateSupabaseProfile(
         user.uid,
         user.displayName?.split(' ')[0] || null,
         user.displayName?.split(' ').slice(1).join(' ') || null,
-        null, // Phone is managed in the main profile, not necessarily here
+        supabaseProfile?.phone || null, // Use phone from supabaseProfile
         user.photoURL || null,
         'tasker' // Set role to 'tasker'
       );

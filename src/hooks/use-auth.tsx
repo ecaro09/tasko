@@ -11,15 +11,10 @@ import {
   getRedirectResult,
 } from 'firebase/auth';
 import { toast } from 'sonner';
-import {
-  UserProfile,
-  fetchUserProfileSupabase,
-  createOrUpdateUserProfileSupabase,
-} from '@/lib/user-profile-supabase'; // Import Supabase profile utilities
+import { useSupabaseProfile } from './use-supabase-profile'; // Import new Supabase profile hook
 
 interface AuthState {
   user: FirebaseUser | null;
-  profile: UserProfile | null; // Add Supabase profile
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -37,32 +32,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = React.useState<AuthState>({
     user: null,
-    profile: null,
     isAuthenticated: false,
     loading: true,
   });
-
-  // Function to fetch user profile from Supabase
-  const fetchUserProfile = React.useCallback(async (firebaseUser: FirebaseUser) => {
-    const supabaseProfile = await fetchUserProfileSupabase(firebaseUser.uid);
-    if (supabaseProfile) {
-      setAuthState(prev => ({ ...prev, profile: supabaseProfile }));
-    } else {
-      // Fallback: if no profile exists, create a basic one
-      console.warn("No Supabase profile found for user, creating a fallback profile.");
-      const newProfile = await createOrUpdateUserProfileSupabase(
-        firebaseUser.uid,
-        firebaseUser.displayName?.split(' ')[0] || null,
-        firebaseUser.displayName?.split(' ').slice(1).join(' ') || null,
-        null, // No phone initially
-        firebaseUser.photoURL || null,
-        'user'
-      );
-      if (newProfile) {
-        setAuthState(prev => ({ ...prev, profile: newProfile }));
-      }
-    }
-  }, []);
+  const { profile, loadingProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Use the new hook
 
   React.useEffect(() => {
     const handleRedirectResult = async () => {
@@ -71,13 +44,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (result) {
           setAuthState({
             user: result.user,
-            profile: null, // Will be fetched below
             isAuthenticated: true,
             loading: false,
           });
           toast.success("Logged in with Google successfully!");
           console.log(`[Auth Log] Redirect login successful (Google) for user: ${result.user.email} at ${new Date().toISOString()}`);
-          await fetchUserProfile(result.user); // Fetch profile after successful login
+          // Supabase profile will be fetched/created by SupabaseProfileProvider
         }
       } catch (error: any) {
         console.error("Error during Google redirect sign-in:", error);
@@ -96,22 +68,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (user) {
         setAuthState({
           user,
-          profile: null, // Reset profile, will be fetched
           isAuthenticated: true,
           loading: false,
         });
-        await fetchUserProfile(user); // Fetch profile for existing sessions
       } else {
         setAuthState({
           user: null,
-          profile: null,
           isAuthenticated: false,
           loading: false,
         });
       }
     });
     return () => unsubscribe();
-  }, [fetchUserProfile]);
+  }, []); // Empty dependency array to ensure listeners are added/removed once
 
   const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => {
     try {
@@ -122,8 +91,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         photoURL: null, // Can be updated later
       });
 
-      // Create Supabase profile
-      await createOrUpdateUserProfileSupabase(
+      // Create Supabase profile using the new hook's function
+      await updateSupabaseProfile(
         userCredential.user.uid,
         firstName || null,
         lastName || null,
@@ -195,19 +164,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const newDisplayName = `${firstName} ${lastName}`.trim();
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
 
-      // Update Supabase profile
-      const updatedSupabaseProfile = await createOrUpdateUserProfileSupabase(
+      // Update Supabase profile using the new hook's function
+      await updateSupabaseProfile(
         authState.user.uid,
         firstName,
         lastName,
         phone,
         photoURL || null,
-        authState.profile?.role || 'user' // Keep existing role or default to 'user'
+        profile?.role || 'user' // Keep existing role or default to 'user'
       );
-
-      if (updatedSupabaseProfile) {
-        setAuthState(prev => ({ ...prev, profile: updatedSupabaseProfile }));
-      }
 
       toast.success("Profile updated successfully!");
       console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
@@ -240,7 +205,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
+  const value = { ...authState, profile, loading: authState.loading || loadingProfile, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

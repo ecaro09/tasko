@@ -9,15 +9,17 @@ import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phon
 import EditProfileSection from '@/components/EditProfileSection';
 import { useModal } from '@/components/ModalProvider'; // Import useModal
 import { Badge } from '@/components/ui/badge'; // Import Badge
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 
 const ProfilePage: React.FC = () => {
-  const { user, profile, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
   const { taskerProfile, isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { openTaskerRegistrationModal } = useModal(); // Get the modal opener
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = React.useState(false);
 
-  if (authLoading || taskerProfileLoading) {
+  if (authLoading || loadingProfile || taskerProfileLoading) { // Include loadingProfile
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
   }
 

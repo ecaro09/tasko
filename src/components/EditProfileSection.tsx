@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Camera } from 'lucide-react';
 import { useFileUpload } from '@/hooks/use-file-upload'; // New import
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 
 interface EditProfileSectionProps {
   onCancel: () => void;
@@ -15,7 +16,8 @@ interface EditProfileSectionProps {
 }
 
 const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSaveSuccess }) => {
-  const { user, profile, updateUserProfile } = useAuth();
+  const { user, updateUserProfile } = useAuth();
+  const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
   const { uploadFile, loading: uploadLoading } = useFileUpload(); // Use the file upload hook
   const [firstName, setFirstName] = React.useState(profile?.first_name || '');
   const [lastName, setLastName] = React.useState(profile?.last_name || '');
@@ -75,7 +77,7 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
     }
   };
 
-  const isFormDisabled = isLoading || uploadLoading;
+  const isFormDisabled = isLoading || uploadLoading || loadingProfile; // Include loadingProfile
 
   return (
     <Card className="shadow-lg p-6">
