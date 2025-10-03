@@ -12,6 +12,7 @@ import {
   deleteDoc, // Import deleteDoc
   doc, // Import doc
   updateDoc, // Import updateDoc
+  getDoc, // Import getDoc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -40,6 +41,7 @@ interface UseTasksContextType {
   loading: boolean;
   error: string | null;
   addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'>) => Promise<void>;
+  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => Promise<void>; // New function
   deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
   completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>; // New function
 }
@@ -525,6 +527,30 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
+  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to edit a task.");
+      return;
+    }
+
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+      // Ensure only the poster can edit their task
+      const taskSnap = await getDoc(taskRef);
+      if (!taskSnap.exists() || taskSnap.data()?.posterId !== user.uid) {
+        toast.error("You are not authorized to edit this task.");
+        return;
+      }
+
+      await updateDoc(taskRef, updatedTask);
+      toast.success("Task updated successfully!");
+    } catch (err: any) {
+      console.error("Error updating task:", err);
+      toast.error(`Failed to update task: ${err.message}`);
+      throw err;
+    }
+  };
+
   const deleteTask = async (taskId: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to delete a task.");
@@ -533,6 +559,13 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
 
     try {
       const taskRef = doc(db, 'tasks', taskId);
+      // Ensure only the poster can delete their task
+      const taskSnap = await getDoc(taskRef);
+      if (!taskSnap.exists() || taskSnap.data()?.posterId !== user.uid) {
+        toast.error("You are not authorized to delete this task.");
+        return;
+      }
+
       await deleteDoc(taskRef);
       toast.success("Task deleted successfully!");
     } catch (err: any) {
@@ -568,6 +601,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     loading,
     error,
     addTask,
+    editTask, // Expose new function
     deleteTask,
     completeTaskWithReview, // Expose new function
   };

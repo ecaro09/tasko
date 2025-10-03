@@ -4,7 +4,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useOffers, Offer } from '@/hooks/use-offers'; // New import for offers
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star } from 'lucide-react'; // Added Star icon
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Star and Edit icons
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -26,7 +26,7 @@ const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks(); // Destructure deleteTask
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
-  const { openReviewTaskModal } = useModal(); // Get the new modal opener
+  const { openReviewTaskModal, openEditTaskModal } = useModal(); // Get the new modal openers
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
@@ -99,6 +99,10 @@ const MyTasksPage: React.FC = () => {
 
   const handleReviewTask = (task: typeof userTasks[0]) => {
     openReviewTaskModal(task);
+  };
+
+  const handleEditTask = (task: typeof userTasks[0]) => {
+    openEditTaskModal(task);
   };
 
   const getOfferStatusBadge = (status: Offer['status']) => {
@@ -185,18 +189,30 @@ const MyTasksPage: React.FC = () => {
                       </Button>
                     )}
 
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mt-4">
                       <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                         View Details
                       </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleDeleteClick(task.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                      >
-                        <Trash2 size={20} />
-                      </Button>
+                      <div className="flex gap-2">
+                        {task.status === 'open' && ( // Only allow editing if task is open
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditTask(task)}
+                            className="border-blue-600 text-blue-600 hover:bg-blue-100"
+                          >
+                            <Edit size={20} />
+                          </Button>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleDeleteClick(task.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          <Trash2 size={20} />
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Offers for this task */}
