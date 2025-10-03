@@ -25,7 +25,7 @@ import { OffersProvider } from "./hooks/use-offers";
 import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
-import { ChatSessionProvider } from "./hooks/use-chat-session"; // New import
+import { ChatSessionProvider } from "./hooks/use-chat-session";
 
 const queryClient = new QueryClient();
 
@@ -40,9 +40,9 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ChatSessionProvider> {/* Wrap with ChatSessionProvider */}
-                        <ModalProvider>
-                          <div className="min-h-screen w-full flex flex-col items-center"> {/* Added for widescreen layout */}
+                      <ChatSessionProvider>
+                        <ModalProvider> {/* ModalProvider is correctly placed here */}
+                          <div className="min-h-screen w-full flex flex-col items-center">
                             <Routes>
                               <Route path="/" element={<Index />} />
                               <Route path="/tasks/:id" element={<TaskDetailPage />} />

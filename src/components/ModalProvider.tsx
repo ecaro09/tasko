@@ -103,7 +103,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <SignupModal isOpen={isSignupModalOpen} onClose={closeAllModals} />
       <PostTaskModal isOpen={isPostTaskModalOpen} onClose={closeAllModals} />
       <TaskerRegistrationModal isOpen={isTaskerRegistrationModalOpen} onClose={closeAllModals} />
-      <MakeOfferModal isOpen={isMakeOfferModalOpen} onClose={closeAllModals} task={selectedTaskForOffer} /> {/* Render new modal */}
+      <MakeOfferModal isOpen={isMakeOfferModalOpen} onClose={closeAllModals} task={selectedTaskForOffer} />
     </ModalContext.Provider>
   );
 };
