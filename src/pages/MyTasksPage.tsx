@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
-import { useOffers, Offer } from '@/hooks/use-offers'; // New import for offers
+import { useOffers } from '@/hooks/use-offers';
+import { Offer } from '@/lib/offer-firestore'; // Import Offer interface from its new location
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Star and Edit icons

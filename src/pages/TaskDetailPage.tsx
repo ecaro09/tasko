@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
-import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
+import { useOffers } from '@/hooks/use-offers';
+import { Offer } from '@/lib/offer-firestore'; // Import Offer interface from its new location
 import { useModal } from '@/components/ModalProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
