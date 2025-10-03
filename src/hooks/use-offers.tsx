@@ -4,20 +4,14 @@ import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, upd
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // To check if user is a tasker
-
-export interface Offer {
-  id: string;
-  taskId: string;
-  taskerId: string;
-  taskerName: string;
-  taskerAvatar?: string;
-  clientId: string; // The ID of the user who posted the task
-  offerAmount: number;
-  message: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
-  dateCreated: string;
-  dateUpdated?: string;
-}
+import {
+  Offer,
+  addOfferFirestore,
+  acceptOfferFirestore,
+  rejectOfferFirestore,
+  withdrawOfferFirestore,
+  fetchOffersFirestore,
+} from '@/lib/offer-firestore'; // Import new utility functions
 
 interface OffersContextType {
   offers: Offer[];
@@ -48,34 +42,16 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setLoading(true);
     setError(null);
 
-    const offersCollectionRef = collection(db, 'offers');
-    const q = query(offersCollectionRef);
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedOffers: Offer[] = snapshot.docs.map((doc) => {
-        const data = doc.data() as DocumentData;
-        return {
-          id: doc.id,
-          taskId: data.taskId,
-          taskerId: data.taskerId,
-          taskerName: data.taskerName,
-          taskerAvatar: data.taskerAvatar,
-          clientId: data.clientId,
-          offerAmount: data.offerAmount,
-          message: data.message,
-          status: data.status,
-          dateCreated: data.dateCreated?.toDate().toISOString() || new Date().toISOString(),
-          dateUpdated: data.dateUpdated?.toDate().toISOString(),
-        };
-      });
-      setAllOffers(fetchedOffers);
-      setLoading(false);
-    }, (err) => {
-      console.error("Error fetching offers:", err);
-      setError("Failed to fetch offers.");
-      setLoading(false);
-      toast.error("Failed to load offers.");
-    });
+    const unsubscribe = fetchOffersFirestore(
+      (fetchedOffers) => {
+        setAllOffers(fetchedOffers);
+        setLoading(false);
+      },
+      (errorMessage) => {
+        setError(errorMessage);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -93,22 +69,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'offers'), {
-        taskId,
-        taskerId: user.uid,
-        taskerName: taskerProfile.displayName,
-        taskerAvatar: taskerProfile.photoURL,
-        clientId,
-        offerAmount,
-        message,
-        status: 'pending',
-        dateCreated: serverTimestamp(),
-      });
-      toast.success("Offer submitted successfully!");
-    } catch (err: any) {
-      console.error("Error adding offer:", err);
-      toast.error(`Failed to submit offer: ${err.message}`);
-      throw err;
+      await addOfferFirestore(taskId, clientId, offerAmount, message, user, taskerProfile);
+    } catch (err) {
+      // Error handled by addOfferFirestore
     } finally {
       setLoading(false);
     }
@@ -126,33 +89,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      const offerRef = doc(db, 'offers', offerId);
-      const offerSnap = await getDoc(offerRef); // Fetch the offer to get taskerId
-      if (!offerSnap.exists()) {
-        toast.error("Offer not found.");
-        setLoading(false);
-        return;
-      }
-      const offerData = offerSnap.data() as Offer;
-
-      await updateDoc(offerRef, {
-        status: 'accepted',
-        dateUpdated: serverTimestamp(),
-      });
-
-      // Update the task status to 'assigned' and set the correct assignedTaskerId
-      const taskRef = doc(db, 'tasks', taskId);
-      await updateDoc(taskRef, {
-        status: 'assigned',
-        assignedTaskerId: offerData.taskerId, // Correctly assign the tasker's ID
-        assignedOfferId: offerId,
-      });
-
-      toast.success("Offer accepted!");
-    } catch (err: any) {
-      console.error("Error accepting offer:", err);
-      toast.error(`Failed to accept offer: ${err.message}`);
-      throw err;
+      await acceptOfferFirestore(offerId, taskId, user);
+    } catch (err) {
+      // Error handled by acceptOfferFirestore
     } finally {
       setLoading(false);
     }
@@ -166,16 +105,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      const offerRef = doc(db, 'offers', offerId);
-      await updateDoc(offerRef, {
-        status: 'rejected',
-        dateUpdated: serverTimestamp(),
-      });
-      toast.info("Offer rejected.");
-    } catch (err: any) {
-      console.error("Error rejecting offer:", err);
-      toast.error(`Failed to reject offer: ${err.message}`);
-      throw err;
+      await rejectOfferFirestore(offerId, user);
+    } catch (err) {
+      // Error handled by rejectOfferFirestore
     } finally {
       setLoading(false);
     }
@@ -189,16 +121,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      const offerRef = doc(db, 'offers', offerId);
-      await updateDoc(offerRef, {
-        status: 'withdrawn',
-        dateUpdated: serverTimestamp(),
-      });
-      toast.info("Offer withdrawn.");
-    } catch (err: any) {
-      console.error("Error withdrawing offer:", err);
-      toast.error(`Failed to withdraw offer: ${err.message}`);
-      throw err;
+      await withdrawOfferFirestore(offerId, user);
+    } catch (err) {
+      // Error handled by withdrawOfferFirestore
     } finally {
       setLoading(false);
     }
