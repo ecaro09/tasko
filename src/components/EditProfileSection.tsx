@@ -22,6 +22,7 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
 
   const [firstName, setFirstName] = React.useState(user?.user_metadata?.first_name || '');
   const [lastName, setLastName] = React.useState(user?.user_metadata?.last_name || '');
+  const [phone, setPhone] = React.useState(profile?.phone || ''); // New state for phone
   const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(user?.user_metadata?.avatar_url || null);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -32,7 +33,10 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
       setLastName(user.user_metadata?.last_name || '');
       setAvatarPreview(user.user_metadata?.avatar_url || null);
     }
-  }, [user]);
+    if (profile) {
+      setPhone(profile.phone || ''); // Update phone from profile
+    }
+  }, [user, profile]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -73,15 +77,15 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
     }
 
     try {
-      // Update Supabase auth.users metadata
+      // Update Supabase auth.users metadata (firstName, lastName, avatarUrl)
       await updateUserProfile(firstName, lastName, newAvatarUrl);
 
-      // Update public.profiles table
+      // Update public.profiles table (firstName, lastName, phone, avatarUrl, etc.)
       await updateProfile(
         user.id,
         firstName,
         lastName,
-        profile.phone, // Keep existing phone
+        phone.trim() === '' ? null : phone, // Pass phone number
         newAvatarUrl || null,
         profile.role,
         profile.rating,
@@ -153,7 +157,17 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
             disabled={isFormDisabled}
           />
         </div>
-        {/* Add more fields here for other editable profile info like phone number if needed */}
+        <div className="grid gap-2">
+          <Label htmlFor="phone">Phone Number (Optional)</Label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="e.g., +639171234567"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            disabled={isFormDisabled}
+          />
+        </div>
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={onCancel} disabled={isFormDisabled}>
             Cancel

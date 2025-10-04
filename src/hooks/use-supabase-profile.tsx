@@ -12,7 +12,7 @@ interface SupabaseProfileContextType {
     userId: string,
     firstName: string | null,
     lastName: string | null,
-    phone: string | null,
+    phone: string | null, // Added phone parameter
     avatarUrl: string | null,
     role: string,
     rating: number,
@@ -61,7 +61,7 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
               user.id,
               user.user_metadata?.first_name as string || null,
               user.user_metadata?.last_name as string || null,
-              user.user_metadata?.phone as string || null,
+              null, // Default phone to null for new profiles
               user.user_metadata?.avatar_url as string || null,
               'user', // Default role
               0,      // Default rating
@@ -90,7 +90,7 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
     userId: string,
     firstName: string | null,
     lastName: string | null,
-    phone: string | null,
+    phone: string | null, // Added phone parameter
     avatarUrl: string | null,
     role: string,
     rating: number,
@@ -103,7 +103,7 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
         userId,
         firstName,
         lastName,
-        phone,
+        phone, // Passed phone to the upsert function
         avatarUrl,
         role,
         rating,

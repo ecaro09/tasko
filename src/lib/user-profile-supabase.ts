@@ -6,7 +6,7 @@ export interface UserProfile {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
-  phone: string | null;
+  phone: string | null; // Added phone field
   role: string;
   rating: number;
   is_verified_tasker: boolean;
@@ -40,7 +40,7 @@ export const createOrUpdateUserProfileSupabase = async (
   userId: string,
   firstName: string | null,
   lastName: string | null,
-  phone: string | null,
+  phone: string | null, // Added phone parameter
   avatarUrl: string | null,
   role: string,
   rating: number,
@@ -54,7 +54,7 @@ export const createOrUpdateUserProfileSupabase = async (
           id: userId,
           first_name: firstName,
           last_name: lastName,
-          phone: phone,
+          phone: phone, // Included phone in upsert
           avatar_url: avatarUrl,
           role: role,
           rating: rating,

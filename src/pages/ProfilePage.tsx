@@ -6,7 +6,7 @@ import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import use
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon } from 'lucide-react';
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone } from 'lucide-react'; // Import Phone icon
 import EditProfileSection from '@/components/EditProfileSection';
 
 const ProfilePage: React.FC = () => {
@@ -63,6 +63,11 @@ const ProfilePage: React.FC = () => {
                 <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <Mail size={18} /> {user.email}
                 </p>
+                {profile?.phone && (
+                  <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mt-1">
+                    <Phone size={18} /> {profile.phone}
+                  </p>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(true)}
