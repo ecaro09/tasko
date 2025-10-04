@@ -8,10 +8,12 @@ import ChatRoomList from '@/components/ChatRoomList';
 import ChatWindow from '@/components/ChatWindow';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from '@/hooks/use-mobile'; // Import the useIsMobile hook
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
+  const { profile: currentUserProfile, loadingProfile } = useSupabaseProfile(); // Get current user profile
   const { chatRooms, loadingRooms, error: chatError } = useChat();
   const [activeRoomId, setActiveRoomId] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -30,7 +32,7 @@ const ChatPage: React.FC = () => {
 
   const currentRoom = activeRoomId ? chatRooms.find(room => room.id === activeRoomId) : null;
 
-  if (authLoading || loadingRooms) {
+  if (authLoading || loadingRooms || loadingProfile) { // Include loadingProfile
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading chat...</div>;
   }
 
@@ -51,6 +53,11 @@ const ChatPage: React.FC = () => {
       </div>
     );
   }
+
+  // Determine current user's display name for filtering
+  const currentUserName = currentUserProfile?.first_name && currentUserProfile?.last_name
+    ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
+    : user?.email || 'You';
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col">
@@ -79,7 +86,7 @@ const ChatPage: React.FC = () => {
               <CardHeader className="border-b border-gray-200 dark:border-gray-700 p-4">
                 <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100">
                   {currentRoom ? (
-                    currentRoom.participantNames.filter(name => name !== (isAuthenticated && user ? `${user.user_metadata?.first_name} ${user.user_metadata?.last_name}` : user?.email)).join(', ') || 'Chat'
+                    currentRoom.participantNames.filter(name => name !== currentUserName).join(', ') || 'Chat'
                   ) : (
                     'Select a Chat'
                   )}
