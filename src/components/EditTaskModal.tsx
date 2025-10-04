@@ -79,7 +79,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       }
     } else if (taskImagePreview === null && task.imageUrl) {
       // If preview is cleared and there was an original image, it means user wants to remove it
-      imageUrl = undefined;
+      imageUrl = undefined; // Explicitly set to undefined to signal removal
     }
 
     try {
