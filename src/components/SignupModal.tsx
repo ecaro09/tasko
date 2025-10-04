@@ -12,7 +12,7 @@ interface SignupModalProps {
   onSwitchToLogin: () => void; // New prop
 }
 
-const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
+const SignupModal: React.FC<SignupModalProps> = React.memo(({ isOpen, onClose, onSwitchToLogin }) => {
   const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Get authLoading
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -86,6 +86,6 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
       </DialogContent>
     </Dialog>
   );
-};
+});
 
 export default SignupModal;
