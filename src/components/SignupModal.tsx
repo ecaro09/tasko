@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -13,12 +14,13 @@ interface SignupModalProps {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
-  const { signupWithEmailPassword, loading: authLoading } = useAuth();
+  const { signupWithEmailPassword, loading: authLoading, user: firebaseUser } = useAuth(); // Get firebaseUser
+  const { updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Get updateProfile from useSupabaseProfile
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
-  const [phone, setPhone] = React.useState(''); // Keep phone state for potential future use or other profile updates
+  const [phone, setPhone] = React.useState('');
   const [isLoadingLocal, setIsLoadingLocal] = React.useState(false);
 
   const isFormDisabled = isLoadingLocal || authLoading;
@@ -30,8 +32,24 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
     }
     setIsLoadingLocal(true);
     try {
-      // Call signupWithEmailPassword without the phone number, as it's now handled by Supabase trigger
       await signupWithEmailPassword(email, password, firstName, lastName);
+      
+      // After successful Firebase signup, update Supabase profile with additional details
+      if (firebaseUser) { // firebaseUser might not be immediately available after signupWithEmailPassword completes, but onAuthStateChanged will update it.
+                         // For immediate update, we can rely on the user object from the signup result if needed,
+                         // but for simplicity and to avoid race conditions, we'll let the AuthProvider update its state,
+                         // and then the SupabaseProfileProvider will react to it.
+                         // However, for the initial data, we can directly call updateSupabaseProfile here.
+        await updateSupabaseProfile(
+          firebaseUser.uid, // Use the newly signed up user's UID
+          firstName,
+          lastName,
+          phone,
+          firebaseUser.photoURL || null, // Use Firebase user's photoURL if available
+          'user' // Default role for new signups
+        );
+      }
+      
       onClose(); // Close the modal after successful signup and verification email sent
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
