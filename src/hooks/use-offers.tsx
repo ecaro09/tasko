@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, DocumentData, getDoc } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // To check if user is a tasker
@@ -42,42 +41,57 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { taskerProfile, isTasker, loading: taskerLoading } = useTaskerProfile();
   const [allOffers, setAllOffers] = React.useState<Offer[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, React.useState] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setLoading(true);
     setError(null);
 
-    const offersCollectionRef = collection(db, 'offers');
-    const q = query(offersCollectionRef);
+    const fetchOffers = async () => {
+      const { data, error: fetchError } = await supabase
+        .from('offers')
+        .select('*')
+        .order('date_created', { ascending: false });
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedOffers: Offer[] = snapshot.docs.map((doc) => {
-        const data = doc.data() as DocumentData;
-        return {
-          id: doc.id,
-          taskId: data.taskId,
-          taskerId: data.taskerId,
-          taskerName: data.taskerName,
-          taskerAvatar: data.taskerAvatar,
-          clientId: data.clientId,
-          offerAmount: data.offerAmount,
-          message: data.message,
-          status: data.status,
-          dateCreated: data.dateCreated?.toDate().toISOString() || new Date().toISOString(),
-          dateUpdated: data.dateUpdated?.toDate().toISOString(),
-        };
-      });
+      if (fetchError) {
+        console.error("Error fetching offers:", fetchError);
+        setError("Failed to load offers.");
+        toast.error("Failed to load offers.");
+        setLoading(false);
+        return;
+      }
+
+      const fetchedOffers: Offer[] = data.map((item: any) => ({
+        id: item.id,
+        taskId: item.task_id,
+        taskerId: item.tasker_id,
+        taskerName: item.tasker_name,
+        taskerAvatar: item.tasker_avatar || undefined,
+        clientId: item.client_id,
+        offerAmount: item.offer_amount,
+        message: item.message,
+        status: item.status,
+        dateCreated: new Date(item.date_created).toISOString(),
+        dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString() : undefined,
+      }));
       setAllOffers(fetchedOffers);
       setLoading(false);
-    }, (err) => {
-      console.error("Error fetching offers:", err);
-      setError("Failed to fetch offers.");
-      setLoading(false);
-      toast.error("Failed to load offers.");
-    });
+    };
 
-    return () => unsubscribe();
+    fetchOffers();
+
+    // Set up real-time subscription for offers
+    const subscription = supabase
+      .channel('public:offers')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, payload => {
+        console.log('Offer change received!', payload);
+        fetchOffers(); // Re-fetch offers on any change
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   const addOffer = async (
@@ -93,17 +107,21 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'offers'), {
-        taskId,
-        taskerId: user.uid,
-        taskerName: taskerProfile.displayName,
-        taskerAvatar: taskerProfile.photoURL,
-        clientId,
-        offerAmount,
-        message,
-        status: 'pending',
-        dateCreated: serverTimestamp(),
-      });
+      const { error: insertError } = await supabase
+        .from('offers')
+        .insert({
+          task_id: taskId,
+          tasker_id: user.id,
+          tasker_name: taskerProfile.displayName,
+          tasker_avatar: taskerProfile.photoURL,
+          client_id: clientId,
+          offer_amount: offerAmount,
+          message: message,
+          status: 'pending',
+          // date_created will be set by default in Supabase
+        });
+
+      if (insertError) throw insertError;
       toast.success("Offer submitted successfully!");
     } catch (err: any) {
       console.error("Error adding offer:", err);
@@ -126,27 +144,43 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      const offerRef = doc(db, 'offers', offerId);
-      const offerSnap = await getDoc(offerRef); // Fetch the offer to get taskerId
-      if (!offerSnap.exists()) {
+      // Fetch the offer to get taskerId
+      const { data: offerData, error: fetchOfferError } = await supabase
+        .from('offers')
+        .select('tasker_id')
+        .eq('id', offerId)
+        .single();
+
+      if (fetchOfferError) throw fetchOfferError;
+      if (!offerData) {
         toast.error("Offer not found.");
         setLoading(false);
         return;
       }
-      const offerData = offerSnap.data() as Offer;
 
-      await updateDoc(offerRef, {
-        status: 'accepted',
-        dateUpdated: serverTimestamp(),
-      });
+      // Update the offer status to 'accepted'
+      const { error: updateOfferError } = await supabase
+        .from('offers')
+        .update({
+          status: 'accepted',
+          date_updated: new Date().toISOString(),
+        })
+        .eq('id', offerId);
+
+      if (updateOfferError) throw updateOfferError;
 
       // Update the task status to 'assigned' and set the correct assignedTaskerId
-      const taskRef = doc(db, 'tasks', taskId);
-      await updateDoc(taskRef, {
-        status: 'assigned',
-        assignedTaskerId: offerData.taskerId, // Correctly assign the tasker's ID
-        assignedOfferId: offerId,
-      });
+      const { error: updateTaskError } = await supabase
+        .from('tasks')
+        .update({
+          status: 'assigned',
+          assigned_tasker_id: offerData.tasker_id, // Correctly assign the tasker's ID
+          assigned_offer_id: offerId,
+          date_updated: new Date().toISOString(),
+        })
+        .eq('id', taskId);
+
+      if (updateTaskError) throw updateTaskError;
 
       toast.success("Offer accepted!");
     } catch (err: any) {
@@ -166,11 +200,15 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      const offerRef = doc(db, 'offers', offerId);
-      await updateDoc(offerRef, {
-        status: 'rejected',
-        dateUpdated: serverTimestamp(),
-      });
+      const { error: updateError } = await supabase
+        .from('offers')
+        .update({
+          status: 'rejected',
+          date_updated: new Date().toISOString(),
+        })
+        .eq('id', offerId);
+
+      if (updateError) throw updateError;
       toast.info("Offer rejected.");
     } catch (err: any) {
       console.error("Error rejecting offer:", err);
@@ -189,11 +227,15 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      const offerRef = doc(db, 'offers', offerId);
-      await updateDoc(offerRef, {
-        status: 'withdrawn',
-        dateUpdated: serverTimestamp(),
-      });
+      const { error: updateError } = await supabase
+        .from('offers')
+        .update({
+          status: 'withdrawn',
+          date_updated: new Date().toISOString(),
+        })
+        .eq('id', offerId);
+
+      if (updateError) throw updateError;
       toast.info("Offer withdrawn.");
     } catch (err: any) {
       console.error("Error withdrawing offer:", err);
