@@ -8,7 +8,8 @@ import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
 import { useFileUpload } from '@/hooks/use-file-upload';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Camera } from 'lucide-react';
+import { User as UserIcon, Camera, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface EditProfileSectionProps {
   onCancel: () => void;
@@ -168,6 +169,33 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
             disabled={isFormDisabled}
           />
         </div>
+
+        {/* Display Role and Verified Tasker status (read-only) */}
+        <div className="grid gap-2">
+          <Label>Role</Label>
+          <Input
+            value={profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'User'}
+            readOnly
+            disabled
+            className="bg-gray-100 dark:bg-gray-700"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label>Verified Tasker Status</Label>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className={`px-3 py-1 rounded-full ${profile?.is_verified_tasker ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+              {profile?.is_verified_tasker ? (
+                <><CheckCircle size={14} className="mr-1" /> Verified</>
+              ) : (
+                'Not Verified'
+              )}
+            </Badge>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              (Verification is managed by Tasko admin)
+            </span>
+          </div>
+        </div>
+
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={onCancel} disabled={isFormDisabled}>
             Cancel

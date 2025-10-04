@@ -6,8 +6,9 @@ import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import use
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone } from 'lucide-react'; // Import Phone icon
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, CheckCircle } from 'lucide-react'; // Import Phone and CheckCircle icons
 import EditProfileSection from '@/components/EditProfileSection';
+import { Badge } from '@/components/ui/badge';
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -68,6 +69,16 @@ const ProfilePage: React.FC = () => {
                     <Phone size={18} /> {profile.phone}
                   </p>
                 )}
+                <div className="flex items-center gap-2 mt-4">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 px-3 py-1 rounded-full">
+                    Role: {profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'User'}
+                  </Badge>
+                  {profile?.is_verified_tasker && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200 px-3 py-1 rounded-full flex items-center gap-1">
+                      <CheckCircle size={14} /> Verified Tasker
+                    </Badge>
+                  )}
+                </div>
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(true)}
