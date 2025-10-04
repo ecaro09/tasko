@@ -2,8 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
-import { useTaskerProfile } from './use-tasker-profile'; // Import useTaskerProfile
-import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default image URLs
+import { useTaskerProfile } from './use-tasker-profile';
+import { useSupabaseProfile } from './use-supabase-profile'; // Import useSupabaseProfile
+import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders';
 
 export interface Task {
   id: string;
@@ -17,7 +18,7 @@ export interface Task {
   posterAvatar: string;
   datePosted: string;
   status: 'open' | 'assigned' | 'completed';
-  imageUrl?: string | null; // Changed to allow null
+  imageUrl?: string | null;
   assignedTaskerId?: string;
   assignedOfferId?: string;
   rating?: number;
@@ -44,7 +45,9 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const { updateTaskerRating } = useTaskerProfile(); // Use the new function
+  const { profile: currentUserProfile } = useSupabaseProfile(); // Get current user's Supabase profile
+  const { updateTaskerRating } = useTaskerProfile();
+  const { fetchProfile: fetchSupabaseProfile } = useSupabaseProfile(); // Function to fetch any user's profile
   const [allTasks, setAllTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -132,26 +135,41 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         return;
       }
 
-      const fetchedTasks: Task[] = data.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        category: item.category,
-        description: item.description,
-        location: item.location,
-        budget: item.budget,
-        posterId: item.poster_id,
-        posterName: item.poster_name,
-        posterAvatar: item.poster_avatar || DEFAULT_AVATAR_URL, // Use default avatar URL
-        datePosted: new Date(item.date_posted).toISOString().split('T')[0],
-        status: item.status || 'open',
-        imageUrl: item.image_url || DEFAULT_TASK_IMAGE_URL, // Use default task image URL
-        assignedTaskerId: item.assigned_tasker_id || undefined,
-        assignedOfferId: item.assigned_offer_id || undefined,
-        rating: item.rating || undefined,
-        review: item.review || undefined,
-        dateCompleted: item.date_completed ? new Date(item.date_completed).toISOString().split('T')[0] : undefined,
-        dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString().split('T')[0] : undefined,
-      }));
+      // Fetch all unique poster profiles to avoid N+1 queries
+      const uniquePosterIds = Array.from(new Set(data.map(item => item.poster_id)));
+      const posterProfiles = await Promise.all(
+        uniquePosterIds.map(id => fetchSupabaseProfile(id))
+      );
+      const posterProfileMap = new Map(posterProfiles.filter(p => p).map(p => [p!.id, p!]));
+
+      const fetchedTasks: Task[] = data.map((item: any) => {
+        const posterProfile = posterProfileMap.get(item.poster_id);
+        const posterAvatar = posterProfile?.avatar_url || DEFAULT_AVATAR_URL;
+        const posterName = posterProfile?.first_name && posterProfile?.last_name
+          ? `${posterProfile.first_name} ${posterProfile.last_name}`
+          : item.poster_name || "Anonymous User"; // Fallback to stored name if profile not found
+
+        return {
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          description: item.description,
+          location: item.location,
+          budget: item.budget,
+          posterId: item.poster_id,
+          posterName: posterName,
+          posterAvatar: posterAvatar,
+          datePosted: new Date(item.date_posted).toISOString().split('T')[0],
+          status: item.status || 'open',
+          imageUrl: item.image_url || DEFAULT_TASK_IMAGE_URL,
+          assignedTaskerId: item.assigned_tasker_id || undefined,
+          assignedOfferId: item.assigned_offer_id || undefined,
+          rating: item.rating || undefined,
+          review: item.review || undefined,
+          dateCompleted: item.date_completed ? new Date(item.date_completed).toISOString().split('T')[0] : undefined,
+          dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString().split('T')[0] : undefined,
+        };
+      });
       setAllTasks(fetchedTasks);
       setLoading(false);
 
@@ -173,10 +191,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [fetchSupabaseProfile]); // Depend on fetchSupabaseProfile to ensure it's available
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => {
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated || !user || !currentUserProfile) { // Ensure currentUserProfile is available
       toast.error("You must be logged in to post a task.");
       return;
     }
@@ -187,12 +205,12 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         .insert({
           ...newTaskData,
           poster_id: user.id,
-          poster_name: user.user_metadata?.first_name && user.user_metadata?.last_name
-            ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+          poster_name: currentUserProfile.first_name && currentUserProfile.last_name // Use currentUserProfile for name
+            ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
             : user.email || "Anonymous User",
-          poster_avatar: user.user_metadata?.avatar_url || DEFAULT_AVATAR_URL, // Use default avatar URL
+          poster_avatar: currentUserProfile.avatar_url || DEFAULT_AVATAR_URL, // Use currentUserProfile for avatar URL
           status: 'open',
-          image_url: newTaskData.imageUrl || DEFAULT_TASK_IMAGE_URL, // Use default task image URL
+          image_url: newTaskData.imageUrl || DEFAULT_TASK_IMAGE_URL,
         });
 
       if (insertError) throw insertError;
@@ -241,7 +259,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           location: updatedFields.location,
           budget: updatedFields.budget,
           category: updatedFields.category,
-          image_url: updatedFields.imageUrl === undefined ? null : updatedFields.imageUrl, // Handle explicit null for removal
+          image_url: updatedFields.imageUrl === undefined ? null : updatedFields.imageUrl,
           date_updated: new Date().toISOString(),
         })
         .eq('id', taskId)
