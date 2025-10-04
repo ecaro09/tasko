@@ -1,5 +1,5 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, sendSignInLinkToEmail } from 'firebase/auth';
+import { getAuth, Auth, connectAuthEmulator, sendSignInLinkToEmail } from 'firebase/auth'; // Added connectAuthEmulator
 import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { toast } from 'sonner';
@@ -59,6 +59,12 @@ export const initializeFirebaseClient = () => {
   auth = getAuth(firebaseApp);
   db = getFirestore(firebaseApp);
   storage = getStorage(firebaseApp);
+
+  // Connect to Firebase Auth Emulator if running on localhost:8080
+  if (location.host === "localhost:8080") {
+    connectAuthEmulator(auth, "http://127.0.0.1:9099");
+    console.log("Connected to Firebase Auth Emulator at http://127.0.0.1:9099");
+  }
 
   enableIndexedDbPersistence(db)
     .then(() => {
