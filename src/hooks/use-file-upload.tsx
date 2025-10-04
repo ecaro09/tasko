@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -12,7 +12,7 @@ export const useFileUpload = (): UseFileUploadResult => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const uploadFile = async (file: File, filePath: string, bucketName: string = 'avatars'): Promise<string | null> => {
+  const uploadFile = useCallback(async (file: File, filePath: string, bucketName: string = 'avatars'): Promise<string | null> => {
     setLoading(true);
     setError(null);
     try {
@@ -46,7 +46,7 @@ export const useFileUpload = (): UseFileUploadResult => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // No dependencies needed as supabase, toast, setLoading, setError are stable
 
   return { uploadFile, loading, error };
 };
