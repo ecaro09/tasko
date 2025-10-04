@@ -3,12 +3,11 @@ import { Task } from '@/lib/task-firestore';
 
 // Define a type for the initial task data, excluding auto-generated 'id'
 // and allowing 'datePosted' to be 'FieldValue' for serverTimestamp.
-// We explicitly omit 'datePosted' from the base Task type to avoid type conflicts.
 type InitialTaskData = Omit<Task, 'id' | 'datePosted'> & {
   datePosted: FieldValue;
 };
 
-const openTasks: InitialTaskData[] = [
+export const openTasks: InitialTaskData[] = [
   {
     title: "Tubero for leaky sink – ₱500",
     category: "repairs",
@@ -336,7 +335,7 @@ const openTasks: InitialTaskData[] = [
   },
 ];
 
-const assignedTasks: InitialTaskData[] = [
+export const assignedTasks: InitialTaskData[] = [
   {
     title: "Install new ceiling fan",
     category: "assembly",
@@ -354,7 +353,7 @@ const assignedTasks: InitialTaskData[] = [
   },
 ];
 
-const completedTasks: InitialTaskData[] = [
+export const completedTasks: InitialTaskData[] = [
   {
     title: "Repair broken cabinet door",
     category: "repairs",
@@ -527,8 +526,9 @@ const completedTasks: InitialTaskData[] = [
   },
 ];
 
-export const initialTasks: InitialTaskData[] = [
-  ...openTasks,
-  ...assignedTasks,
-  ...completedTasks,
-];
+// Export all task arrays individually
+export {
+  openTasks,
+  assignedTasks,
+  completedTasks,
+};

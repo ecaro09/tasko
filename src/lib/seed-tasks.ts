@@ -5,7 +5,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { initialTasks } from './initial-tasks-data'; // Import the initial tasks data
+import { openTasks, assignedTasks, completedTasks } from './initial-tasks-data'; // Import individual task arrays
 
 // Function to seed initial tasks
 export const seedInitialTasks = async () => {
@@ -14,7 +14,8 @@ export const seedInitialTasks = async () => {
 
   if (snapshot.empty) {
     console.log("Database is empty, seeding initial tasks...");
-    for (const task of initialTasks) {
+    const allInitialTasks = [...openTasks, ...assignedTasks, ...completedTasks];
+    for (const task of allInitialTasks) {
       await addDoc(tasksCollectionRef, task);
     }
     toast.info("Initial demo tasks added!");
