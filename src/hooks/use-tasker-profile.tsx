@@ -227,7 +227,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   }, [user, fetchTaskerProfileById, fetchAllTaskerProfiles]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     taskerProfile,
     allTaskerProfiles,
     loading,
@@ -236,7 +236,16 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     isTasker,
     fetchTaskerProfileById,
     updateTaskerRating,
-  };
+  }), [
+    taskerProfile,
+    allTaskerProfiles,
+    loading,
+    error,
+    createOrUpdateTaskerProfile,
+    isTasker,
+    fetchTaskerProfileById,
+    updateTaskerRating,
+  ]);
 
   return <TaskerProfileContext.Provider value={value}>{children}</TaskerProfileContext.Provider>;
 };
