@@ -7,8 +7,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Camera } from 'lucide-react';
-import { useFileUpload } from '@/hooks/use-file-upload'; // New import
-import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
+import { useFileUpload } from '@/hooks/use-file-upload';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
 
 interface EditProfileSectionProps {
   onCancel: () => void;
@@ -17,8 +17,8 @@ interface EditProfileSectionProps {
 
 const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSaveSuccess }) => {
   const { user, updateUserProfile } = useAuth();
-  const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
-  const { uploadFile, loading: uploadLoading } = useFileUpload(); // Use the file upload hook
+  const { profile, loadingProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile();
+  const { uploadFile, loading: uploadLoading } = useFileUpload();
   const [firstName, setFirstName] = React.useState(profile?.first_name || '');
   const [lastName, setLastName] = React.useState(profile?.last_name || '');
   const [phone, setPhone] = React.useState(profile?.phone || '');
@@ -68,16 +68,28 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
     }
 
     try {
-      await updateUserProfile(firstName, lastName, phone, newPhotoURL || undefined);
+      // Update Firebase profile (displayName, photoURL)
+      await updateUserProfile(firstName, lastName, newPhotoURL || undefined);
+
+      // Update Supabase profile (first_name, last_name, phone, avatar_url, role)
+      await updateSupabaseProfile(
+        user.uid,
+        firstName,
+        lastName,
+        phone,
+        newPhotoURL || null,
+        profile.role // Keep existing role
+      );
+
       onSaveSuccess();
     } catch (error) {
-      // Error handled by useAuth, toast already shown
+      // Error handled by useAuth or useSupabaseProfile, toast already shown
     } finally {
       setIsLoading(false);
     }
   };
 
-  const isFormDisabled = isLoading || uploadLoading || loadingProfile; // Include loadingProfile
+  const isFormDisabled = isLoading || uploadLoading || loadingProfile;
 
   return (
     <Card className="shadow-lg p-6">

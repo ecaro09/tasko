@@ -18,7 +18,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
   const [password, setPassword] = React.useState('');
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
-  const [phone, setPhone] = React.useState('');
+  const [phone, setPhone] = React.useState(''); // Keep phone state for potential future use or other profile updates
   const [isLoadingLocal, setIsLoadingLocal] = React.useState(false);
 
   const isFormDisabled = isLoadingLocal || authLoading;
@@ -30,7 +30,8 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
     }
     setIsLoadingLocal(true);
     try {
-      await signupWithEmailPassword(email, password, firstName, lastName, phone);
+      // Call signupWithEmailPassword without the phone number, as it's now handled by Supabase trigger
+      await signupWithEmailPassword(email, password, firstName, lastName);
       onClose(); // Close the modal after successful signup and verification email sent
     } catch (error) {
       // Error handled by useAuth hook, toast already shown

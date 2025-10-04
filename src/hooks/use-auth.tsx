@@ -8,11 +8,10 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithCredential,
-  sendEmailVerification, // Import sendEmailVerification
+  sendEmailVerification,
 } from 'firebase/auth';
 import { toast } from 'sonner';
-import { FirebaseAuthentication } from '@capacitor-firebase/authentication'; // Import the Capacitor plugin
-import { useSupabaseProfile } from './use-supabase-profile'; // New import
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -21,12 +20,12 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (firstName: string, lastName: string, phone: string, photoURL?: string) => Promise<void>;
+  updateUserProfile: (firstName: string, lastName: string, photoURL?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  sendVerificationEmail: () => Promise<void>; // Add sendVerificationEmail to context
+  sendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,7 +36,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: false,
     loading: true,
   });
-  const supabaseProfileContext = useSupabaseProfile(); // Get context for Supabase profile
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -75,7 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => {
+  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const displayName = `${firstName || ''} ${lastName || ''}`.trim();
@@ -83,18 +81,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         displayName: displayName,
         photoURL: null, // Can be updated later
       });
-
-      // Create initial Supabase profile entry
-      if (userCredential.user && supabaseProfileContext) {
-        await supabaseProfileContext.updateProfile(
-          userCredential.user.uid,
-          firstName || null,
-          lastName || null,
-          phone || null,
-          null, // No avatar URL initially
-          'user' // Default role
-        );
-      }
 
       // Send email verification after successful signup
       if (userCredential.user) {
@@ -156,7 +142,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateUserProfile = async (firstName: string, lastName: string, phone: string, photoURL?: string) => {
+  const updateUserProfile = async (firstName: string, lastName: string, photoURL?: string) => {
     if (!authState.user) {
       toast.error("You must be logged in to update your profile.");
       return;
@@ -165,24 +151,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const newDisplayName = `${firstName} ${lastName}`.trim();
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
 
-      // Also update Supabase profile
-      if (supabaseProfileContext && authState.user) {
-        await supabaseProfileContext.updateProfile(
-          authState.user.uid,
-          firstName,
-          lastName,
-          phone,
-          photoURL || null,
-          supabaseProfileContext.profile?.role || 'user' // Keep existing role or default to 'user'
-        );
-      }
-
-      toast.success("Profile updated successfully!");
-      console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
+      toast.success("Firebase profile updated successfully!");
+      console.log(`[Auth Log] Firebase profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
     } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast.error(`Failed to update profile: ${error.message}`);
-      console.log(`[Auth Log] Profile update failed for user: ${authState.user.uid} at ${new Date().toISOString()} - Error: ${error.message}`);
+      console.error("Error updating Firebase profile:", error);
+      toast.error(`Failed to update Firebase profile: ${error.message}`);
+      console.log(`[Auth Log] Firebase profile update failed for user: ${authState.user.uid} at ${new Date().toISOString()} - Error: ${error.message}`);
       throw error;
     }
   };
