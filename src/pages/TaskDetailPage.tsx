@@ -42,10 +42,10 @@ const TaskDetailPage: React.FC = () => {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Task not found.</div>;
   }
 
-  const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
+  const isTaskPoster = isAuthenticated && user?.id === task.posterId; // Changed user?.uid to user?.id
   const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
   const assignedOffer = taskOffers.find(offer => offer.status === 'accepted');
-  const isAssignedTasker = isAuthenticated && user?.uid === assignedOffer?.taskerId;
+  const isAssignedTasker = isAuthenticated && user?.id === assignedOffer?.taskerId; // Changed user?.uid to user?.id
 
   const handleMakeOfferClick = () => {
     if (task) {
@@ -79,7 +79,7 @@ const TaskDetailPage: React.FC = () => {
 
   const handleWithdrawOffer = async (offerId: string) => {
     const offer = taskOffers.find(o => o.id === offerId);
-    if (!isAuthenticated || user?.uid !== offer?.taskerId) {
+    if (!isAuthenticated || user?.id !== offer?.taskerId) { // Changed user?.uid to user?.id
       toast.error("You are not authorized to withdraw this offer.");
       return;
     }
@@ -241,7 +241,7 @@ const TaskDetailPage: React.FC = () => {
                               <MessageSquare size={16} /> Chat with Tasker
                             </Button>
                           )}
-                          {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && (
+                          {isAuthenticated && user?.id === offer.taskerId && offer.status === 'pending' && ( // Changed user?.uid to user?.id
                             <Button
                               size="sm"
                               variant="outline"

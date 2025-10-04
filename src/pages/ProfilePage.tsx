@@ -42,7 +42,7 @@ const ProfilePage: React.FC = () => {
   const displayName = profile?.first_name && profile?.last_name
     ? `${profile.first_name} ${profile.last_name}`
     : user.email || "Anonymous User";
-  const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || undefined;
+  const avatarUrl = profile?.avatar_url || undefined; // Primarily use profile avatar
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">

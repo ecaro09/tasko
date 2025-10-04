@@ -3,7 +3,7 @@ import { useChat, ChatMessage, ChatRoom } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, User as UserIcon } from 'lucide-react';
+import { Send, User as UserIcon, MessageSquare } from 'lucide-react'; // Added MessageSquare
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from '@/lib/utils';

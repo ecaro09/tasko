@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -41,17 +41,17 @@ const OffersContext = createContext<OffersContextType | undefined>(undefined);
 export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const { profile: currentUserProfile } = useSupabaseProfile(); // Get current user's Supabase profile
-  const { isTasker, loading: taskerLoading } = useTaskerProfile();
+  const { isTasker, loading: taskerLoading } = useTaskerProfile(); // Destructure taskerLoading
   const { fetchProfile: fetchSupabaseProfile } = useSupabaseProfile(); // Function to fetch any user's profile
-  const [allOffers, setAllOffers] = React.useState<Offer[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [allOffers, setAllOffers] = useState<Offer[]>([]); // Use useState
+  const [loadingOffers, setLoadingOffers] = useState(true); // Renamed to avoid conflict with taskerLoading
+  const [error, setError] = useState<string | null>(null); // Use useState
 
-  React.useEffect(() => {
-    setLoading(true);
+  const fetchOffers = useCallback(async () => { // Memoize fetchOffers
+    setLoadingOffers(true);
     setError(null);
 
-    const fetchOffers = async () => {
+    try {
       const { data, error: fetchError } = await supabase
         .from('offers')
         .select('*')
@@ -61,8 +61,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         console.error("Error fetching offers:", fetchError);
         setError("Failed to load offers.");
         toast.error("Failed to load offers.");
-        setLoading(false);
-        return;
+        return; // Return early on error
       }
 
       // Fetch all unique tasker profiles to avoid N+1 queries
@@ -92,26 +91,32 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           dateCreated: new Date(item.date_created).toISOString(),
           dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString() : undefined,
         };
-      }));
+      });
       setAllOffers(fetchedOffers);
-      setLoading(false);
-    };
+    } catch (err: any) {
+      console.error("Error fetching all offers:", err);
+      setError(`Failed to load offers: ${err.message}`);
+      toast.error(`Failed to load offers: ${err.message}`);
+    } finally {
+      setLoadingOffers(false);
+    }
+  }, [fetchSupabaseProfile]); // Dependencies for useCallback
 
+  useEffect(() => {
     fetchOffers();
 
-    // Set up real-time subscription for offers
     const subscription = supabase
       .channel('public:offers')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, payload => {
         console.log('Offer change received!', payload);
-        fetchOffers(); // Re-fetch offers on any change
+        fetchOffers();
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [fetchSupabaseProfile]); // Depend on fetchSupabaseProfile to ensure it's available
+  }, [fetchOffers]); // Depend on memoized fetchOffers
 
   const addOffer = async (
     taskId: string,
@@ -119,27 +124,26 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     offerAmount: number,
     message: string,
   ) => {
-    if (!isAuthenticated || !user || !isTasker || !currentUserProfile) { // Ensure currentUserProfile is available
+    if (!isAuthenticated || !user || !isTasker || !currentUserProfile) {
       toast.error("You must be logged in as a tasker to make an offer.");
       return;
     }
 
-    setLoading(true);
+    setLoadingOffers(true); // Use loadingOffers
     try {
       const { error: insertError } = await supabase
         .from('offers')
         .insert({
           task_id: taskId,
           tasker_id: user.id,
-          tasker_name: currentUserProfile.first_name && currentUserProfile.last_name // Use currentUserProfile for name
+          tasker_name: currentUserProfile.first_name && currentUserProfile.last_name
             ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
             : user.email || "Anonymous Tasker",
-          tasker_avatar: currentUserProfile.avatar_url || DEFAULT_AVATAR_URL, // Use currentUserProfile for avatar URL
+          tasker_avatar: currentUserProfile.avatar_url || DEFAULT_AVATAR_URL,
           client_id: clientId,
           offer_amount: offerAmount,
           message: message,
           status: 'pending',
-          // date_created will be set by default in Supabase
         });
 
       if (insertError) throw insertError;
@@ -149,7 +153,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       toast.error(`Failed to submit offer: ${err.message}`);
       throw err;
     } finally {
-      setLoading(false);
+      setLoadingOffers(false); // Use loadingOffers
     }
   };
 
@@ -163,7 +167,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
 
-    setLoading(true);
+    setLoadingOffers(true); // Use loadingOffers
     try {
       // Fetch the offer to get taskerId
       const { data: offerData, error: fetchOfferError } = await supabase
@@ -175,7 +179,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (fetchOfferError) throw fetchOfferError;
       if (!offerData) {
         toast.error("Offer not found.");
-        setLoading(false);
+        setLoadingOffers(false); // Use loadingOffers
         return;
       }
 
@@ -209,7 +213,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       toast.error(`Failed to accept offer: ${err.message}`);
       throw err;
     } finally {
-      setLoading(false);
+      setLoadingOffers(false); // Use loadingOffers
     }
   };
 
@@ -219,7 +223,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
 
-    setLoading(true);
+    setLoadingOffers(true); // Use loadingOffers
     try {
       const { error: updateError } = await supabase
         .from('offers')
@@ -236,9 +240,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       toast.error(`Failed to reject offer: ${err.message}`);
       throw err;
     } finally {
-      setLoading(false);
+      setLoadingOffers(false); // Use loadingOffers
     }
-  };
+    };
 
   const withdrawOffer = async (offerId: string) => {
     if (!isAuthenticated || !user) {
@@ -246,7 +250,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
 
-    setLoading(true);
+    setLoadingOffers(true); // Use loadingOffers
     try {
       const { error: updateError } = await supabase
         .from('offers')
@@ -263,13 +267,13 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       toast.error(`Failed to withdraw offer: ${err.message}`);
       throw err;
     } finally {
-      setLoading(false);
+      setLoadingOffers(false); // Use loadingOffers
     }
   };
 
   const value = {
     offers: allOffers,
-    loading: loading || taskerLoading, // Consider tasker profile loading as well
+    loading: loadingOffers || taskerLoading, // Use loadingOffers
     error,
     addOffer,
     getOffersForTask,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks } from '@/hooks/use-tasks';
+import { useTasks, Task } from '@/hooks/use-tasks';
 import { useOffers, Offer } from '@/hooks/use-offers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ const MyTasksPage: React.FC = () => {
     );
   }
 
-  const userTasks = tasks.filter(task => task.posterId === user.id);
+  const userTasks = tasks.filter(task => task.posterId === user.id); // Changed user.uid to user.id
 
   const handleDeleteClick = (taskId: string) => {
     setTaskToDelete(taskId);

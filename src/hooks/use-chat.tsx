@@ -109,8 +109,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .channel('public:chat_rooms')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_rooms' }, payload => {
         console.log('Chat room change received!', payload);
-        // Only re-fetch if the current user is a participant in the changed room
-        if (payload.new?.participants?.includes(user.id) || payload.old?.participants?.includes(user.id)) {
+        // Explicitly cast payload.new and payload.old to ensure 'participants' property is recognized
+        const newParticipants = (payload.new as { participants?: string[] })?.participants;
+        const oldParticipants = (payload.old as { participants?: string[] })?.participants;
+
+        if (user && (newParticipants?.includes(user.id) || oldParticipants?.includes(user.id))) {
           fetchChatRooms();
         }
       })
