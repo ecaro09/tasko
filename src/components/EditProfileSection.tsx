@@ -84,13 +84,15 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
       // Update public.profiles table (firstName, lastName, phone, avatarUrl, etc.)
       await updateProfile(
         user.id,
-        firstName,
-        lastName,
-        phone.trim() === '' ? null : phone, // Pass phone number
-        newAvatarUrl || null,
-        profile.role,
-        profile.rating,
-        profile.is_verified_tasker
+        { // Pass as partial object
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone.trim() === '' ? null : phone,
+          avatar_url: newAvatarUrl || null,
+          role: profile.role, // Keep existing role
+          rating: profile.rating, // Keep existing rating
+          is_verified_tasker: profile.is_verified_tasker // Keep existing status
+        }
       );
 
       onSaveSuccess();

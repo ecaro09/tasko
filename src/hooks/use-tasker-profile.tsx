@@ -159,13 +159,10 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         // Also update the public.profiles table to reflect tasker status
         await updateSupabaseUserProfile(
           user.id,
-          userProfile.first_name,
-          userProfile.last_name,
-          userProfile.phone,
-          userProfile.avatar_url,
-          'tasker', // Set role to 'tasker'
-          userProfile.rating,
-          true // Set is_verified_tasker to true
+          { // Pass as partial object
+            role: 'tasker', // Set role to 'tasker'
+            is_verified_tasker: true // Set is_verified_tasker to true
+          }
         );
 
         // Re-fetch all profiles to update the list

@@ -8,15 +8,9 @@ interface SupabaseProfileContextType {
   profile: UserProfile | null;
   loadingProfile: boolean;
   error: string | null;
-  updateProfile: (
+  updateProfile: ( // Updated signature
     userId: string,
-    firstName: string | null,
-    lastName: string | null,
-    phone: string | null, // Added phone parameter
-    avatarUrl: string | null,
-    role: string,
-    rating: number,
-    isVerifiedTasker: boolean
+    updatedFields: Partial<Omit<UserProfile, 'id' | 'updated_at'>>
   ) => Promise<void>;
   fetchProfile: (userId: string) => Promise<UserProfile | null>; // Function to fetch any user's profile
 }
@@ -59,13 +53,15 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
             // If no profile exists in public.profiles, create a basic one
             const newProfile = await createOrUpdateUserProfileSupabase(
               user.id,
-              user.user_metadata?.first_name as string || null,
-              user.user_metadata?.last_name as string || null,
-              null, // Default phone to null for new profiles
-              user.user_metadata?.avatar_url as string || null,
-              'user', // Default role
-              0,      // Default rating
-              false   // Default is_verified_tasker
+              { // Pass as partial object
+                first_name: user.user_metadata?.first_name as string || null,
+                last_name: user.user_metadata?.last_name as string || null,
+                avatar_url: user.user_metadata?.avatar_url as string || null,
+                phone: null, // Default phone to null for new profiles
+                role: 'user', // Default role
+                rating: 0,      // Default rating
+                is_verified_tasker: false   // Default is_verified_tasker
+              }
             );
             setProfile(newProfile);
             toast.success("New user profile created in Supabase!");
@@ -86,28 +82,16 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
     }
   }, [isAuthenticated, user, authLoading]); // Re-run when auth state changes
 
-  const updateProfile = async (
+  const updateProfile = async ( // Updated implementation
     userId: string,
-    firstName: string | null,
-    lastName: string | null,
-    phone: string | null, // Added phone parameter
-    avatarUrl: string | null,
-    role: string,
-    rating: number,
-    isVerifiedTasker: boolean
+    updatedFields: Partial<Omit<UserProfile, 'id' | 'updated_at'>>
   ) => {
     setLoadingProfile(true);
     setError(null);
     try {
       const updated = await createOrUpdateUserProfileSupabase(
         userId,
-        firstName,
-        lastName,
-        phone, // Passed phone to the upsert function
-        avatarUrl,
-        role,
-        rating,
-        isVerifiedTasker
+        updatedFields
       );
       if (updated) {
         setProfile(updated);
