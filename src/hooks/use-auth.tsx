@@ -72,11 +72,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           data: {
             first_name: firstName,
             last_name: lastName,
-            avatar_url: null, // Default avatar
-            phone: null,
-            role: 'user', // Default role
-            rating: 0,
-            is_verified_tasker: false,
+            // Removed avatar_url, phone, role, rating, is_verified_tasker
+            // These will be handled by the handle_new_user trigger and public.profiles table
           },
         },
       });
