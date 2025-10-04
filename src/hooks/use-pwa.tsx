@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface PWAContextType {
@@ -92,7 +92,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
            (window.navigator as any).standalone === true;
   };
 
-  const installApp = async () => {
+  const installApp = useCallback(async () => {
     if (deferredPrompt) {
       (deferredPrompt as any).prompt();
       const { outcome } = await (deferredPrompt as any).userChoice;
@@ -102,11 +102,11 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setShowInstallPromptState(false);
       }
     }
-  };
+  }, [deferredPrompt, setDeferredPrompt, setShowInstallPromptState]);
 
-  const closeInstallPrompt = () => {
+  const closeInstallPrompt = useCallback(() => {
     setShowInstallPromptState(false);
-  };
+  }, [setShowInstallPromptState]);
 
   const value = {
     isOnline,
