@@ -11,15 +11,16 @@ import FAQPage from "./pages/FAQPage";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
-import EULAPage from "./pages/EULAPage"; // New import
+import EULAPage from "./pages/EULAPage";
 import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
 import TaskerDashboardPage from "./pages/TaskerDashboardPage";
-import FinishSignInPage from "./pages/FinishSignInPage"; // New import
-import { AuthProvider, useAuth } from "./hooks/use-auth"; // Import useAuth to get user for SupabaseProfileProvider
+import ClientDashboardPage from "./pages/ClientDashboardPage"; // New import
+import FinishSignInPage from "./pages/FinishSignInPage";
+import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
@@ -30,7 +31,7 @@ import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { ChatSessionProvider } from "./hooks/use-chat-session";
-import { SupabaseProfileProvider } from "./hooks/use-supabase-profile"; // New import
+import { SupabaseProfileProvider } from "./hooks/use-supabase-profile";
 
 const queryClient = new QueryClient();
 
@@ -51,7 +52,7 @@ const App = () => {
         <TooltipProvider>
           <BrowserRouter>
             <AuthProvider>
-              <AppProviders> {/* Wrap other providers with AppProviders */}
+              <AppProviders>
                 <PWAProvider>
                   <TasksProvider>
                     <TaskerProfileProvider>
@@ -72,12 +73,13 @@ const App = () => {
                                   <Route path="/contact" element={<ContactPage />} />
                                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
                                   <Route path="/terms" element={<TermsOfServicePage />} />
-                                  <Route path="/eula" element={<EULAPage />} /> {/* New route */}
+                                  <Route path="/eula" element={<EULAPage />} />
                                   <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
                                   <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
                                   <Route path="/chat" element={<ChatPage />} />
                                   <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} />
-                                  <Route path="/finishSignIn" element={<FinishSignInPage />} /> {/* New route */}
+                                  <Route path="/client-dashboard" element={<ClientDashboardPage />} /> {/* New route */}
+                                  <Route path="/finishSignIn" element={<FinishSignInPage />} />
                                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>

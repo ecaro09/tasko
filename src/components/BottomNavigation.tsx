@@ -1,10 +1,10 @@
 import React from 'react';
-import { Home, LayoutGrid, ListTodo, User, MessageSquare, Briefcase } from 'lucide-react'; // New import for Briefcase icon
+import { Home, LayoutGrid, ListTodo, User, MessageSquare, Briefcase, LayoutList } from 'lucide-react'; // New import for LayoutList icon
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useModal } from './ModalProvider';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 
 interface BottomNavigationProps {
   // onProfileClick: () => void; // No longer needed as we'll handle navigation directly
@@ -12,7 +12,7 @@ interface BottomNavigationProps {
 
 const BottomNavigation: React.FC<BottomNavigationProps> = () => {
   const { isAuthenticated } = useAuth();
-  const { isTasker } = useTaskerProfile(); // Use isTasker from hook
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Use isTasker from hook
   const { openLoginModal } = useModal();
   const navigate = useNavigate();
 
@@ -44,17 +44,19 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <LayoutGrid size={20} className="mb-1" />
           <span>Services</span>
         </a>
-        <NavLink
-          to="/my-tasks"
-          className={({ isActive }) => cn(
-            "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
-            isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
-          )}
-        >
-          <ListTodo size={20} className="mb-1" />
-          <span>My Tasks</span>
-        </NavLink>
-        {isAuthenticated && isTasker && ( // Conditional link for taskers
+        {isAuthenticated && !taskerProfileLoading && !isTasker && ( // Conditional link for clients
+          <NavLink
+            to="/client-dashboard"
+            className={({ isActive }) => cn(
+              "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+              isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+            )}
+          >
+            <LayoutList size={20} className="mb-1" />
+            <span>Dashboard</span>
+          </NavLink>
+        )}
+        {isAuthenticated && !taskerProfileLoading && isTasker && ( // Conditional link for taskers
           <NavLink
             to="/tasker-dashboard"
             className={({ isActive }) => cn(
@@ -66,7 +68,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
             <span>Dashboard</span>
           </NavLink>
         )}
-        {/* New NavLink for Chat */}
         <NavLink
           to="/chat"
           className={({ isActive }) => cn(

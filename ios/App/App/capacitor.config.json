@@ -4,7 +4,7 @@
 	"webDir": "dist",
 	"plugins": {
 		"FirebaseAuthentication": {
-			"serverClientId": "YOUR_GOOGLE_WEB_CLIENT_ID_HERE",
+			"serverClientId": "479936033803-1234567890abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
 			"forceCodeForRefreshToken": true
 		}
 	},
