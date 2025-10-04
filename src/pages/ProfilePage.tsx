@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,10 +12,11 @@ import EditProfileSection from '@/components/EditProfileSection';
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
+  const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = React.useState(false);
 
-  if (authLoading || taskerProfileLoading) {
+  if (authLoading || taskerProfileLoading || loadingProfile) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
   }
 
@@ -36,6 +38,11 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  const displayName = profile?.first_name && profile?.last_name
+    ? `${profile.first_name} ${profile.last_name}`
+    : user.email || "Anonymous User";
+  const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || undefined;
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
       <div className="container mx-auto max-w-3xl">
@@ -46,12 +53,13 @@ const ProfilePage: React.FC = () => {
             <Card className="shadow-lg p-6 mb-8">
               <CardContent className="flex flex-col items-center text-center p-0">
                 <Avatar className="w-24 h-24 mb-4 border-4 border-green-500">
-                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
+                  <AvatarImage src={avatarUrl} alt={displayName} />
                   <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
-                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : <UserIcon size={32} />}
+                    {profile?.first_name?.charAt(0).toUpperCase() || ''}
+                    {profile?.last_name?.charAt(0).toUpperCase() || <UserIcon size={32} />}
                   </AvatarFallback>
                 </Avatar>
-                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">{user.displayName || "Anonymous User"}</h2>
+                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">{displayName}</h2>
                 <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <Mail size={18} /> {user.email}
                 </p>

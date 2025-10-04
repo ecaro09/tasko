@@ -4,7 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/hooks/use-auth';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
+import { useFileUpload } from '@/hooks/use-file-upload';
 import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon, Camera } from 'lucide-react';
 
 interface EditProfileSectionProps {
   onCancel: () => void;
@@ -13,33 +17,86 @@ interface EditProfileSectionProps {
 
 const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSaveSuccess }) => {
   const { user, updateUserProfile } = useAuth();
-  const [displayName, setDisplayName] = React.useState(user?.displayName || '');
+  const { profile, updateProfile, loadingProfile } = useSupabaseProfile();
+  const { uploadFile, loading: uploadLoading } = useFileUpload();
+
+  const [firstName, setFirstName] = React.useState(user?.user_metadata?.first_name || '');
+  const [lastName, setLastName] = React.useState(user?.user_metadata?.last_name || '');
+  const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(user?.user_metadata?.avatar_url || null);
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
-    setDisplayName(user?.displayName || '');
+    if (user) {
+      setFirstName(user.user_metadata?.first_name || '');
+      setLastName(user.user_metadata?.last_name || '');
+      setAvatarPreview(user.user_metadata?.avatar_url || null);
+    }
   }, [user]);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    } else {
+      setAvatarFile(null);
+      setAvatarPreview(user?.user_metadata?.avatar_url || null); // Revert to original if no new file selected
+    }
+  };
+
   const handleSave = async () => {
-    if (!user) {
-      toast.error("No user logged in.");
+    if (!user || !profile) {
+      toast.error("No user or profile data available.");
       return;
     }
-    if (displayName.trim() === '') {
-      toast.error("Display name cannot be empty.");
+    if (firstName.trim() === '' || lastName.trim() === '') {
+      toast.error("First name and last name cannot be empty.");
       return;
     }
 
     setIsLoading(true);
+    let newAvatarUrl: string | undefined = user.user_metadata?.avatar_url || undefined;
+
+    if (avatarFile) {
+      const filePath = `avatars/${user.id}/${Date.now()}_${avatarFile.name}`;
+      const uploadedURL = await uploadFile(avatarFile, filePath);
+      if (uploadedURL) {
+        newAvatarUrl = uploadedURL;
+      } else {
+        setIsLoading(false);
+        return; // Stop if avatar upload fails
+      }
+    } else if (avatarPreview === null && user.user_metadata?.avatar_url) {
+      // If preview is cleared and there was an original image, it means user wants to remove it
+      newAvatarUrl = undefined; // Explicitly set to undefined to signal removal
+    }
+
     try {
-      await updateUserProfile(displayName);
+      // Update Supabase auth.users metadata
+      await updateUserProfile(firstName, lastName, newAvatarUrl);
+
+      // Update public.profiles table
+      await updateProfile(
+        user.id,
+        firstName,
+        lastName,
+        profile.phone, // Keep existing phone
+        newAvatarUrl || null,
+        profile.role,
+        profile.rating,
+        profile.is_verified_tasker
+      );
+
       onSaveSuccess();
     } catch (error) {
-      // Error handled by useAuth, toast already shown
+      // Errors handled by useAuth and useSupabaseProfile, toasts already shown
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isFormDisabled = isLoading || uploadLoading || loadingProfile;
 
   return (
     <Card className="shadow-lg p-6">
@@ -47,22 +104,62 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
         <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Edit Profile</CardTitle>
       </CardHeader>
       <CardContent className="p-0 space-y-4">
+        <div className="flex flex-col items-center gap-4 mb-6">
+          <Avatar className="w-24 h-24 border-4 border-green-500">
+            <AvatarImage src={avatarPreview || undefined} alt={user?.email || "User"} />
+            <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
+              {firstName.charAt(0).toUpperCase()}{lastName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <Label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-2 text-blue-600 hover:text-blue-800">
+            <Camera size={20} /> {avatarFile ? "Change Avatar" : (avatarPreview ? "Update Avatar" : "Upload Avatar (Optional)")}
+            <Input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={isFormDisabled}
+            />
+          </Label>
+          {avatarPreview && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setAvatarPreview(null)}
+              disabled={isFormDisabled}
+              className="text-red-500 hover:text-red-700"
+            >
+              Remove Avatar
+            </Button>
+          )}
+        </div>
+
         <div className="grid gap-2">
-          <Label htmlFor="displayName">Display Name</Label>
+          <Label htmlFor="firstName">First Name</Label>
           <Input
-            id="displayName"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            disabled={isLoading}
+            id="firstName"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            disabled={isFormDisabled}
           />
         </div>
-        {/* Add more fields here for other editable profile info */}
+        <div className="grid gap-2">
+          <Label htmlFor="lastName">Last Name</Label>
+          <Input
+            id="lastName"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            disabled={isFormDisabled}
+          />
+        </div>
+        {/* Add more fields here for other editable profile info like phone number if needed */}
         <div className="flex justify-end gap-2 mt-6">
-          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          <Button variant="outline" onClick={onCancel} disabled={isFormDisabled}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">
-            {isLoading ? 'Saving...' : 'Save Changes'}
+          <Button onClick={handleSave} disabled={isFormDisabled} className="bg-green-600 hover:bg-green-700 text-white">
+            {isFormDisabled ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </CardContent>
