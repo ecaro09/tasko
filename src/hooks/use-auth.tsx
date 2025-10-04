@@ -7,11 +7,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithCredential, // Import signInWithCredential
 } from 'firebase/auth';
 import { toast } from 'sonner';
-// Removed: import { useSupabaseProfile } from './use-supabase-profile'; // This import is no longer needed here
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication'; // Import the Capacitor plugin
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -35,34 +34,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: false,
     loading: true,
   });
-  // Removed: const { profile, loadingProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // No longer directly used here
 
   React.useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          setAuthState({
-            user: result.user,
-            isAuthenticated: true,
-            loading: false,
-          });
-          toast.success("Logged in with Google successfully!");
-          console.log(`[Auth Log] Redirect login successful (Google) for user: ${result.user.email} at ${new Date().toISOString()}`);
-          // Supabase profile will be handled by SupabaseProfileProvider's useEffect
-        }
-      } catch (error: any) {
-        console.error("Error during Google redirect sign-in:", error);
-        let errorMessage = "Failed to sign in with Google after redirect.";
-        if (error.message) {
-          errorMessage = error.message;
-        }
-        toast.error(errorMessage);
-        setAuthState(prev => ({ ...prev, loading: false }));
-      }
-    };
-
-    handleRedirectResult();
+    // The Capacitor FirebaseAuthentication plugin handles the redirect result internally.
+    // We no longer need getRedirectResult from Firebase JS SDK here.
 
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -90,12 +65,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         displayName: displayName,
         photoURL: null, // Can be updated later
       });
-
-      // Supabase profile creation will be handled by SupabaseProfileProvider's useEffect
-      // when firebaseUser prop changes.
-      // The initial profile data (firstName, lastName, phone, role) can be passed
-      // to SupabaseProfileProvider if needed, or handled by a separate explicit call
-      // from the SignupModal component itself. For now, relying on SupabaseProfileProvider's useEffect.
 
       toast.success("Account created successfully! You are now logged in.");
       console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
@@ -156,12 +125,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
     try {
-      // Update Firebase Auth profile
       const newDisplayName = `${firstName} ${lastName}`.trim();
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
-
-      // Supabase profile update will be handled by EditProfileSection directly calling useSupabaseProfile's updateProfile.
-      // Or by SupabaseProfileProvider's useEffect if it detects changes in Firebase user's display name/photoURL.
 
       toast.success("Profile updated successfully!");
       console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
@@ -174,11 +139,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
     try {
       setAuthState(prev => ({ ...prev, loading: true }));
-      await signInWithRedirect(auth, provider);
-      console.log(`[Auth Log] Initiating Google sign-in redirect at ${new Date().toISOString()}`);
+      const result = await FirebaseAuthentication.signInWithGoogle();
+
+      if (result.credential?.idToken && result.credential?.accessToken) {
+        const credential = GoogleAuthProvider.credential(result.credential.idToken, result.credential.accessToken);
+        await signInWithCredential(auth, credential);
+        toast.success("Logged in with Google successfully!");
+        console.log(`[Auth Log] Google sign-in successful for user: ${auth.currentUser?.email} at ${new Date().toISOString()}`);
+      } else {
+        throw new Error("Google sign-in did not return valid credentials.");
+      }
     } catch (error: any) {
       console.error("Auth error caught during Google sign-in:", error);
       console.log(`[Auth Log] Login failed (Google) at ${new Date().toISOString()} - Error: ${error.message}`);
