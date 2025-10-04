@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; // Import useSearchParams
 import { useAuth } from '@/hooks/use-auth';
 import { useChat, ChatRoom } from '@/hooks/use-chat';
 import ChatRoomList from '@/components/ChatRoomList';
@@ -15,13 +15,18 @@ const ChatPage: React.FC = () => {
   const { chatRooms, loadingRooms, error: chatError } = useChat();
   const [activeRoomId, setActiveRoomId] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
+  const [searchParams] = useSearchParams(); // Initialize useSearchParams
 
-  // Set the first room as active by default if available
+  // Effect to read roomId from URL and set it as active
   React.useEffect(() => {
-    if (!activeRoomId && chatRooms.length > 0) {
+    const roomIdFromUrl = searchParams.get('roomId');
+    if (roomIdFromUrl && chatRooms.some(room => room.id === roomIdFromUrl)) {
+      setActiveRoomId(roomIdFromUrl);
+    } else if (!activeRoomId && chatRooms.length > 0) {
+      // If no room from URL or invalid, and no active room, set the first available room
       setActiveRoomId(chatRooms[0].id);
     }
-  }, [chatRooms, activeRoomId]);
+  }, [chatRooms, searchParams, activeRoomId]); // Depend on chatRooms, searchParams, and activeRoomId
 
   const currentRoom = activeRoomId ? chatRooms.find(room => room.id === activeRoomId) : null;
 
