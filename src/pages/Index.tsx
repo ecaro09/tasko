@@ -28,7 +28,6 @@ const getCategoryName = (category: string) => {
     repairs: 'Repairs',
     delivery: 'Delivery',
     mounting: 'Mounting',
-    painting: 'Painting',
     marketing: 'Marketing', // Added marketing category
     other: 'Other'
   };
@@ -50,14 +49,14 @@ const Index = () => {
     await logout();
   }, [logout]);
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = React.useCallback(() => {
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
-  };
+  }, [searchTerm, selectedCategory]); // Dependencies for useCallback
 
-  const handleCategorySelect = (category: string) => {
+  const handleCategorySelect = React.useCallback((category: string) => {
     setSelectedCategory(category);
     setSearchTerm('');
-  };
+  }, []); // No dependencies needed as setSelectedCategory and setSearchTerm are stable setters
 
   const handleViewTaskDetails = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
