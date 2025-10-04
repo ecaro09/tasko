@@ -215,7 +215,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     };
   }, [fetchTasks, seedInitialTasks]); // Now depends on memoized fetchTasks and seedInitialTasks
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => {
+  const addTask = useCallback(async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => {
     if (!isAuthenticated || !user || !currentUserProfile) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -242,9 +242,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to post task: ${err.message}`);
       throw err;
     }
-  };
+  }, [isAuthenticated, user, currentUserProfile]);
 
-  const deleteTask = async (taskId: string) => {
+  const deleteTask = useCallback(async (taskId: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to delete a task.");
       return;
@@ -264,9 +264,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to delete task: ${err.message}`);
       throw err;
     }
-  };
+  }, [isAuthenticated, user]);
 
-  const editTask = async (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>>) => {
+  const editTask = useCallback(async (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to edit a task.");
       return;
@@ -294,9 +294,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to update task: ${err.message}`);
       throw err;
     }
-  };
+  }, [isAuthenticated, user]);
 
-  const completeTaskWithReview = async (taskId: string, rating: number, review: string) => {
+  const completeTaskWithReview = useCallback(async (taskId: string, rating: number, review: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to complete a task.");
       return;
@@ -347,7 +347,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to complete task: ${err.message}`);
       throw err;
     }
-  };
+  }, [isAuthenticated, user, updateTaskerRating]);
 
   const value = {
     tasks: allTasks,
