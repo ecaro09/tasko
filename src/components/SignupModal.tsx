@@ -14,7 +14,7 @@ interface SignupModalProps {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
-  const { signupWithEmailPassword, loading: authLoading, user: firebaseUser } = useAuth(); // Get firebaseUser
+  const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Removed firebaseUser from destructuring
   const { updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Get updateProfile from useSupabaseProfile
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -32,20 +32,16 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
     }
     setIsLoadingLocal(true);
     try {
-      await signupWithEmailPassword(email, password, firstName, lastName);
+      const newUser = await signupWithEmailPassword(email, password, firstName, lastName); // Get the new user directly
       
       // After successful Firebase signup, update Supabase profile with additional details
-      if (firebaseUser) { // firebaseUser might not be immediately available after signupWithEmailPassword completes, but onAuthStateChanged will update it.
-                         // For immediate update, we can rely on the user object from the signup result if needed,
-                         // but for simplicity and to avoid race conditions, we'll let the AuthProvider update its state,
-                         // and then the SupabaseProfileProvider will react to it.
-                         // However, for the initial data, we can directly call updateSupabaseProfile here.
+      if (newUser) { // Use the newUser object
         await updateSupabaseProfile(
-          firebaseUser.uid, // Use the newly signed up user's UID
+          newUser.uid, // Use the newly signed up user's UID
           firstName,
           lastName,
           phone,
-          firebaseUser.photoURL || null, // Use Firebase user's photoURL if available
+          newUser.photoURL || null, // Use Firebase user's photoURL if available
           'user' // Default role for new signups
         );
       }

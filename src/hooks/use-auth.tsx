@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
 import {
   signOut,
   User as FirebaseUser,
@@ -12,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { toast } from 'sonner';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { auth } from '@/lib/firebase'; // Ensure auth is imported
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -20,7 +20,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string) => Promise<FirebaseUser | null>; // Modified return type
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (firstName: string, lastName: string, photoURL?: string) => Promise<void>;
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string) => {
+  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string): Promise<FirebaseUser | null> => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const displayName = `${firstName || ''} ${lastName || ''}`.trim();
@@ -87,9 +87,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await sendEmailVerification(userCredential.user);
         toast.success("Account created successfully! A verification email has been sent to your inbox. Please verify your email to continue.");
         console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}. Verification email sent.`);
+        return userCredential.user; // Return the user object
       } else {
         toast.success("Account created successfully! You are now logged in.");
         console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
+        return null;
       }
     } catch (error: any) {
       console.error("Auth error caught during signup:", error);
