@@ -19,5 +19,7 @@ export const seedInitialTasks = async () => {
       await addDoc(tasksCollectionRef, task);
     }
     toast.info("Initial demo tasks added!");
+  } else {
+    console.log("Tasks collection is not empty, skipping seeding.");
   }
 };
