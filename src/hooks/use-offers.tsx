@@ -271,7 +271,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [isAuthenticated, user, setLoadingOffers]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     offers: allOffers,
     loading: loadingOffers || taskerLoading, // Use loadingOffers
     error,
@@ -280,7 +280,17 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     acceptOffer,
     rejectOffer,
     withdrawOffer,
-  };
+  }), [
+    allOffers,
+    loadingOffers,
+    taskerLoading,
+    error,
+    addOffer,
+    getOffersForTask,
+    acceptOffer,
+    rejectOffer,
+    withdrawOffer,
+  ]);
 
   return <OffersContext.Provider value={value}>{children}</OffersContext.Provider>;
 };
