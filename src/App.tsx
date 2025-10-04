@@ -26,7 +26,7 @@ import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { ChatProvider } from "./hooks/use-chat";
-import { SupabaseProfileProvider } from "./hooks/use-supabase-profile"; // Import SupabaseProfileProvider
+import { SupabaseProfileProvider } from "./hooks/use-supabase-profile";
 
 const queryClient = new QueryClient();
 
@@ -37,10 +37,10 @@ const App = () => {
         <TooltipProvider>
           <BrowserRouter>
             <AuthProvider>
-              <SupabaseProfileProvider> {/* Moved SupabaseProfileProvider here */}
-                <PWAProvider>
-                  <TasksProvider>
-                    <TaskerProfileProvider>
+              <SupabaseProfileProvider>
+                <TaskerProfileProvider> {/* Moved TaskerProfileProvider here */}
+                  <PWAProvider>
+                    <TasksProvider>
                       <OffersProvider>
                         <ChatProvider>
                           <ModalProvider>
@@ -67,9 +67,9 @@ const App = () => {
                           </ModalProvider>
                         </ChatProvider>
                       </OffersProvider>
-                    </TaskerProfileProvider>
-                  </TasksProvider>
-                </PWAProvider>
+                    </TasksProvider>
+                  </PWAProvider>
+                </TaskerProfileProvider>
               </SupabaseProfileProvider>
             </AuthProvider>
           </BrowserRouter>
