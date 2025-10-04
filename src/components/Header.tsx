@@ -12,7 +12,7 @@ interface HeaderProps {
   onSignOut: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
+const Header: React.FC<HeaderProps> = React.memo(({ isAuthenticated, onSignOut }) => {
   const { openLoginModal, openSignupModal } = useModal();
   const { user } = useAuth();
   const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
@@ -77,6 +77,6 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
       </div>
     </header>
   );
-};
+});
 
 export default Header;
