@@ -60,7 +60,8 @@ enableIndexedDbPersistence(db)
 
 // Export actionCodeSettings for email link sign-in
 export const actionCodeSettings = {
-  url: import.meta.env.VITE_FIREBASE_SIGN_IN_REDIRECT_URL || "http://localhost:8080/finishSignIn", // Default to localhost if not set
+  // Use VITE_FIREBASE_SIGN_IN_REDIRECT_URL if set, otherwise construct from current origin
+  url: import.meta.env.VITE_FIREBASE_SIGN_IN_REDIRECT_URL || `${window.location.origin}/finishSignIn`,
   handleCodeInApp: true,
   android: {
     packageName: "com.tasko.app",
