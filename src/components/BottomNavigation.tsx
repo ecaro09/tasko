@@ -9,7 +9,7 @@ interface BottomNavigationProps {
   // onProfileClick: () => void; // No longer needed as we'll handle navigation directly
 }
 
-const BottomNavigation: React.FC<BottomNavigationProps> = () => {
+const BottomNavigation: React.FC<BottomNavigationProps> = React.memo(() => {
   const { isAuthenticated } = useAuth();
   const { openLoginModal } = useModal();
   const navigate = useNavigate();
@@ -73,6 +73,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
       </div>
     </nav>
   );
-};
+});
 
 export default BottomNavigation;
