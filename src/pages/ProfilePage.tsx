@@ -39,10 +39,13 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  const displayName = profile?.first_name && profile?.last_name
-    ? `${profile.first_name} ${profile.last_name}`
+  // Use profile data for display
+  const displayFirstName = profile?.first_name || '';
+  const displayLastName = profile?.last_name || '';
+  const displayName = displayFirstName && displayLastName
+    ? `${displayFirstName} ${displayLastName}`
     : user.email || "Anonymous User";
-  const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || undefined;
+  const avatarUrl = profile?.avatar_url || undefined;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
@@ -56,8 +59,8 @@ const ProfilePage: React.FC = () => {
                 <Avatar className="w-24 h-24 mb-4 border-4 border-green-500">
                   <AvatarImage src={avatarUrl} alt={displayName} />
                   <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
-                    {profile?.first_name?.charAt(0).toUpperCase() || ''}
-                    {profile?.last_name?.charAt(0).toUpperCase() || <UserIcon size={32} />}
+                    {displayFirstName.charAt(0).toUpperCase()}
+                    {displayLastName.charAt(0).toUpperCase() || <UserIcon size={32} />}
                   </AvatarFallback>
                 </Avatar>
                 <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">{displayName}</h2>
