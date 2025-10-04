@@ -135,10 +135,10 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         .from('tasker_profiles')
         .upsert({
           user_id: user.id,
-          display_name: user.user_metadata?.first_name && user.user_metadata?.last_name
-            ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+          display_name: userProfile.first_name && userProfile.last_name // Use userProfile for display name
+            ? `${userProfile.first_name} ${userProfile.last_name}`
             : user.email || "Anonymous Tasker",
-          photo_url: user.user_metadata?.avatar_url || undefined,
+          photo_url: userProfile.avatar_url || undefined, // Use userProfile for avatar URL
           is_tasker: true,
           date_joined: new Date().toISOString(), // Only set on initial creation, upsert will merge
           skills: data.skills,
