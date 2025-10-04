@@ -8,10 +8,11 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
   sendEmailVerification,
+  sendSignInLinkToEmail, // New import
 } from 'firebase/auth';
 import { toast } from 'sonner';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { auth } from '@/lib/firebase'; // Ensure auth is imported
+import { auth, actionCodeSettings } from '@/lib/firebase'; // Ensure auth and actionCodeSettings are imported
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -26,6 +27,7 @@ interface AuthContextType extends AuthState {
   updateUserProfile: (firstName: string, lastName: string, photoURL?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
+  sendLoginLinkToEmail: (email: string) => Promise<void>; // New function signature
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -191,7 +193,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle, sendVerificationEmail };
+  const sendLoginLinkToEmail = async (email: string) => {
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      toast.success("Login link sent! Please check your email.");
+      console.log(`[Auth Log] Email login link sent to ${email} at ${new Date().toISOString()}`);
+    } catch (error: any) {
+      console.error("Error sending email login link:", error);
+      toast.error(`Failed to send login link: ${error.message}`);
+      console.log(`[Auth Log] Failed to send email login link to ${email} at ${new Date().toISOString()} - Error: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle, sendVerificationEmail, sendLoginLinkToEmail };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
