@@ -200,7 +200,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
+  const value = React.useMemo(() => ({
+    ...authState,
+    signupWithEmailPassword,
+    loginWithEmailPassword,
+    logout,
+    updateUserProfile,
+    signInWithGoogle
+  }), [
+    authState,
+    signupWithEmailPassword,
+    loginWithEmailPassword,
+    logout,
+    updateUserProfile,
+    signInWithGoogle
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
