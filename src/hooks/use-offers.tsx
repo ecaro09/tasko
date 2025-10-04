@@ -157,9 +157,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [isAuthenticated, user, isTasker, currentUserProfile, setLoadingOffers]);
 
-  const getOffersForTask = (taskId: string): Offer[] => {
+  const getOffersForTask = useCallback((taskId: string): Offer[] => {
     return allOffers.filter(offer => offer.taskId === taskId);
-  };
+  }, [allOffers]); // Dependency on allOffers
 
   const acceptOffer = useCallback(async (offerId: string, taskId: string) => {
     if (!isAuthenticated || !user) {
