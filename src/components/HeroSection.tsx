@@ -9,7 +9,7 @@ interface HeroSectionProps {
   onSearchSubmit: () => void;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChange, onSearchSubmit }) => {
+const HeroSection: React.FC<HeroSectionProps> = React.memo(({ searchTerm, onSearchTermChange, onSearchSubmit }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onSearchSubmit();
@@ -48,6 +48,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChang
       </div>
     </section>
   );
-};
+});
 
 export default HeroSection;
