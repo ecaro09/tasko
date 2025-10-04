@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client'; // Changed from Firebase to Supabase client
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
+import { useSupabaseProfile } from './use-supabase-profile'; // Import useSupabaseProfile
 
 export interface TaskerProfile {
   userId: string;
@@ -31,6 +32,7 @@ const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>
 
 export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { profile: userProfile, updateProfile: updateSupabaseUserProfile } = useSupabaseProfile(); // Use useSupabaseProfile
   const [taskerProfile, setTaskerProfile] = React.useState<TaskerProfile | null>(null);
   const [allTaskerProfiles, setAllTaskerProfiles] = React.useState<TaskerProfile[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -113,7 +115,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
   }, [isAuthenticated, user, authLoading]);
 
   const createOrUpdateTaskerProfile = async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating' | 'reviewCount'>) => {
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated || !user || !userProfile) {
       toast.error("You must be logged in to manage a tasker profile.");
       return;
     }
@@ -153,6 +155,19 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         setTaskerProfile(mapSupabaseProfileToTaskerProfile(updatedData));
         setIsTasker(true);
         toast.success("Tasker profile saved successfully!");
+        
+        // Also update the public.profiles table to reflect tasker status
+        await updateSupabaseUserProfile(
+          user.id,
+          userProfile.first_name,
+          userProfile.last_name,
+          userProfile.phone,
+          userProfile.avatar_url,
+          'tasker', // Set role to 'tasker'
+          userProfile.rating,
+          true // Set is_verified_tasker to true
+        );
+
         // Re-fetch all profiles to update the list
         const { data: allProfilesData, error: fetchAllError } = await supabase
           .from('tasker_profiles')
