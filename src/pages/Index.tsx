@@ -46,9 +46,9 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
 
-  const handleSignOut = async () => {
+  const handleSignOut = React.useCallback(async () => {
     await logout();
-  };
+  }, [logout]);
 
   const handleSearchSubmit = () => {
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
