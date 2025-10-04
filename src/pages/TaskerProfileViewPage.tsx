@@ -4,13 +4,21 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth
+import { useChat } from '@/hooks/use-chat'; // Import useChat
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
+import { toast } from 'sonner';
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
+  const { user, isAuthenticated } = useAuth(); // Get current user info
+  const { profile: currentUserProfile } = useSupabaseProfile(); // Get current user's Supabase profile
+  const { createChatRoom } = useChat(); // Get chat functions
+
   const [tasker, setTasker] = React.useState<TaskerProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -35,6 +43,36 @@ const TaskerProfileViewPage: React.FC = () => {
 
     loadTasker();
   }, [id, fetchTaskerProfileById]);
+
+  const handleChatWithTasker = async () => {
+    if (!isAuthenticated || !user || !currentUserProfile) {
+      toast.error("You must be logged in to start a chat.");
+      return;
+    }
+    if (!tasker) {
+      toast.error("Tasker profile not loaded.");
+      return;
+    }
+    if (user.id === tasker.userId) {
+      toast.info("You cannot chat with yourself.");
+      navigate('/chat'); // Navigate to chat page
+      return;
+    }
+
+    try {
+      const participantIds = [user.id, tasker.userId];
+      const participantNames = [
+        `${currentUserProfile.first_name || ''} ${currentUserProfile.last_name || ''}`.trim() || user.email || 'You',
+        tasker.displayName
+      ];
+      const roomId = await createChatRoom(participantIds, participantNames);
+      if (roomId) {
+        navigate(`/chat?roomId=${roomId}`);
+      }
+    } catch (err) {
+      // Error handled by useChat hook
+    }
+  };
 
   if (loading || globalLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading tasker profile...</div>;
@@ -75,7 +113,7 @@ const TaskerProfileViewPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6">
               <div className="flex items-center justify-center md:justify-start gap-2 text-gray-800 dark:text-gray-100">
                 <DollarSign size={20} className="text-green-600" />
-                <span className="font-semibold">Hourly Rate:</span> ₱{tasker.hourlyRate.toLocaleString()}
+                <span className="font-semibold">Hourly Rate:</span> ₱{tasker.hourlyRate.toLocaleString()}/hr
               </div>
               <div className="flex items-center justify-center md:justify-start gap-2 text-gray-800 dark:text-gray-100">
                 <Calendar size={20} className="text-green-600" />
@@ -96,9 +134,17 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             </div>
 
-            <Button className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all">
-              Contact Tasker (Coming Soon)
-            </Button>
+            {isAuthenticated && user?.id !== tasker.userId && (
+              <Button
+                onClick={handleChatWithTasker}
+                className="mt-6 bg-green-600 hover:bg-green-700 text-white text-lg px-8 py-4 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <MessageSquare size={20} /> Chat with Tasker
+              </Button>
+            )}
+            {!isAuthenticated && (
+              <p className="text-sm text-gray-500 mt-4">Log in to chat with this tasker.</p>
+            )}
           </CardContent>
         </Card>
       </div>

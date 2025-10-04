@@ -11,15 +11,19 @@ import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XC
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
+import { useChat } from '@/hooks/use-chat'; // Import useChat
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { profile: currentUserProfile } = useSupabaseProfile(); // Get current user's Supabase profile
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
+  const { createChatRoom } = useChat(); // Get chat functions
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -40,6 +44,8 @@ const TaskDetailPage: React.FC = () => {
 
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
   const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
+  const assignedOffer = taskOffers.find(offer => offer.status === 'accepted');
+  const isAssignedTasker = isAuthenticated && user?.uid === assignedOffer?.taskerId;
 
   const handleMakeOfferClick = () => {
     if (task) {
@@ -81,6 +87,32 @@ const TaskDetailPage: React.FC = () => {
       await withdrawOffer(offerId);
     } catch (error) {
       // Error handled by useOffers hook
+    }
+  };
+
+  const handleChatWithParticipant = async (participantId: string, participantName: string) => {
+    if (!isAuthenticated || !user || !currentUserProfile) {
+      toast.error("You must be logged in to start a chat.");
+      return;
+    }
+    if (user.id === participantId) {
+      toast.info("You cannot chat with yourself.");
+      navigate('/chat'); // Navigate to chat page
+      return;
+    }
+
+    try {
+      const participantIds = [user.id, participantId];
+      const participantNames = [
+        `${currentUserProfile.first_name || ''} ${currentUserProfile.last_name || ''}`.trim() || user.email || 'You',
+        participantName
+      ];
+      const roomId = await createChatRoom(participantIds, participantNames);
+      if (roomId) {
+        navigate(`/chat?roomId=${roomId}`);
+      }
+    } catch (err) {
+      // Error handled by useChat hook
     }
   };
 
@@ -149,6 +181,14 @@ const TaskDetailPage: React.FC = () => {
                 {isAuthenticated && !isTasker && !isTaskPoster && (
                   <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>
                 )}
+                {isAssignedTasker && (
+                  <Button
+                    onClick={() => handleChatWithParticipant(task.posterId, task.posterName)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-4"
+                  >
+                    <MessageSquare size={20} /> Chat with Client
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -196,6 +236,15 @@ const TaskDetailPage: React.FC = () => {
                                 <XCircle size={16} className="mr-1" /> Reject
                               </Button>
                             </div>
+                          )}
+                          {isTaskPoster && offer.status === 'accepted' && (
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-2"
+                              onClick={() => handleChatWithParticipant(offer.taskerId, offer.taskerName)}
+                            >
+                              <MessageSquare size={16} /> Chat with Tasker
+                            </Button>
                           )}
                           {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && (
                             <Button
