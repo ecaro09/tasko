@@ -25,10 +25,9 @@ const SupabaseProfileContext = createContext<SupabaseProfileContextType | undefi
 
 interface SupabaseProfileProviderProps {
   children: ReactNode;
-  firebaseUser: SupabaseUser | null; // Renamed from firebaseUser to reflect SupabaseUser
 }
 
-export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = ({ children, firebaseUser }) => {
+export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth(); // Use useAuth to get the current user
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = React.useState(true);

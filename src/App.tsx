@@ -25,7 +25,8 @@ import { OffersProvider } from "./hooks/use-offers";
 import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
-import { ChatProvider } from "./hooks/use-chat"; // Corrected import path and component name
+import { ChatProvider } from "./hooks/use-chat";
+import { SupabaseProfileProvider } from "./hooks/use-supabase-profile"; // Import SupabaseProfileProvider
 
 const queryClient = new QueryClient();
 
@@ -40,29 +41,31 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ChatProvider> {/* Corrected component name */}
-                        <ModalProvider>
-                          <div className="min-h-screen w-full flex flex-col items-center">
-                            <Routes>
-                              <Route path="/" element={<Index />} />
-                              <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                              <Route path="/my-tasks" element={<MyTasksPage />} />
-                              <Route path="/my-offers" element={<MyOffersPage />} />
-                              <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
-                              <Route path="/profile" element={<ProfilePage />} />
-                              <Route path="/settings" element={<SettingsPage />} />
-                              <Route path="/faq" element={<FAQPage />} />
-                              <Route path="/contact" element={<ContactPage />} />
-                              <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                              <Route path="/terms" element={<TermsOfServicePage />} />
-                              <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
-                              <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                              <Route path="/chat" element={<ChatPage />} />
-                              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                              <Route path="*" element={<NotFound />} />
-                            </Routes>
-                          </div>
-                        </ModalProvider>
+                      <ChatProvider>
+                        <SupabaseProfileProvider> {/* Wrap with SupabaseProfileProvider */}
+                          <ModalProvider>
+                            <div className="min-h-screen w-full flex flex-col items-center">
+                              <Routes>
+                                <Route path="/" element={<Index />} />
+                                <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                                <Route path="/my-tasks" element={<MyTasksPage />} />
+                                <Route path="/my-offers" element={<MyOffersPage />} />
+                                <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
+                                <Route path="/profile" element={<ProfilePage />} />
+                                <Route path="/settings" element={<SettingsPage />} />
+                                <Route path="/faq" element={<FAQPage />} />
+                                <Route path="/contact" element={<ContactPage />} />
+                                <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                                <Route path="/terms" element={<TermsOfServicePage />} />
+                                <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
+                                <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
+                                <Route path="/chat" element={<ChatPage />} />
+                                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                                <Route path="*" element={<NotFound />} />
+                              </Routes>
+                            </div>
+                          </ModalProvider>
+                        </SupabaseProfileProvider>
                       </ChatProvider>
                     </OffersProvider>
                   </TaskerProfileProvider>
