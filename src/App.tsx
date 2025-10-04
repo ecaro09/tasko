@@ -11,6 +11,7 @@ import FAQPage from "./pages/FAQPage";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
+import EULAPage from "./pages/EULAPage"; // New import
 import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
@@ -71,6 +72,7 @@ const App = () => {
                                   <Route path="/contact" element={<ContactPage />} />
                                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
                                   <Route path="/terms" element={<TermsOfServicePage />} />
+                                  <Route path="/eula" element={<EULAPage />} /> {/* New route */}
                                   <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
                                   <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
                                   <Route path="/chat" element={<ChatPage />} />
