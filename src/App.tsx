@@ -25,7 +25,7 @@ import { OffersProvider } from "./hooks/use-offers";
 import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
-import { ChatSessionProvider } from "./hooks/use-chat-session";
+import { ChatProvider } from "./hooks/use-chat"; // Corrected import path and component name
 
 const queryClient = new QueryClient();
 
@@ -40,8 +40,8 @@ const App = () => {
                 <TasksProvider>
                   <TaskerProfileProvider>
                     <OffersProvider>
-                      <ChatSessionProvider>
-                        <ModalProvider> {/* ModalProvider is correctly placed here */}
+                      <ChatProvider> {/* Corrected component name */}
+                        <ModalProvider>
                           <div className="min-h-screen w-full flex flex-col items-center">
                             <Routes>
                               <Route path="/" element={<Index />} />
@@ -63,7 +63,7 @@ const App = () => {
                             </Routes>
                           </div>
                         </ModalProvider>
-                      </ChatSessionProvider>
+                      </ChatProvider>
                     </OffersProvider>
                   </TaskerProfileProvider>
                 </TasksProvider>
