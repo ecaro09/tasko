@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -53,8 +53,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return profile?.email || "Unknown User";
   };
 
-  // Fetch chat rooms for the current user
-  React.useEffect(() => {
+  // Memoized function to fetch chat rooms for the current user
+  const fetchChatRooms = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setChatRooms([]);
       setLoadingRooms(false);
@@ -64,7 +64,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoadingRooms(true);
     setError(null);
 
-    const fetchChatRooms = async () => {
+    try {
       const { data, error: fetchError } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -100,11 +100,18 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }));
       setChatRooms(fetchedRooms);
       setLoadingRooms(false);
-    };
+    } catch (err: any) {
+      console.error("Error fetching all chat rooms:", err);
+      setError(`Failed to load chat rooms: ${err.message}`);
+      toast.error(`Failed to load chat rooms: ${err.message}`);
+      setLoadingRooms(false);
+    }
+  }, [isAuthenticated, user, fetchSupabaseProfile]); // Dependencies for useCallback
 
+  // Effect to fetch chat rooms and set up real-time subscription
+  React.useEffect(() => {
     fetchChatRooms();
 
-    // Set up real-time subscription for chat rooms
     const subscription = supabase
       .channel('public:chat_rooms')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_rooms' }, payload => {
@@ -122,7 +129,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [isAuthenticated, user, authLoading, fetchSupabaseProfile]);
+  }, [fetchChatRooms, user]); // Depend on memoized fetchChatRooms and user
 
   // Fetch messages for the active chat room
   React.useEffect(() => {
