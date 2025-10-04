@@ -8,7 +8,7 @@ interface InstallPromptProps {
   onClose: () => void;
 }
 
-const InstallPrompt: React.FC<InstallPromptProps> = ({ isVisible, onInstall, onClose }) => {
+const InstallPrompt: React.FC<InstallPromptProps> = React.memo(({ isVisible, onInstall, onClose }) => {
   if (!isVisible) return null;
 
   return (
@@ -28,6 +28,6 @@ const InstallPrompt: React.FC<InstallPromptProps> = ({ isVisible, onInstall, onC
       </div>
     </div>
   );
-};
+});
 
 export default InstallPrompt;
