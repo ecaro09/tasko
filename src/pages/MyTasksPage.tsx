@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
-import { useOffers, Offer } from '@/hooks/use-offers'; // New import for offers
+import { useOffers, Offer } from '@/hooks/use-offers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle } from 'lucide-react'; // Added icons
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Edit icon
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -17,19 +17,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
-import { Badge } from "@/components/ui/badge"; // New import
-import { toast } from 'sonner'; // New import
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { toast } from 'sonner';
+import { useModal } from '@/components/ModalProvider';
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
-  const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
+  const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers();
   const navigate = useNavigate();
+  const { openReviewTaskModal, openEditTaskModal } = useModal(); // Get openEditTaskModal from useModal
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
 
-  if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
+  if (authLoading || tasksLoading || offersLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
   }
 
@@ -51,7 +54,7 @@ const MyTasksPage: React.FC = () => {
     );
   }
 
-  const userTasks = tasks.filter(task => task.posterId === user.uid);
+  const userTasks = tasks.filter(task => task.posterId === user.id);
 
   const handleDeleteClick = (taskId: string) => {
     setTaskToDelete(taskId);
@@ -87,6 +90,14 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
+  const handleCompleteTaskClick = (task: Task) => {
+    openReviewTaskModal(task);
+  };
+
+  const handleEditTaskClick = (task: Task) => {
+    openEditTaskModal(task);
+  };
+
   const getOfferStatusBadge = (status: Offer['status']) => {
     switch (status) {
       case 'pending':
@@ -120,6 +131,8 @@ const MyTasksPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userTasks.map((task) => {
               const offersForTask = offers.filter(offer => offer.taskId === task.id);
+              const assignedOffer = offersForTask.find(offer => offer.status === 'accepted');
+
               return (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <div className="h-40 overflow-hidden relative">
@@ -141,10 +154,34 @@ const MyTasksPage: React.FC = () => {
                       <Tag size={16} className="mr-2" /> {task.category}
                     </p>
                     <p className="text-2xl font-bold text-green-600 mb-4">₱{task.budget.toLocaleString()}</p>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center gap-2">
                       <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                         View Details
                       </Button>
+                      {task.status === 'assigned' && !task.dateCompleted && (
+                        <Button
+                          onClick={() => handleCompleteTaskClick(task)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                        >
+                          <CheckCircle size={16} /> Complete & Review
+                        </Button>
+                      )}
+                      {task.status === 'completed' && task.rating && (
+                        <div className="flex items-center gap-1 text-yellow-500">
+                          <Star size={16} fill="currentColor" />
+                          <span className="font-semibold">{task.rating.toFixed(1)}</span>
+                        </div>
+                      )}
+                      {task.status === 'open' && ( // Only allow editing if task is open
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleEditTaskClick(task)}
+                          className="border-gray-400 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
+                          <Edit size={20} />
+                        </Button>
+                      )}
                       <Button
                         variant="destructive"
                         size="icon"
