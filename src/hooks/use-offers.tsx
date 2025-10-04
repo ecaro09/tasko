@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client'; // Import Supabase cl
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // To check if user is a tasker
+import { useSupabaseProfile } from './use-supabase-profile'; // Import useSupabaseProfile
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 export interface Offer {
   id: string;
@@ -38,10 +40,12 @@ const OffersContext = createContext<OffersContextType | undefined>(undefined);
 
 export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const { taskerProfile, isTasker, loading: taskerLoading } = useTaskerProfile();
+  const { profile: currentUserProfile } = useSupabaseProfile(); // Get current user's Supabase profile
+  const { isTasker, loading: taskerLoading } = useTaskerProfile();
+  const { fetchProfile: fetchSupabaseProfile } = useSupabaseProfile(); // Function to fetch any user's profile
   const [allOffers, setAllOffers] = React.useState<Offer[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, React.useState] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setLoading(true);
@@ -61,18 +65,33 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         return;
       }
 
-      const fetchedOffers: Offer[] = data.map((item: any) => ({
-        id: item.id,
-        taskId: item.task_id,
-        taskerId: item.tasker_id,
-        taskerName: item.tasker_name,
-        taskerAvatar: item.tasker_avatar || undefined,
-        clientId: item.client_id,
-        offerAmount: item.offer_amount,
-        message: item.message,
-        status: item.status,
-        dateCreated: new Date(item.date_created).toISOString(),
-        dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString() : undefined,
+      // Fetch all unique tasker profiles to avoid N+1 queries
+      const uniqueTaskerIds = Array.from(new Set(data.map(item => item.tasker_id)));
+      const taskerProfiles = await Promise.all(
+        uniqueTaskerIds.map(id => fetchSupabaseProfile(id))
+      );
+      const taskerProfileMap = new Map(taskerProfiles.filter(p => p).map(p => [p!.id, p!]));
+
+      const fetchedOffers: Offer[] = data.map((item: any) => {
+        const taskerProfile = taskerProfileMap.get(item.tasker_id);
+        const taskerAvatar = taskerProfile?.avatar_url || DEFAULT_AVATAR_URL;
+        const taskerName = taskerProfile?.first_name && taskerProfile?.last_name
+          ? `${taskerProfile.first_name} ${taskerProfile.last_name}`
+          : item.tasker_name || "Anonymous Tasker"; // Fallback to stored name if profile not found
+
+        return {
+          id: item.id,
+          taskId: item.task_id,
+          taskerId: item.tasker_id,
+          taskerName: taskerName,
+          taskerAvatar: taskerAvatar,
+          clientId: item.client_id,
+          offerAmount: item.offer_amount,
+          message: item.message,
+          status: item.status,
+          dateCreated: new Date(item.date_created).toISOString(),
+          dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString() : undefined,
+        };
       }));
       setAllOffers(fetchedOffers);
       setLoading(false);
@@ -92,7 +111,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [fetchSupabaseProfile]); // Depend on fetchSupabaseProfile to ensure it's available
 
   const addOffer = async (
     taskId: string,
@@ -100,7 +119,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     offerAmount: number,
     message: string,
   ) => {
-    if (!isAuthenticated || !user || !isTasker || !taskerProfile) {
+    if (!isAuthenticated || !user || !isTasker || !currentUserProfile) { // Ensure currentUserProfile is available
       toast.error("You must be logged in as a tasker to make an offer.");
       return;
     }
@@ -112,8 +131,10 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         .insert({
           task_id: taskId,
           tasker_id: user.id,
-          tasker_name: taskerProfile.displayName,
-          tasker_avatar: taskerProfile.photoURL,
+          tasker_name: currentUserProfile.first_name && currentUserProfile.last_name // Use currentUserProfile for name
+            ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
+            : user.email || "Anonymous Tasker",
+          tasker_avatar: currentUserProfile.avatar_url || DEFAULT_AVATAR_URL, // Use currentUserProfile for avatar URL
           client_id: clientId,
           offer_amount: offerAmount,
           message: message,
