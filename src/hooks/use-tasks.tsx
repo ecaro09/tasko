@@ -16,7 +16,7 @@ export interface Task {
   posterAvatar: string;
   datePosted: string;
   status: 'open' | 'assigned' | 'completed';
-  imageUrl?: string;
+  imageUrl?: string | null; // Changed to allow null
   assignedTaskerId?: string;
   assignedOfferId?: string;
   rating?: number;
@@ -143,7 +143,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         posterAvatar: item.poster_avatar || "https://randomuser.me/api/portraits/lego/1.jpg",
         datePosted: new Date(item.date_posted).toISOString().split('T')[0],
         status: item.status || 'open',
-        imageUrl: item.image_url || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        imageUrl: item.image_url || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none
         assignedTaskerId: item.assigned_tasker_id || undefined,
         assignedOfferId: item.assigned_offer_id || undefined,
         rating: item.rating || undefined,
@@ -191,7 +191,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
             : user.email || "Anonymous User",
           poster_avatar: user.user_metadata?.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg",
           status: 'open',
-          image_url: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+          image_url: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
         });
 
       if (insertError) throw insertError;
@@ -240,7 +240,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           location: updatedFields.location,
           budget: updatedFields.budget,
           category: updatedFields.category,
-          image_url: updatedFields.imageUrl === undefined ? null : updatedFields.imageUrl,
+          image_url: updatedFields.imageUrl === undefined ? null : updatedFields.imageUrl, // Handle explicit null for removal
           date_updated: new Date().toISOString(),
         })
         .eq('id', taskId)

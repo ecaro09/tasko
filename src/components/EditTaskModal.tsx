@@ -37,6 +37,15 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       setTaskCategory(task.category);
       setTaskImagePreview(task.imageUrl || null);
       setTaskImageFile(null); // Reset file input
+    } else {
+      // Reset form if no task is selected (e.g., modal opened without a task)
+      setTaskTitle('');
+      setTaskDescription('');
+      setTaskLocation('');
+      setTaskBudget('');
+      setTaskCategory('');
+      setTaskImageFile(null);
+      setTaskImagePreview(null);
     }
   }, [task, isOpen]);
 
@@ -70,7 +79,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
 
     if (taskImageFile) {
       const filePath = `task_images/${task.id}_${Date.now()}_${taskImageFile.name}`;
-      const uploadedURL = await uploadFile(taskImageFile, filePath);
+      const uploadedURL = await uploadFile(taskImageFile, filePath, 'task_images'); // Specify bucket
       if (uploadedURL) {
         imageUrl = uploadedURL;
       } else {
@@ -79,7 +88,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       }
     } else if (taskImagePreview === null && task.imageUrl) {
       // If preview is cleared and there was an original image, it means user wants to remove it
-      imageUrl = undefined; // Explicitly set to undefined to signal removal
+      imageUrl = null; // Explicitly set to null to signal removal
     }
 
     try {
@@ -207,7 +216,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setTaskImagePreview(null)}
+                  onClick={() => { setTaskImageFile(null); setTaskImagePreview(null); }}
                   disabled={isFormDisabled}
                   className="text-red-500 hover:text-red-700"
                 >
