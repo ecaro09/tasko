@@ -108,13 +108,13 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setShowInstallPromptState(false);
   }, [setShowInstallPromptState]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     isOnline,
     showInstallPrompt: showInstallPromptState,
     installApp,
     closeInstallPrompt,
     showSplashScreen,
-  };
+  }), [isOnline, showInstallPromptState, installApp, closeInstallPrompt, showSplashScreen]);
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>;
 };
