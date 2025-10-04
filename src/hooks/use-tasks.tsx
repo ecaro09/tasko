@@ -349,7 +349,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   }, [isAuthenticated, user, updateTaskerRating]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     tasks: allTasks,
     loading,
     error,
@@ -357,7 +357,15 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     deleteTask,
     editTask,
     completeTaskWithReview,
-  };
+  }), [
+    allTasks,
+    loading,
+    error,
+    addTask,
+    deleteTask,
+    editTask,
+    completeTaskWithReview,
+  ]);
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;
 };
