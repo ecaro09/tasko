@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { toast } from 'sonner';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'; // Import the Capacitor plugin
+import { useSupabaseProfile } from './use-supabase-profile'; // New import
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -34,11 +35,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: false,
     loading: true,
   });
+  const supabaseProfileContext = useSupabaseProfile(); // Get context for Supabase profile
 
   React.useEffect(() => {
-    // The Capacitor FirebaseAuthentication plugin handles the redirect result internally.
-    // We no longer need getRedirectResult from Firebase JS SDK here.
-
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setAuthState({
@@ -55,7 +54,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
     return () => unsubscribe();
-  }, []); // Empty dependency array to ensure listeners are added/removed once
+  }, []);
 
   const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => {
     try {
@@ -65,6 +64,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         displayName: displayName,
         photoURL: null, // Can be updated later
       });
+
+      // Create initial Supabase profile entry
+      if (userCredential.user && supabaseProfileContext) {
+        await supabaseProfileContext.updateProfile(
+          userCredential.user.uid,
+          firstName || null,
+          lastName || null,
+          phone || null,
+          null, // No avatar URL initially
+          'user' // Default role
+        );
+      }
 
       toast.success("Account created successfully! You are now logged in.");
       console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
@@ -127,6 +138,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const newDisplayName = `${firstName} ${lastName}`.trim();
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
+
+      // Also update Supabase profile
+      if (supabaseProfileContext && authState.user) {
+        await supabaseProfileContext.updateProfile(
+          authState.user.uid,
+          firstName,
+          lastName,
+          phone,
+          photoURL || null,
+          supabaseProfileContext.profile?.role || 'user' // Keep existing role or default to 'user'
+        );
+      }
 
       toast.success("Profile updated successfully!");
       console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
