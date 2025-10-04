@@ -7,7 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithCredential, // Import signInWithCredential
+  signInWithCredential,
+  sendEmailVerification, // Import sendEmailVerification
 } from 'firebase/auth';
 import { toast } from 'sonner';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'; // Import the Capacitor plugin
@@ -25,6 +26,7 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   updateUserProfile: (firstName: string, lastName: string, phone: string, photoURL?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  sendVerificationEmail: () => Promise<void>; // Add sendVerificationEmail to context
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +58,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
+  const sendVerificationEmail = async () => {
+    if (!authState.user) {
+      toast.error("No user logged in to send verification email.");
+      return;
+    }
+    try {
+      await sendEmailVerification(authState.user);
+      toast.success("Verification email sent! Please check your inbox.");
+      console.log(`[Auth Log] Verification email sent to ${authState.user.email} at ${new Date().toISOString()}`);
+    } catch (error: any) {
+      console.error("Error sending verification email:", error);
+      toast.error(`Failed to send verification email: ${error.message}`);
+      console.log(`[Auth Log] Failed to send verification email to ${authState.user.email} at ${new Date().toISOString()} - Error: ${error.message}`);
+      throw error;
+    }
+  };
+
   const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -77,8 +96,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         );
       }
 
-      toast.success("Account created successfully! You are now logged in.");
-      console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
+      // Send email verification after successful signup
+      if (userCredential.user) {
+        await sendEmailVerification(userCredential.user);
+        toast.success("Account created successfully! A verification email has been sent to your inbox. Please verify your email to continue.");
+        console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}. Verification email sent.`);
+      } else {
+        toast.success("Account created successfully! You are now logged in.");
+        console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
+      }
     } catch (error: any) {
       console.error("Auth error caught during signup:", error);
       console.log(`[Auth Log] Signup failed (Email/Password) for user: ${email} at ${new Date().toISOString()} - Error: ${error.message}`);
@@ -189,7 +215,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle, sendVerificationEmail };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

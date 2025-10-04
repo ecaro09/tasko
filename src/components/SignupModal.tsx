@@ -31,7 +31,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
     setIsLoadingLocal(true);
     try {
       await signupWithEmailPassword(email, password, firstName, lastName, phone);
-      onClose();
+      onClose(); // Close the modal after successful signup and verification email sent
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
     } finally {
