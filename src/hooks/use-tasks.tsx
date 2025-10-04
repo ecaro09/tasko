@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // Import useTaskerProfile
+import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default image URLs
 
 export interface Task {
   id: string;
@@ -140,10 +141,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         budget: item.budget,
         posterId: item.poster_id,
         posterName: item.poster_name,
-        posterAvatar: item.poster_avatar || "https://randomuser.me/api/portraits/lego/1.jpg",
+        posterAvatar: item.poster_avatar || DEFAULT_AVATAR_URL, // Use default avatar URL
         datePosted: new Date(item.date_posted).toISOString().split('T')[0],
         status: item.status || 'open',
-        imageUrl: item.image_url || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none
+        imageUrl: item.image_url || DEFAULT_TASK_IMAGE_URL, // Use default task image URL
         assignedTaskerId: item.assigned_tasker_id || undefined,
         assignedOfferId: item.assigned_offer_id || undefined,
         rating: item.rating || undefined,
@@ -189,9 +190,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           poster_name: user.user_metadata?.first_name && user.user_metadata?.last_name
             ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
             : user.email || "Anonymous User",
-          poster_avatar: user.user_metadata?.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg",
+          poster_avatar: user.user_metadata?.avatar_url || DEFAULT_AVATAR_URL, // Use default avatar URL
           status: 'open',
-          image_url: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+          image_url: newTaskData.imageUrl || DEFAULT_TASK_IMAGE_URL, // Use default task image URL
         });
 
       if (insertError) throw insertError;
