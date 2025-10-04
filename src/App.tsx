@@ -37,12 +37,12 @@ const App = () => {
         <TooltipProvider>
           <BrowserRouter>
             <AuthProvider>
-              <PWAProvider>
-                <TasksProvider>
-                  <TaskerProfileProvider>
-                    <OffersProvider>
-                      <ChatProvider>
-                        <SupabaseProfileProvider> {/* Wrap with SupabaseProfileProvider */}
+              <SupabaseProfileProvider> {/* Moved SupabaseProfileProvider here */}
+                <PWAProvider>
+                  <TasksProvider>
+                    <TaskerProfileProvider>
+                      <OffersProvider>
+                        <ChatProvider>
                           <ModalProvider>
                             <div className="min-h-screen w-full flex flex-col items-center">
                               <Routes>
@@ -65,12 +65,12 @@ const App = () => {
                               </Routes>
                             </div>
                           </ModalProvider>
-                        </SupabaseProfileProvider>
-                      </ChatProvider>
-                    </OffersProvider>
-                  </TaskerProfileProvider>
-                </TasksProvider>
-              </PWAProvider>
+                        </ChatProvider>
+                      </OffersProvider>
+                    </TaskerProfileProvider>
+                  </TasksProvider>
+                </PWAProvider>
+              </SupabaseProfileProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
