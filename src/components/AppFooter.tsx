@@ -67,10 +67,11 @@ const AppFooter = () => {
           <div>
             <h3 className="text-xl font-semibold text-white mb-4">Follow Us</h3>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Facebook size={24} /></a>
+              {/* Removed placeholder social media links */}
+              {/* <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Facebook size={24} /></a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Twitter size={24} /></a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Instagram size={24} /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Linkedin size={24} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Linkedin size={24} /></a> */}
             </div>
           </div>
         </div>

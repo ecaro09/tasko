@@ -42,8 +42,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ searchTerm, onSearchTermChang
             Search
           </Button>
         </div>
+        {/* Removed placeholder links */}
         <p className="mt-6 text-sm md:text-base drop-shadow-md">
-          Popular: <a href="#" className="underline hover:text-green-200">Cleaning</a>, <a href="#" className="underline hover:text-green-200">Handyman</a>, <a href="#" className="underline hover:text-green-200">Moving</a>, <a href="#" className="underline hover:text-green-200">Delivery</a>
+          Popular: Cleaning, Handyman, Moving, Delivery
         </p>
       </div>
     </section>
