@@ -17,6 +17,7 @@ import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
 import TaskerDashboardPage from "./pages/TaskerDashboardPage";
+import FinishSignInPage from "./pages/FinishSignInPage"; // New import
 import { AuthProvider, useAuth } from "./hooks/use-auth"; // Import useAuth to get user for SupabaseProfileProvider
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -74,6 +75,7 @@ const App = () => {
                                   <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
                                   <Route path="/chat" element={<ChatPage />} />
                                   <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} />
+                                  <Route path="/finishSignIn" element={<FinishSignInPage />} /> {/* New route */}
                                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
