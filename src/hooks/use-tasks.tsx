@@ -6,6 +6,7 @@ import {
   orderBy,
   onSnapshot,
   DocumentData,
+  Timestamp, // Import Timestamp type
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -50,6 +51,17 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedTasks: Task[] = snapshot.docs.map((doc) => {
         const data = doc.data() as DocumentData;
+        
+        // Handle datePosted which can be a Firebase Timestamp or a string (from seeded data)
+        let datePostedDate: Date;
+        if (data.datePosted instanceof Timestamp) {
+          datePostedDate = data.datePosted.toDate();
+        } else if (typeof data.datePosted === 'string') {
+          datePostedDate = new Date(data.datePosted);
+        } else {
+          datePostedDate = new Date(); // Fallback to current date if unexpected type
+        }
+
         return {
           id: doc.id,
           title: data.title,
@@ -60,7 +72,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterId: data.posterId,
           posterName: data.posterName,
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
-          datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          datePosted: datePostedDate.toISOString().split('T')[0], // Format to YYYY-MM-DD
           status: data.status || 'open',
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
