@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -52,7 +52,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     reviewCount: data.review_count || 0,
   });
 
-  const fetchTaskerProfileById = async (id: string): Promise<TaskerProfile | null> => {
+  const fetchTaskerProfileById = useCallback(async (id: string): Promise<TaskerProfile | null> => {
     try {
       const { data, error: fetchError } = await supabase
         .from('tasker_profiles')
@@ -73,7 +73,24 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       toast.error(`Failed to load tasker profile: ${err.message}`);
       return null;
     }
-  };
+  }, []);
+
+  const fetchAllTaskerProfiles = useCallback(async () => {
+    try {
+      const { data, error: fetchAllError } = await supabase
+        .from('tasker_profiles')
+        .select('*');
+
+      if (fetchAllError) throw fetchAllError;
+
+      const profiles: TaskerProfile[] = data.map(mapSupabaseProfileToTaskerProfile);
+      setAllTaskerProfiles(profiles);
+    } catch (err: any) {
+      console.error("Error fetching all tasker profiles:", err);
+      setError("Failed to load all tasker profiles.");
+      toast.error("Failed to load all tasker profiles.");
+    }
+  }, []);
 
   React.useEffect(() => {
     const loadProfiles = async () => {
@@ -93,28 +110,14 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         setIsTasker(false);
       }
 
-      try {
-        const { data, error: fetchAllError } = await supabase
-          .from('tasker_profiles')
-          .select('*');
-
-        if (fetchAllError) throw fetchAllError;
-
-        const profiles: TaskerProfile[] = data.map(mapSupabaseProfileToTaskerProfile);
-        setAllTaskerProfiles(profiles);
-      } catch (err: any) {
-        console.error("Error fetching all tasker profiles:", err);
-        setError("Failed to load all tasker profiles.");
-        toast.error("Failed to load all tasker profiles.");
-      } finally {
-        setLoading(false);
-      }
+      await fetchAllTaskerProfiles(); // Fetch all profiles
+      setLoading(false);
     };
 
     loadProfiles();
-  }, [isAuthenticated, user, authLoading]);
+  }, [isAuthenticated, user, authLoading, fetchTaskerProfileById, fetchAllTaskerProfiles]);
 
-  const createOrUpdateTaskerProfile = async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating' | 'reviewCount'>) => {
+  const createOrUpdateTaskerProfile = useCallback(async (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating' | 'reviewCount'>) => {
     if (!isAuthenticated || !user || !userProfile) {
       toast.error("You must be logged in to manage a tasker profile.");
       return;
@@ -166,11 +169,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
         );
 
         // Re-fetch all profiles to update the list
-        const { data: allProfilesData, error: fetchAllError } = await supabase
-          .from('tasker_profiles')
-          .select('*');
-        if (fetchAllError) throw fetchAllError;
-        setAllTaskerProfiles(allProfilesData.map(mapSupabaseProfileToTaskerProfile));
+        await fetchAllTaskerProfiles();
       }
     } catch (err: any) {
       console.error("Error saving tasker profile:", err);
@@ -180,9 +179,9 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, user, userProfile, updateSupabaseUserProfile, fetchAllTaskerProfiles]);
 
-  const updateTaskerRating = async (taskerId: string, newRating: number) => {
+  const updateTaskerRating = useCallback(async (taskerId: string, newRating: number) => {
     setLoading(true);
     setError(null);
     try {
@@ -210,11 +209,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
       toast.success("Tasker rating updated!");
 
       // Re-fetch all profiles to update the list
-      const { data: allProfilesData, error: fetchAllError } = await supabase
-        .from('tasker_profiles')
-        .select('*');
-      if (fetchAllError) throw fetchAllError;
-      setAllTaskerProfiles(allProfilesData.map(mapSupabaseProfileToTaskerProfile));
+      await fetchAllTaskerProfiles();
 
       // If the updated tasker is the current user, update their profile state
       if (user?.id === taskerId) {
@@ -230,7 +225,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, fetchTaskerProfileById, fetchAllTaskerProfiles]);
 
   const value = {
     taskerProfile,
