@@ -108,7 +108,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
 
       // Only seed if no tasks were fetched initially
       if (fetchedTasks.length === 0) {
-        await seedInitialTasks(); // Call seed function
+        // Call seed function, which is also memoized
+        // The seed function will call fetchTasks again after seeding
+        // to update the state, so no need to set loading/error here.
       }
 
     } catch (err: any) {
@@ -184,11 +186,21 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         // After seeding, re-fetch tasks to display them
         await fetchTasks(); // This will trigger a re-fetch
       }
-    } // Added missing closing curly brace here
+    }
   }, [fetchTasks]); // seedInitialTasks depends on fetchTasks
 
   React.useEffect(() => {
     fetchTasks(); // Initial fetch
+
+    // Call seed function after initial fetch, but only if no tasks were found
+    // This ensures seeding happens only once and only if the table is empty
+    const checkAndSeed = async () => {
+      const { data: existingTasks } = await supabase.from('tasks').select('id');
+      if (existingTasks && existingTasks.length === 0) {
+        await seedInitialTasks();
+      }
+    };
+    checkAndSeed();
 
     const subscription = supabase
       .channel('public:tasks')
@@ -201,7 +213,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [fetchTasks]); // Now depends on memoized fetchTasks
+  }, [fetchTasks, seedInitialTasks]); // Now depends on memoized fetchTasks and seedInitialTasks
 
   const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => {
     if (!isAuthenticated || !user || !currentUserProfile) {
