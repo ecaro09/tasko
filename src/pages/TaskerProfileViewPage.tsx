@@ -60,12 +60,7 @@ const TaskerProfileViewPage: React.FC = () => {
     }
 
     try {
-      const participantIds = [user.id, tasker.userId];
-      const participantNames = [
-        `${currentUserProfile.first_name || ''} ${currentUserProfile.last_name || ''}`.trim() || user.email || 'You',
-        tasker.displayName
-      ];
-      const roomId = await createChatRoom(participantIds, participantNames);
+      const roomId = await createChatRoom(tasker.userId); // Use simplified createChatRoom
       if (roomId) {
         navigate(`/chat?roomId=${roomId}`);
       }

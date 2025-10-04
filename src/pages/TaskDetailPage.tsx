@@ -90,7 +90,7 @@ const TaskDetailPage: React.FC = () => {
     }
   };
 
-  const handleChatWithParticipant = async (participantId: string, participantName: string) => {
+  const handleChatWithParticipant = async (participantId: string) => { // Simplified to take only ID
     if (!isAuthenticated || !user || !currentUserProfile) {
       toast.error("You must be logged in to start a chat.");
       return;
@@ -102,12 +102,7 @@ const TaskDetailPage: React.FC = () => {
     }
 
     try {
-      const participantIds = [user.id, participantId];
-      const participantNames = [
-        `${currentUserProfile.first_name || ''} ${currentUserProfile.last_name || ''}`.trim() || user.email || 'You',
-        participantName
-      ];
-      const roomId = await createChatRoom(participantIds, participantNames);
+      const roomId = await createChatRoom(participantId); // Use simplified createChatRoom
       if (roomId) {
         navigate(`/chat?roomId=${roomId}`);
       }
@@ -183,7 +178,7 @@ const TaskDetailPage: React.FC = () => {
                 )}
                 {isAssignedTasker && (
                   <Button
-                    onClick={() => handleChatWithParticipant(task.posterId, task.posterName)}
+                    onClick={() => handleChatWithParticipant(task.posterId)}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-4"
                   >
                     <MessageSquare size={20} /> Chat with Client
@@ -241,7 +236,7 @@ const TaskDetailPage: React.FC = () => {
                             <Button
                               size="sm"
                               className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-2"
-                              onClick={() => handleChatWithParticipant(offer.taskerId, offer.taskerName)}
+                              onClick={() => handleChatWithParticipant(offer.taskerId)}
                             >
                               <MessageSquare size={16} /> Chat with Tasker
                             </Button>

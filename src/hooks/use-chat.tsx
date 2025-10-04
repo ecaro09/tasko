@@ -2,11 +2,13 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
+import { useSupabaseProfile } from './use-supabase-profile'; // Import useSupabaseProfile
 
 export interface ChatRoom {
   id: string;
   participants: string[]; // Array of user_ids
-  participantNames: string[]; // Array of display names
+  participantNames: string[]; // Array of display names (e.g., "John Doe")
+  participantAvatars: (string | null)[]; // Array of avatar URLs
   lastMessage?: string;
   lastMessageTimestamp?: string;
   createdAt: string;
@@ -26,7 +28,7 @@ interface ChatContextType {
   loadingRooms: boolean;
   loadingMessages: boolean;
   error: string | null;
-  createChatRoom: (participantIds: string[], participantNames: string[]) => Promise<string | null>;
+  createChatRoom: (targetParticipantId: string) => Promise<string | null>; // Simplified to take target ID
   getMessagesForRoom: (roomId: string) => Promise<void>;
   sendMessage: (roomId: string, text: string) => Promise<void>;
 }
@@ -35,12 +37,21 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { profile: currentUserProfile, fetchProfile: fetchSupabaseProfile } = useSupabaseProfile(); // Get current user profile and fetch function
   const [chatRooms, setChatRooms] = React.useState<ChatRoom[]>([]);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [loadingRooms, setLoadingRooms] = React.useState(true);
   const [loadingMessages, setLoadingMessages] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeRoomId, setActiveRoomId] = React.useState<string | null>(null);
+
+  // Helper to get display name from profile
+  const getDisplayName = (profile: any) => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    return profile?.email || "Unknown User";
+  };
 
   // Fetch chat rooms for the current user
   React.useEffect(() => {
@@ -68,13 +79,24 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      const fetchedRooms: ChatRoom[] = data.map((item: any) => ({
-        id: item.id,
-        participants: item.participants,
-        participantNames: item.participant_names,
-        lastMessage: item.last_message || undefined,
-        lastMessageTimestamp: item.last_message_timestamp ? new Date(item.last_message_timestamp).toISOString() : undefined,
-        createdAt: new Date(item.created_at).toISOString(),
+      const fetchedRooms: ChatRoom[] = await Promise.all(data.map(async (item: any) => {
+        const participantIds = item.participants as string[];
+        const participantProfiles = await Promise.all(
+          participantIds.map(id => fetchSupabaseProfile(id))
+        );
+
+        const participantNames = participantProfiles.map(p => getDisplayName(p));
+        const participantAvatars = participantProfiles.map(p => p?.avatar_url || null);
+
+        return {
+          id: item.id,
+          participants: participantIds,
+          participantNames: participantNames,
+          participantAvatars: participantAvatars,
+          lastMessage: item.last_message || undefined,
+          lastMessageTimestamp: item.last_message_timestamp ? new Date(item.last_message_timestamp).toISOString() : undefined,
+          createdAt: new Date(item.created_at).toISOString(),
+        };
       }));
       setChatRooms(fetchedRooms);
       setLoadingRooms(false);
@@ -97,7 +119,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [isAuthenticated, user, authLoading]);
+  }, [isAuthenticated, user, authLoading, fetchSupabaseProfile]);
 
   // Fetch messages for the active chat room
   React.useEffect(() => {
@@ -152,11 +174,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [activeRoomId, isAuthenticated, user]);
 
-  const createChatRoom = async (participantIds: string[], participantNames: string[]): Promise<string | null> => {
-    if (!isAuthenticated || !user) {
+  const createChatRoom = async (targetParticipantId: string): Promise<string | null> => {
+    if (!isAuthenticated || !user || !currentUserProfile) {
       toast.error("You must be logged in to create a chat room.");
       return null;
     }
+
+    const participantIds = [user.id, targetParticipantId];
 
     // Check if a room already exists between these participants
     const { data: existingRooms, error: checkError } = await supabase
@@ -178,11 +202,30 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     try {
+      // Fetch profiles for both participants
+      const userProfile = currentUserProfile; // Already available
+      const targetProfile = await fetchSupabaseProfile(targetParticipantId);
+
+      if (!userProfile || !targetProfile) {
+        toast.error("Could not fetch all participant profiles.");
+        return null;
+      }
+
+      const participantNames = [
+        getDisplayName(userProfile),
+        getDisplayName(targetProfile)
+      ];
+      const participantAvatars = [
+        userProfile.avatar_url || null,
+        targetProfile.avatar_url || null
+      ];
+
       const { data, error: insertError } = await supabase
         .from('chat_rooms')
         .insert({
           participants: participantIds,
           participant_names: participantNames,
+          participant_avatars: participantAvatars, // Store avatars
         })
         .select()
         .single();

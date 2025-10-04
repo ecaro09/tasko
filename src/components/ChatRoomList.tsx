@@ -35,27 +35,14 @@ const ChatRoomList: React.FC<ChatRoomListProps> = ({ onSelectRoom, activeRoomId 
 
   const getOtherParticipantInfo = (room: ChatRoom) => {
     if (!user) return { name: "Unknown", avatar: undefined };
-    const otherParticipantId = room.participants.find(pId => pId !== user.id);
-    const otherParticipantName = room.participantNames.find(pName => !pName.includes(user.user_metadata?.first_name || '')); // Simple heuristic
     
-    // Fallback to a more robust way if participantNames are ordered consistently
     const userIndex = room.participants.indexOf(user.id);
-    let displayParticipantName = "Unknown User";
-    let displayParticipantAvatar = undefined;
+    const otherParticipantIndex = userIndex === 0 ? 1 : 0; // Assuming only two participants
 
-    if (otherParticipantId) {
-      const otherIndex = room.participants.indexOf(otherParticipantId);
-      if (room.participantNames && room.participantNames[otherIndex]) {
-        displayParticipantName = room.participantNames[otherIndex];
-      }
-      // For avatar, we'd ideally fetch from profiles table, but for now, use a placeholder
-      // or if we stored avatar_urls in participant_names array (less ideal)
-    }
+    const name = room.participantNames[otherParticipantIndex] || "Unknown User";
+    const avatar = room.participantAvatars[otherParticipantIndex] || undefined;
 
-    return {
-      name: displayParticipantName,
-      avatar: undefined, // Placeholder, actual avatar fetching would be more complex
-    };
+    return { name, avatar };
   };
 
   return (

@@ -29,28 +29,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, currentRoom }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const getParticipantInfo = (senderId: string) => {
+    if (!currentRoom || !user) return { name: "Unknown", avatar: undefined };
+    
+    const senderIndex = currentRoom.participants.indexOf(senderId);
+    if (senderIndex !== -1) {
+      const name = currentRoom.participantNames[senderIndex] || "Unknown User";
+      const avatar = currentRoom.participantAvatars[senderIndex] || undefined;
+      return { name, avatar };
+    }
+    return { name: "Unknown", avatar: undefined };
+  };
+
   const handleSendMessage = async () => {
     if (newMessage.trim() && user) {
       await sendMessage(roomId, newMessage);
       setNewMessage('');
     }
-  };
-
-  const getParticipantName = (senderId: string) => {
-    if (!currentRoom || !user) return "Unknown";
-    if (senderId === user.id) return "You";
-
-    const senderIndex = currentRoom.participants.indexOf(senderId);
-    if (senderIndex !== -1 && currentRoom.participantNames[senderIndex]) {
-      return currentRoom.participantNames[senderIndex];
-    }
-    return "Other User";
-  };
-
-  const getParticipantAvatar = (senderId: string) => {
-    // In a real app, you'd fetch this from user profiles
-    // For now, a simple placeholder or a generic icon
-    return undefined;
   };
 
   if (loadingMessages) {
@@ -75,50 +70,55 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, currentRoom }) => {
             <p className="text-sm">Say hello!</p>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex items-end gap-2",
-                message.senderId === user?.id ? "justify-end" : "justify-start"
-              )}
-            >
-              {message.senderId !== user?.id && (
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={getParticipantAvatar(message.senderId)} alt={getParticipantName(message.senderId)} />
-                  <AvatarFallback className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                    {getParticipantName(message.senderId).charAt(0).toUpperCase() || <UserIcon size={14} />}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              <Card
+          messages.map((message) => {
+            const { name: senderName, avatar: senderAvatar } = getParticipantInfo(message.senderId);
+            const isCurrentUser = message.senderId === user?.id;
+
+            return (
+              <div
+                key={message.id}
                 className={cn(
-                  "max-w-[70%] p-3 rounded-lg",
-                  message.senderId === user?.id
-                    ? "bg-[hsl(var(--primary-color))] text-white rounded-br-none"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-none"
+                  "flex items-end gap-2",
+                  isCurrentUser ? "justify-end" : "justify-start"
                 )}
               >
-                <CardContent className="p-0">
-                  <p className="text-sm">{message.text}</p>
-                  <span className={cn(
-                    "block text-xs mt-1",
-                    message.senderId === user?.id ? "text-gray-200" : "text-gray-500 dark:text-gray-400"
-                  )}>
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </CardContent>
-              </Card>
-              {message.senderId === user?.id && (
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={getParticipantAvatar(message.senderId)} alt={getParticipantName(message.senderId)} />
-                  <AvatarFallback className="bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-200">
-                    {getParticipantName(message.senderId).charAt(0).toUpperCase() || <UserIcon size={14} />}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-            </div>
-          ))
+                {!isCurrentUser && (
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={senderAvatar} alt={senderName} />
+                    <AvatarFallback className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      {senderName.charAt(0).toUpperCase() || <UserIcon size={14} />}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <Card
+                  className={cn(
+                    "max-w-[70%] p-3 rounded-lg",
+                    isCurrentUser
+                      ? "bg-[hsl(var(--primary-color))] text-white rounded-br-none"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-none"
+                  )}
+                >
+                  <CardContent className="p-0">
+                    <p className="text-sm">{message.text}</p>
+                    <span className={cn(
+                      "block text-xs mt-1",
+                      isCurrentUser ? "text-gray-200" : "text-gray-500 dark:text-gray-400"
+                    )}>
+                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </CardContent>
+                </Card>
+                {isCurrentUser && (
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={senderAvatar} alt={senderName} />
+                    <AvatarFallback className="bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-200">
+                      {senderName.charAt(0).toUpperCase() || <UserIcon size={14} />}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
