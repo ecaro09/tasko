@@ -118,7 +118,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
   }, [fetchOffers]); // Depend on memoized fetchOffers
 
-  const addOffer = async (
+  const addOffer = useCallback(async (
     taskId: string,
     clientId: string,
     offerAmount: number,
@@ -155,13 +155,13 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setLoadingOffers(false); // Use loadingOffers
     }
-  };
+  }, [isAuthenticated, user, isTasker, currentUserProfile, setLoadingOffers]);
 
   const getOffersForTask = (taskId: string): Offer[] => {
     return allOffers.filter(offer => offer.taskId === taskId);
   };
 
-  const acceptOffer = async (offerId: string, taskId: string) => {
+  const acceptOffer = useCallback(async (offerId: string, taskId: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to accept an offer.");
       return;
@@ -215,9 +215,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setLoadingOffers(false); // Use loadingOffers
     }
-  };
+  }, [isAuthenticated, user, setLoadingOffers]);
 
-  const rejectOffer = async (offerId: string) => {
+  const rejectOffer = useCallback(async (offerId: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to reject an offer.");
       return;
@@ -242,9 +242,9 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setLoadingOffers(false); // Use loadingOffers
     }
-    };
+    }, [isAuthenticated, user, setLoadingOffers]);
 
-  const withdrawOffer = async (offerId: string) => {
+  const withdrawOffer = useCallback(async (offerId: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to withdraw an offer.");
       return;
@@ -269,7 +269,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setLoadingOffers(false); // Use loadingOffers
     }
-  };
+  }, [isAuthenticated, user, setLoadingOffers]);
 
   const value = {
     offers: allOffers,
