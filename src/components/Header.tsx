@@ -5,6 +5,7 @@ import { useModal } from './ModalProvider';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from 'lucide-react';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -14,10 +15,12 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
   const { openLoginModal, openSignupModal } = useModal();
   const { user } = useAuth();
+  const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
 
-  const userFirstName = user?.user_metadata?.first_name as string | undefined;
-  const userLastName = user?.user_metadata?.last_name as string | undefined;
-  const userAvatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  // Use profile data if available, fallback to user_metadata or email
+  const userFirstName = profile?.first_name || user?.user_metadata?.first_name as string | undefined;
+  const userLastName = profile?.last_name || user?.user_metadata?.last_name as string | undefined;
+  const userAvatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url as string | undefined;
 
   const displayUserName = userFirstName && userLastName
     ? `${userFirstName} ${userLastName}`
