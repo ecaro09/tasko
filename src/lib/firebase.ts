@@ -1,82 +1,53 @@
-import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, connectAuthEmulator, sendSignInLinkToEmail } from 'firebase/auth'; // Added connectAuthEmulator
-import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { toast } from 'sonner';
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { toast } from 'sonner'; // Import toast for error messages
 
-let firebaseApp: FirebaseApp;
-export let auth: Auth;
-export let db: Firestore;
-export let storage: FirebaseStorage;
-
-export const actionCodeSettings = {
-  url: import.meta.env.VITE_FIREBASE_SIGN_IN_REDIRECT_URL || `${window.location.origin}/finishSignIn`,
-  handleCodeInApp: true,
-  android: {
-    packageName: "com.tasko.app",
-    installApp: true,
-    minimumVersion: "12"
-  },
-  ios: {
-    bundleId: "com.tasko.app",
-  },
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-export const initializeFirebaseClient = () => {
-  if (typeof window === 'undefined') {
-    console.warn("Attempted to initialize Firebase on server-side. Skipping.");
-    return;
-  }
+// Validate Firebase configuration
+const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
 
-  const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-  };
+if (missingKeys.length > 0) {
+  const errorMessage = `Firebase initialization failed: Missing environment variables for: ${missingKeys.join(', ')}. Please check your .env file.`;
+  console.error(errorMessage);
+  toast.error(errorMessage);
+  // Prevent further execution if critical config is missing
+  throw new Error(errorMessage);
+}
 
-  const requiredConfigKeys = [
-    'apiKey',
-    'authDomain',
-    'projectId',
-    'appId',
-    'storageBucket',
-    'messagingSenderId',
-  ];
-  const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
+// Log the API key to check if it's being loaded
+console.log("Firebase API Key:", firebaseConfig.apiKey ? "Loaded" : "Not Loaded", firebaseConfig.apiKey);
 
-  if (missingKeys.length > 0) {
-    const errorMessage = `Firebase initialization failed: Missing environment variables for: ${missingKeys.join(', ')}. Please check your .env file.`;
-    console.error(errorMessage);
-    toast.error(errorMessage);
-    throw new Error(errorMessage);
-  }
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-  firebaseApp = initializeApp(firebaseConfig);
-  auth = getAuth(firebaseApp);
-  db = getFirestore(firebaseApp);
-  storage = getStorage(firebaseApp);
+// Initialize Firebase services
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-  // Connect to Firebase Auth Emulator if running on localhost:8080
-  if (location.host === "localhost:8080") {
-    connectAuthEmulator(auth, "http://127.0.0.1:9099");
-    console.log("Connected to Firebase Auth Emulator at http://127.0.0.1:9099");
-  }
-
-  enableIndexedDbPersistence(db)
-    .then(() => {
-      console.log("Firestore offline persistence enabled successfully!");
-    })
-    .catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn("Firestore persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.");
-      } else if (err.code === 'unimplemented') {
-        console.warn("Firestore persistence failed: The current browser does not support all of the features required to enable persistence.");
-      } else {
-        console.error("Firestore persistence failed for unknown reason:", err);
-      }
-    });
-};
+// Enable Firestore offline persistence
+enableIndexedDbPersistence(db)
+  .then(() => {
+    console.log("Firestore offline persistence enabled successfully!");
+  })
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      // Multiple tabs open, persistence can only be enabled in one tab at a time.
+      console.warn("Firestore persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.");
+    } else if (err.code === 'unimplemented') {
+      // The current browser does not support all of the features required to enable persistence.
+      console.warn("Firestore persistence failed: The current browser does not support all of the features required to enable persistence.");
+    } else {
+      console.error("Firestore persistence failed for unknown reason:", err);
+    }
+  });

@@ -2,31 +2,42 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { db } from '@/lib/firebase';
 import {
   collection,
+  addDoc,
   query,
   orderBy,
   onSnapshot,
+  serverTimestamp,
   DocumentData,
-  Timestamp, // Import Timestamp type
+  getDocs,
+  deleteDoc, // Import deleteDoc
+  doc, // Import doc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
-import {
-  Task, // Import Task interface
-  addTaskFirestore,
-  editTaskFirestore,
-  deleteTaskFirestore,
-  completeTaskWithReviewFirestore,
-} from '@/lib/task-firestore'; // Import new utility functions
-import { seedInitialTasks } from '@/lib/seed-tasks'; // Import seed function from new location
+
+export interface Task {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  location: string;
+  budget: number;
+  posterId: string;
+  posterName: string;
+  posterAvatar: string;
+  datePosted: string;
+  status: 'open' | 'assigned' | 'completed';
+  imageUrl?: string;
+  assignedTaskerId?: string; // New field for the assigned tasker's ID
+  assignedOfferId?: string; // New field for the accepted offer's ID
+}
 
 interface UseTasksContextType {
-  tasks: Task[];
+  tasks: Task[]; // This will now be all tasks
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }) => Promise<void>; // Updated addTask signature
-  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => Promise<void>;
-  deleteTask: (taskId: string) => Promise<void>;
-  completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>; // Added deleteTask
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -37,9 +48,66 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const [allTasks, setAllTasks] = React.useState<Task[]>([]);
+  const [allTasks, setAllTasks] = React.useState<Task[]>([]
+);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Function to seed initial tasks
+  const seedInitialTasks = async () => {
+    const tasksCollectionRef = collection(db, 'tasks');
+    const snapshot = await getDocs(tasksCollectionRef);
+
+    if (snapshot.empty) {
+      console.log("Database is empty, seeding initial marketing tasks...");
+      const initialTasks = [
+        {
+          title: "Social Media Manager for Local Business",
+          category: "marketing",
+          description: "Looking for a Pinoy/Pinay social media expert to manage our Facebook and Instagram pages. Must be familiar with local trends and audience engagement. Experience with Canva is a plus!",
+          location: "Metro Manila",
+          budget: 5000,
+          posterId: "seed-user-1",
+          posterName: "Maria Santos",
+          posterAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
+          datePosted: serverTimestamp(),
+          status: "open",
+          imageUrl: "https://images.unsplash.com/photo-1557804506-669a67965da0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        },
+        {
+          title: "Flyer Distribution for Sari-Sari Store",
+          category: "marketing",
+          description: "Need help distributing flyers for our new sari-sari store opening in Cebu. Must be reliable and know the local neighborhoods well. Target areas: Lapu-Lapu City, Mandaue City.",
+          location: "Cebu City",
+          budget: 1200,
+          posterId: "seed-user-2",
+          posterName: "Juan Dela Cruz",
+          posterAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
+          datePosted: serverTimestamp(),
+          status: "open",
+          imageUrl: "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        },
+        {
+          title: "Online Content Creator for Pinoy Food Blog",
+          category: "marketing",
+          description: "Seeking a creative Pinay content creator to produce engaging short videos and articles for our Filipino food blog. Knowledge of popular Filipino dishes and food styling is a must!",
+          location: "Remote (Philippines)",
+          budget: 3500,
+          posterId: "seed-user-3",
+          posterName: "Aling Nena",
+          posterAvatar: "https://randomuser.me/api/portraits/women/68.jpg",
+          datePosted: serverTimestamp(),
+          status: "open",
+          imageUrl: "https://images.unsplash.com/photo-1504711432028-ee2611f5817a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        },
+      ];
+
+      for (const task of initialTasks) {
+        await addDoc(tasksCollectionRef, task);
+      }
+      toast.info("Initial marketing tasks added!");
+    }
+  };
 
   React.useEffect(() => {
     setLoading(true);
@@ -51,17 +119,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedTasks: Task[] = snapshot.docs.map((doc) => {
         const data = doc.data() as DocumentData;
-        
-        // Handle datePosted which can be a Firebase Timestamp or a string (from seeded data)
-        let datePostedDate: Date;
-        if (data.datePosted instanceof Timestamp) {
-          datePostedDate = data.datePosted.toDate();
-        } else if (typeof data.datePosted === 'string') {
-          datePostedDate = new Date(data.datePosted);
-        } else {
-          datePostedDate = new Date(); // Fallback to current date if unexpected type
-        }
-
         return {
           id: doc.id,
           title: data.title,
@@ -72,13 +129,11 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterId: data.posterId,
           posterName: data.posterName,
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
-          datePosted: datePostedDate.toISOString().split('T')[0], // Format to YYYY-MM-DD
+          datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
-          rating: data.rating || undefined, // Include rating
-          review: data.review || undefined, // Include review
         };
       });
       setAllTasks(fetchedTasks);
@@ -98,20 +153,28 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }) => {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId'>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
     }
-    await addTaskFirestore(newTaskData, user);
-  };
 
-  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => {
-    if (!isAuthenticated || !user) {
-      toast.error("You must be logged in to edit a task.");
-      return;
+    try {
+      await addDoc(collection(db, 'tasks'), {
+        ...newTaskData,
+        posterId: user.uid,
+        posterName: user.displayName || user.email || "Anonymous User",
+        posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
+        datePosted: serverTimestamp(),
+        status: 'open',
+        imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
+      });
+      toast.success("Task posted successfully!");
+    } catch (err: any) {
+      console.error("Error adding task:", err);
+      toast.error(`Failed to post task: ${err.message}`);
+      throw err;
     }
-    await editTaskFirestore(taskId, updatedTask, user);
   };
 
   const deleteTask = async (taskId: string) => {
@@ -119,25 +182,24 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error("You must be logged in to delete a task.");
       return;
     }
-    await deleteTaskFirestore(taskId, user);
-  };
 
-  const completeTaskWithReview = async (taskId: string, rating: number, review: string) => {
-    if (!isAuthenticated || !user) {
-      toast.error("You must be logged in to complete and review a task.");
-      return;
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+      await deleteDoc(taskRef);
+      toast.success("Task deleted successfully!");
+    } catch (err: any) {
+      console.error("Error deleting task:", err);
+      toast.error(`Failed to delete task: ${err.message}`);
+      throw err;
     }
-    await completeTaskWithReviewFirestore(taskId, rating, review, user);
   };
 
   const value = {
-    tasks: allTasks,
+    tasks: allTasks, // Expose all tasks
     loading,
     error,
     addTask,
-    editTask,
     deleteTask,
-    completeTaskWithReview,
   };
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;

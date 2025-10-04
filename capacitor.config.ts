@@ -1,13 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tasko.application', // Make sure this matches your App ID
+  appId: 'com.example.tasko',
   appName: 'Tasko',
-  webDir: 'dist',
-  plugins: {
-    // FirebaseAuthentication plugin configuration removed as Firebase Auth is no longer used.
-    // Supabase handles authentication directly.
-  },
+  webDir: 'dist'
 };
 
 export default config;

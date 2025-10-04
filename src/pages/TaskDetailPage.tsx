@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
-import { useOffers } from '@/hooks/use-offers';
-import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offer interface
+import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
 import { useModal } from '@/components/ModalProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XC
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
-import { useChat } from '@/hooks/use-chat'; // New import for useChat
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +20,6 @@ const TaskDetailPage: React.FC = () => {
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { createChatRoom } = useChat(); // Use createChatRoom from useChat
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -43,35 +40,10 @@ const TaskDetailPage: React.FC = () => {
 
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
   const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
-  const canChatWithPoster = isAuthenticated && user?.uid !== task.posterId; // Can chat if authenticated and not the poster
 
   const handleMakeOfferClick = () => {
     if (task) {
       openMakeOfferModal(task);
-    }
-  };
-
-  const handleChatWithPoster = async () => {
-    if (!user || !task) {
-      toast.error("User or task information is missing.");
-      return;
-    }
-    if (user.uid === task.posterId) {
-      toast.info("You cannot chat with yourself.");
-      return;
-    }
-
-    try {
-      const roomId = await createChatRoom(
-        [user.uid, task.posterId],
-        [user.displayName || user.email || "You", task.posterName]
-      );
-      if (roomId) {
-        navigate('/chat'); // Navigate to the chat page
-      }
-    } catch (error) {
-      console.error("Failed to create or navigate to chat room:", error);
-      toast.error("Failed to start chat.");
     }
   };
 
@@ -167,17 +139,12 @@ const TaskDetailPage: React.FC = () => {
                   </div>
                 </div>
                 {canMakeOffer && (
-                  <Button onClick={handleMakeOfferClick} className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 mb-2">
+                  <Button onClick={handleMakeOfferClick} className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2">
                     <User size={20} /> Make an Offer
                   </Button>
                 )}
-                {canChatWithPoster && (
-                  <Button onClick={handleChatWithPoster} variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                    <MessageSquare size={20} /> Chat with Poster
-                  </Button>
-                )}
                 {!isAuthenticated && (
-                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer or chat.</p>
+                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer.</p>
                 )}
                 {isAuthenticated && !isTasker && !isTaskPoster && (
                   <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>

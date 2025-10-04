@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useOffers } from '@/hooks/use-offers';
 import { toast } from 'sonner';
-import { Task } from '@/lib/task-firestore'; // Import Task interface from new location
+import { Task } from '@/hooks/use-tasks'; // Import Task interface
 
 interface MakeOfferModalProps {
   isOpen: boolean;
