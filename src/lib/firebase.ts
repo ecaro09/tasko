@@ -57,3 +57,18 @@ enableIndexedDbPersistence(db)
       console.error("Firestore persistence failed for unknown reason:", err);
     }
   });
+
+// Export actionCodeSettings for email link sign-in
+export const actionCodeSettings = {
+  url: import.meta.env.VITE_FIREBASE_SIGN_IN_REDIRECT_URL || "http://localhost:8080/finishSignIn", // Default to localhost if not set
+  handleCodeInApp: true,
+  android: {
+    packageName: "com.tasko.app",
+    installApp: true,
+    minimumVersion: "12"
+  },
+  ios: {
+    bundleId: "com.tasko.app",
+  },
+  // dynamicLinkDomain: "tasko.page.link" // Optional: if you have a custom dynamic link domain
+};
