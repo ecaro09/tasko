@@ -1,20 +1,33 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import {
+  signOut,
+  User as FirebaseUser,
+  updateProfile,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithCredential,
+  sendEmailVerification,
+  sendSignInLinkToEmail, // New import
+} from 'firebase/auth';
 import { toast } from 'sonner';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { auth, actionCodeSettings } from '@/lib/firebase'; // Ensure auth and actionCodeSettings are imported
 
 interface AuthState {
-  user: SupabaseUser | null;
+  user: FirebaseUser | null;
   isAuthenticated: boolean;
   loading: boolean;
 }
 
 interface AuthContextType extends AuthState {
-  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string) => Promise<FirebaseUser | null>; // Modified return type
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (firstName: string, lastName: string, avatarUrl?: string) => Promise<void>;
+  updateUserProfile: (firstName: string, lastName: string, photoURL?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
+  sendLoginLinkToEmail: (email: string) => Promise<void>; // New function signature
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,72 +40,68 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   React.useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
         setAuthState({
-          user: session.user,
+          user,
           isAuthenticated: true,
           loading: false,
         });
-        console.log(`[Auth Log] User session active: ${session.user.id} (${session.user.email}) - Event: ${event} at ${new Date().toISOString()}`);
       } else {
         setAuthState({
           user: null,
           isAuthenticated: false,
           loading: false,
         });
-        console.log(`[Auth Log] No user session - Event: ${event} at ${new Date().toISOString()}`);
       }
     });
-
-    // Initial check for session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setAuthState({
-          user: session.user,
-          isAuthenticated: true,
-          loading: false,
-        });
-        console.log(`[Auth Log] Initial session check: User ${session.user.id} (${session.user.email}) active at ${new Date().toISOString()}`);
-      } else {
-        setAuthState(prev => ({ ...prev, loading: false }));
-        console.log(`[Auth Log] Initial session check: No user active at ${new Date().toISOString()}`);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
-  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string) => {
+  const sendVerificationEmail = async () => {
+    if (!authState.user) {
+      toast.error("No user logged in to send verification email.");
+      return;
+    }
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            avatar_url: null, // Default avatar
-            phone: null,
-            role: 'user', // Default role
-            rating: 0,
-            is_verified_tasker: false,
-          },
-        },
+      await sendEmailVerification(authState.user);
+      toast.success("Verification email sent! Please check your inbox.");
+      console.log(`[Auth Log] Verification email sent to ${authState.user.email} at ${new Date().toISOString()}`);
+    } catch (error: any) {
+      console.error("Error sending verification email:", error);
+      toast.error(`Failed to send verification email: ${error.message}`);
+      console.log(`[Auth Log] Failed to send verification email to ${authState.user.email} at ${new Date().toISOString()} - Error: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string): Promise<FirebaseUser | null> => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const displayName = `${firstName || ''} ${lastName || ''}`.trim();
+      await updateProfile(userCredential.user, {
+        displayName: displayName,
+        photoURL: null, // Can be updated later
       });
 
-      if (error) throw error;
-      if (!data.user) throw new Error("User data not returned after signup.");
-
-      toast.success("Account created successfully! Please check your email to verify your account.");
-      console.log(`[Auth Log] Signup successful (Email/Password) for user: ${data.user.email} at ${new Date().toISOString()}`);
+      // Send email verification after successful signup
+      if (userCredential.user) {
+        await sendEmailVerification(userCredential.user);
+        toast.success("Account created successfully! A verification email has been sent to your inbox. Please verify your email to continue.");
+        console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}. Verification email sent.`);
+        return userCredential.user; // Return the user object
+      } else {
+        toast.success("Account created successfully! You are now logged in.");
+        console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
+        return null;
+      }
     } catch (error: any) {
       console.error("Auth error caught during signup:", error);
       console.log(`[Auth Log] Signup failed (Email/Password) for user: ${email} at ${new Date().toISOString()} - Error: ${error.message}`);
       let errorMessage = "Failed to create account.";
-      if (error.message.includes('User already registered')) {
-        errorMessage = "This email is already registered. Please log in.";
-      } else if (error.message.includes('Password should be at least 6 characters')) {
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already in use.";
+      } else if (error.code === 'auth/weak-password') {
         errorMessage = "Password should be at least 6 characters.";
       } else if (error.message) {
         errorMessage = error.message;
@@ -104,22 +113,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithEmailPassword = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-      if (!data.user) throw new Error("User data not returned after login.");
-
+      await signInWithEmailAndPassword(auth, email, password);
       toast.success("Logged in successfully!");
-      console.log(`[Auth Log] Login successful (Email/Password) for user: ${data.user.email} at ${new Date().toISOString()}`);
+      console.log(`[Auth Log] Login successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
     } catch (error: any) {
       console.error("Auth error caught during login:", error);
       console.log(`[Auth Log] Login failed (Email/Password) for user: ${email} at ${new Date().toISOString()} - Error: ${error.message}`);
       let errorMessage = "Failed to log in.";
-      if (error.message.includes('Invalid login credentials')) {
+      if (error.code === 'auth/invalid-credential') {
         errorMessage = "Invalid email or password.";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "No user found with this email.";
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = "Incorrect password.";
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -130,8 +136,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await signOut(auth);
       toast.success("Logged out successfully!");
       console.log(`[Auth Log] Logout successful at ${new Date().toISOString()}`);
     } catch (error: any) {
@@ -141,69 +146,68 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateUserProfile = async (firstName: string, lastName: string, avatarUrl?: string) => {
+  const updateUserProfile = async (firstName: string, lastName: string, photoURL?: string) => {
     if (!authState.user) {
       toast.error("You must be logged in to update your profile.");
       return;
     }
     try {
-      const { data, error } = await supabase.auth.updateUser({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          avatar_url: avatarUrl,
-        },
-      });
+      const newDisplayName = `${firstName} ${lastName}`.trim();
+      await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
 
-      if (error) throw error;
-      if (data.user) {
-        setAuthState(prev => ({
-          ...prev,
-          user: data.user,
-        }));
-        toast.success("Profile updated successfully!");
-        console.log(`[Auth Log] Profile update successful for user: ${data.user.id} at ${new Date().toISOString()}`);
-      }
+      toast.success("Firebase profile updated successfully!");
+      console.log(`[Auth Log] Firebase profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
     } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast.error(`Failed to update profile: ${error.message}`);
-      console.log(`[Auth Log] Profile update failed for user: ${authState.user.id} at ${new Date().toISOString()} - Error: ${error.message}`);
+      console.error("Error updating Firebase profile:", error);
+      toast.error(`Failed to update Firebase profile: ${error.message}`);
+      console.log(`[Auth Log] Firebase profile update failed for user: ${authState.user.uid} at ${new Date().toISOString()} - Error: ${error.message}`);
       throw error;
     }
   };
 
   const signInWithGoogle = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin, // Redirect back to the current origin
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
+      setAuthState(prev => ({ ...prev, loading: true }));
+      const result = await FirebaseAuthentication.signInWithGoogle();
 
-      if (error) throw error;
-      console.log(`[Auth Log] Initiating Google sign-in redirect at ${new Date().toISOString()}`);
-      // No toast.success here, as the page will redirect.
-      // The onAuthStateChange listener will handle the post-redirect state.
+      if (result.credential?.idToken && result.credential?.accessToken) {
+        const credential = GoogleAuthProvider.credential(result.credential.idToken, result.credential.accessToken);
+        await signInWithCredential(auth, credential);
+        toast.success("Logged in with Google successfully!");
+        console.log(`[Auth Log] Google sign-in successful for user: ${auth.currentUser?.email} at ${new Date().toISOString()}`);
+      } else {
+        throw new Error("Google sign-in did not return valid credentials.");
+      }
     } catch (error: any) {
       console.error("Auth error caught during Google sign-in:", error);
       console.log(`[Auth Log] Login failed (Google) at ${new Date().toISOString()} - Error: ${error.message}`);
       let errorMessage = "Failed to sign in with Google.";
-      if (error.message.includes('Popup closed by user')) {
+      if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = "Google sign-in popup closed.";
       } else if (error.message) {
         errorMessage = error.message;
       }
       toast.error(errorMessage);
+      setAuthState(prev => ({ ...prev, loading: false }));
       throw error;
     }
   };
 
-  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
+  const sendLoginLinkToEmail = async (email: string) => {
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      toast.success("Login link sent! Please check your email.");
+      console.log(`[Auth Log] Email login link sent to ${email} at ${new Date().toISOString()}`);
+    } catch (error: any) {
+      console.error("Error sending email login link:", error);
+      toast.error(`Failed to send login link: ${error.message}`);
+      console.log(`[Auth Log] Failed to send email login link to ${email} at ${new Date().toISOString()} - Error: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle, sendVerificationEmail, sendLoginLinkToEmail };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

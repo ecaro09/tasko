@@ -1,45 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Star } from 'lucide-react';
-import { useTasks, Task } from '@/hooks/use-tasks'; // Updated import
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface ReviewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  task: Task | null;
+  onReviewSubmit: (rating: number, review: string) => Promise<void>;
+  taskTitle: string;
 }
 
-const ReviewTaskModal: React.FC<ReviewTaskModalProps> = ({ isOpen, onClose, task }) => {
-  const { completeTaskWithReview } = useTasks(); // Using completeTaskWithReview
-  const [rating, setRating] = React.useState(0);
-  const [review, setReview] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
+const ReviewTaskModal: React.FC<ReviewTaskModalProps> = ({ isOpen, onClose, onReviewSubmit, taskTitle }) => {
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
-    if (isOpen && task) {
-      // Assuming task.review is an object with rating and comment
-      setRating(task.review?.rating || 0);
-      setReview(task.review?.comment || '');
-    } else {
+    if (isOpen) {
       setRating(0);
       setReview('');
     }
-  }, [isOpen, task]);
+  }, [isOpen]);
 
   const handleStarClick = (starIndex: number) => {
     setRating(starIndex + 1);
   };
 
-  const handleSubmitReview = async () => {
-    if (!task) {
-      toast.error("No task selected for review.");
-      return;
-    }
+  const handleSubmit = async () => {
     if (rating === 0) {
       toast.error("Please provide a star rating.");
       return;
@@ -51,10 +42,10 @@ const ReviewTaskModal: React.FC<ReviewTaskModalProps> = ({ isOpen, onClose, task
 
     setIsLoading(true);
     try {
-      await completeTaskWithReview(task.id, rating, review);
+      await onReviewSubmit(rating, review);
       onClose();
     } catch (error) {
-      // Error handled by useTasks hook
+      // Error handled by the parent function, toast already shown
     } finally {
       setIsLoading(false);
     }
@@ -66,43 +57,43 @@ const ReviewTaskModal: React.FC<ReviewTaskModalProps> = ({ isOpen, onClose, task
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Review Task</DialogTitle>
           <DialogDescription className="text-[hsl(var(--text-light))]">
-            Rate and review "{task?.title || 'this task'}" to mark it as complete.
+            Share your experience for "{taskTitle}".
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label className="text-lg font-semibold">Your Rating</Label>
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
+            <Label className="text-lg font-semibold">Rating</Label>
+            <div className="flex gap-1">
+              {[...Array(5)].map((_, index) => (
                 <Star
-                  key={i}
+                  key={index}
                   size={32}
                   className={cn(
                     "cursor-pointer transition-colors",
-                    i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"
+                    index < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"
                   )}
-                  onClick={() => handleStarClick(i)}
-                  aria-label={`Rate ${i + 1} stars`}
+                  onClick={() => handleStarClick(index)}
+                  aria-label={`${index + 1} star rating`}
                 />
               ))}
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="review" className="text-lg font-semibold">Your Review</Label>
+            <Label htmlFor="review">Your Review</Label>
             <Textarea
               id="review"
-              placeholder="Share your experience with the tasker..."
+              placeholder="How was your experience with the tasker?"
               value={review}
               onChange={(e) => setReview(e.target.value)}
-              rows={5}
+              rows={4}
               disabled={isLoading}
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>Cancel</Button>
-          <Button onClick={handleSubmitReview} disabled={isLoading} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
-            {isLoading ? 'Submitting...' : 'Submit Review & Complete'}
+          <Button onClick={handleSubmit} disabled={isLoading} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
+            {isLoading ? 'Submitting...' : 'Submit Review'}
           </Button>
         </DialogFooter>
       </DialogContent>

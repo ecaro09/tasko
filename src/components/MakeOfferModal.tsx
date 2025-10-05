@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useOffers } from '@/hooks/use-offers';
 import { toast } from 'sonner';
-import { Task } from '@/hooks/use-tasks'; // Updated import
+import { Task } from '@/lib/task-firestore'; // Import Task interface from new location
 
 interface MakeOfferModalProps {
   isOpen: boolean;
@@ -43,10 +43,6 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ isOpen, onClose, task }
     }
     if (!task) {
       toast.error("No task selected to make an offer on.");
-      return;
-    }
-    if (task.posterId === user.id) {
-      toast.error("You cannot make an offer on your own task.");
       return;
     }
     if (!offerAmount || !message.trim()) {

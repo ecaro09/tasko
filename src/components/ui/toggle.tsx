@@ -23,14 +23,12 @@ const toggleVariants = cva(
       variant: "default",
       size: "default",
     },
-  },
+  }
 );
 
-export interface ToggleProps
+interface ToggleProps
   extends React.ComponentPropsWithoutRef<typeof TogglePrimitive.Root>,
-    VariantProps<typeof toggleVariants> {
-  children?: React.ReactNode; // Explicitly define children
-}
+    VariantProps<typeof toggleVariants> {}
 
 const Toggle = React.forwardRef<
   React.ElementRef<typeof TogglePrimitive.Root>,
@@ -38,7 +36,7 @@ const Toggle = React.forwardRef<
 >(({ className, variant, size, children, ...props }, ref) => (
   <TogglePrimitive.Root
     ref={ref}
-    className={cn(toggleVariants({ variant, size, className }))}
+    className={cn(toggleVariants({ variant, size }), className)}
     {...props}
   >
     {children}

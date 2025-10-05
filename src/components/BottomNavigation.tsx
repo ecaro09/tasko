@@ -1,9 +1,10 @@
 import React from 'react';
-import { Home, LayoutGrid, ListTodo, User, MessageSquare } from 'lucide-react';
+import { Home, LayoutGrid, ListTodo, User, MessageSquare, Briefcase } from 'lucide-react'; // New import for Briefcase icon
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useModal } from './ModalProvider';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
 
 interface BottomNavigationProps {
   // onProfileClick: () => void; // No longer needed as we'll handle navigation directly
@@ -11,6 +12,7 @@ interface BottomNavigationProps {
 
 const BottomNavigation: React.FC<BottomNavigationProps> = () => {
   const { isAuthenticated } = useAuth();
+  const { isTasker } = useTaskerProfile(); // Use isTasker from hook
   const { openLoginModal } = useModal();
   const navigate = useNavigate();
 
@@ -52,6 +54,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
           <ListTodo size={20} className="mb-1" />
           <span>My Tasks</span>
         </NavLink>
+        {isAuthenticated && isTasker && ( // Conditional link for taskers
+          <NavLink
+            to="/tasker-dashboard"
+            className={({ isActive }) => cn(
+              "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
+              isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+            )}
+          >
+            <Briefcase size={20} className="mb-1" />
+            <span>Dashboard</span>
+          </NavLink>
+        )}
         {/* New NavLink for Chat */}
         <NavLink
           to="/chat"

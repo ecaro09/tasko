@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks, Task } from '@/hooks/use-tasks';
-import { useOffers, Offer } from '@/hooks/use-offers';
+import { useTasks } from '@/hooks/use-tasks';
+import { useOffers } from '@/hooks/use-offers';
+import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offer interface
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react';
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Star and Edit icons
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -17,24 +18,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { toast } from 'sonner';
-import { useModal } from '@/components/ModalProvider';
-import { DEFAULT_TASK_IMAGE_URL } from '@/utils/image-placeholders'; // Import image placeholder
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
+import { Badge } from "@/components/ui/badge"; // New import
+import { toast } from 'sonner'; // New import
+import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, isLoading: tasksLoading, error: tasksError, deleteTask } = useTasks(); // Updated destructuring
-  const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers();
+  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks(); // Destructure deleteTask
+  const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
+  const { openReviewTaskModal, openEditTaskModal } = useModal(); // Get the new modal openers
   const navigate = useNavigate();
-  const { openReviewTaskModal, openEditTaskModal } = useModal();
-
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
 
-  if (authLoading || tasksLoading || offersLoading) {
+  if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
   }
 
@@ -56,7 +54,7 @@ const MyTasksPage: React.FC = () => {
     );
   }
 
-  const userTasks = (tasks || []).filter(task => task.posterId === user.id); // Ensure tasks is an array
+  const userTasks = tasks.filter(task => task.posterId === user.uid);
 
   const handleDeleteClick = (taskId: string) => {
     setTaskToDelete(taskId);
@@ -66,6 +64,14 @@ const MyTasksPage: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (taskToDelete) {
       try {
+        // Before deleting the task, also delete any associated offers
+        const offersToDelete = offers.filter(offer => offer.taskId === taskToDelete);
+        for (const offer of offersToDelete) {
+          // This would ideally be handled by a server-side function or cascade delete in a real DB
+          // For Firebase, we'd need to explicitly delete them.
+          // For now, we'll just delete the task.
+          // In a real app, you'd want to ensure data consistency.
+        }
         await deleteTask(taskToDelete);
       } catch (error) {
         // Error handled by useTasks hook, toast already shown
@@ -78,7 +84,10 @@ const MyTasksPage: React.FC = () => {
 
   const handleAcceptOffer = async (offerId: string, taskId: string) => {
     try {
-      await acceptOffer(offerId, taskId);
+      const roomId = await acceptOffer(offerId, taskId);
+      if (roomId) {
+        navigate('/chat'); // Navigate to the chat page after accepting the offer
+      }
     } catch (error) {
       // Error handled by useOffers hook
     }
@@ -92,11 +101,11 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
-  const handleCompleteTaskClick = (task: Task) => {
+  const handleReviewTask = (task: typeof userTasks[0]) => {
     openReviewTaskModal(task);
   };
 
-  const handleEditTaskClick = (task: Task) => {
+  const handleEditTask = (task: typeof userTasks[0]) => {
     openEditTaskModal(task);
   };
 
@@ -120,7 +129,7 @@ const MyTasksPage: React.FC = () => {
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">My Posted Tasks</h1>
 
-        {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError.message}</p>}
+        {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
 
         {userTasks.length === 0 && !tasksLoading && !tasksError ? (
           <div className="text-center py-12">
@@ -134,28 +143,18 @@ const MyTasksPage: React.FC = () => {
             {userTasks.map((task) => {
               const offersForTask = offers.filter(offer => offer.taskId === task.id);
               const assignedOffer = offersForTask.find(offer => offer.status === 'accepted');
+              const assignedTaskerName = assignedOffer?.taskerName;
 
               return (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <div className="h-40 overflow-hidden relative">
-                    <img 
-                      src={task.imageUrl || DEFAULT_TASK_IMAGE_URL} 
-                      alt={task.title} 
-                      className="w-full h-full object-cover" 
-                      onError={(e) => {
-                        e.currentTarget.src = DEFAULT_TASK_IMAGE_URL;
-                        e.currentTarget.onerror = null;
-                      }}
-                    />
-                    <div className={cn(
-                      "absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold",
-                      task.status === 'open' && 'bg-blue-600 text-white',
-                      task.status === 'assigned' && 'bg-yellow-600 text-white',
-                      task.status === 'in_progress' && 'bg-orange-600 text-white',
-                      task.status === 'completed' && 'bg-green-600 text-white',
-                      task.status === 'cancelled' && 'bg-gray-600 text-white'
-                    )}>
-                      {task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
+                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
+                    <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                      task.status === 'open' ? 'bg-blue-600 text-white' :
+                      task.status === 'assigned' ? 'bg-yellow-600 text-white' :
+                      'bg-green-600 text-white'
+                    }`}>
+                      {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                     </div>
                   </div>
                   <CardContent className="p-4">
@@ -167,97 +166,114 @@ const MyTasksPage: React.FC = () => {
                       <Tag size={16} className="mr-2" /> {task.category}
                     </p>
                     <p className="text-2xl font-bold text-green-600 mb-4">₱{task.budget.toLocaleString()}</p>
-                    <div className="flex justify-between items-center gap-2">
+
+                    {task.status === 'assigned' && assignedTaskerName && (
+                      <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900 rounded-md flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                        <User size={18} />
+                        <span>Assigned to: <span className="font-semibold">{assignedTaskerName}</span></span>
+                      </div>
+                    )}
+
+                    {task.status === 'completed' && task.rating && task.review ? (
+                      <div className="mb-4 p-3 bg-green-50 dark:bg-green-900 rounded-md text-green-800 dark:text-green-200">
+                        <div className="flex items-center gap-1 mb-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={16} className={i < task.rating! ? "fill-green-600 text-green-600" : "text-gray-400"} />
+                          ))}
+                          <span className="font-semibold ml-1">{task.rating}/5</span>
+                        </div>
+                        <p className="text-sm italic">"{task.review}"</p>
+                      </div>
+                    ) : task.status === 'assigned' && (
+                      <Button
+                        onClick={() => handleReviewTask(task)}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mb-4"
+                      >
+                        <CheckCircle size={20} /> Mark as Complete & Review
+                      </Button>
+                    )}
+
+                    <div className="flex justify-between items-center mt-4">
                       <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                         View Details
                       </Button>
-                      {task.status === 'completed' && !task.review?.comment && ( // Condition changed
+                      <div className="flex gap-2">
+                        {task.status === 'open' && ( // Only allow editing if task is open
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditTask(task)}
+                            className="border-blue-600 text-blue-600 hover:bg-blue-100"
+                          >
+                            <Edit size={20} />
+                          </Button>
+                        )}
                         <Button
-                          onClick={() => handleCompleteTaskClick(task)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-                        >
-                          <CheckCircle size={16} /> Review & Finalize
-                        </Button>
-                      )}
-                      {task.status === 'completed' && task.review?.rating && (
-                        <div className="flex items-center gap-1 text-yellow-500">
-                          <Star size={16} fill="currentColor" />
-                          <span className="font-semibold">{task.review.rating.toFixed(1)}</span>
-                        </div>
-                      )}
-                      {task.status === 'open' && (
-                        <Button
-                          variant="outline"
+                          variant="destructive"
                           size="icon"
-                          onClick={() => handleEditTaskClick(task)}
-                          className="border-gray-400 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                          onClick={() => handleDeleteClick(task.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
                         >
-                          <Edit size={20} />
+                          <Trash2 size={20} />
                         </Button>
-                      )}
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleDeleteClick(task.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                      >
-                        <Trash2 size={20} />
-                      </Button>
+                      </div>
                     </div>
 
                     {/* Offers for this task */}
-                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">Offers ({offersForTask.length})</h4>
-                      {offersForTask.length === 0 ? (
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">No offers yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {offersForTask.map(offer => (
-                            <Card key={offer.id} className="p-3 shadow-sm">
-                              <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="w-10 h-10 border-2 border-blue-500">
-                                    <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
-                                    <AvatarFallback className="bg-blue-200 text-blue-800 text-md font-semibold">
-                                      {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={16} />}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-semibold text-md text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                      <MessageSquare size={12} /> {offer.message}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col items-end sm:items-center gap-1">
-                                  <p className="text-xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
-                                  {getOfferStatusBadge(offer.status)}
-                                  {offer.status === 'pending' && (
-                                    <div className="flex gap-1 mt-1">
-                                      <Button
-                                        size="sm"
-                                        className="bg-green-600 hover:bg-green-700 text-white h-7 px-3 text-xs"
-                                        onClick={() => handleAcceptOffer(offer.id, task.id)}
-                                      >
-                                        <CheckCircle size={14} className="mr-1" /> Accept
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        className="h-7 px-3 text-xs"
-                                        onClick={() => handleRejectOffer(offer.id)}
-                                      >
-                                        <XCircle size={14} className="mr-1" /> Reject
-                                      </Button>
+                    {task.status === 'open' && (
+                      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <h4 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">Offers ({offersForTask.length})</h4>
+                        {offersForTask.length === 0 ? (
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">No offers yet.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {offersForTask.map(offer => (
+                              <Card key={offer.id} className="p-3 shadow-sm">
+                                <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="w-10 h-10 border-2 border-blue-500">
+                                      <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                                      <AvatarFallback className="bg-blue-200 text-blue-800 text-md font-semibold">
+                                        {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={16} />}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-semibold text-md text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                        <MessageSquare size={12} /> {offer.message}
+                                      </p>
                                     </div>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                                  </div>
+                                  <div className="flex flex-col items-end sm:items-center gap-1">
+                                    <p className="text-xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
+                                    {getOfferStatusBadge(offer.status)}
+                                    {offer.status === 'pending' && (
+                                      <div className="flex gap-1 mt-1">
+                                        <Button
+                                          size="sm"
+                                          className="bg-green-600 hover:bg-green-700 text-white h-7 px-3 text-xs"
+                                          onClick={() => handleAcceptOffer(offer.id, task.id)}
+                                        >
+                                          <CheckCircle size={14} className="mr-1" /> Accept
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          className="h-7 px-3 text-xs"
+                                          onClick={() => handleRejectOffer(offer.id)}
+                                        >
+                                          <XCircle size={14} className="mr-1" /> Reject
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );

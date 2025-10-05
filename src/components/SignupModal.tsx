@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -13,22 +14,39 @@ interface SignupModalProps {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
-  const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Get authLoading
+  const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Removed firebaseUser from destructuring
+  const { updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Get updateProfile from useSupabaseProfile
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  const [isLoadingLocal, setIsLoadingLocal] = React.useState(false);
 
-  const isFormDisabled = isLoadingLocal || authLoading; // Combine local and global auth loading
+  const isFormDisabled = isLoadingLocal || authLoading;
 
   const handleEmailPasswordSignup = async () => {
-    if (!email || !password) {
-      toast.error("Please enter both email and password.");
+    if (!email || !password || !firstName || !lastName) {
+      toast.error("Please fill in all required fields (Email, Password, First Name, Last Name).");
       return;
     }
     setIsLoadingLocal(true);
     try {
-      await signupWithEmailPassword(email, password);
-      onClose();
+      const newUser = await signupWithEmailPassword(email, password, firstName, lastName); // Get the new user directly
+      
+      // After successful Firebase signup, update Supabase profile with additional details
+      if (newUser) { // Use the newUser object
+        await updateSupabaseProfile(
+          newUser.uid, // Use the newly signed up user's UID
+          firstName,
+          lastName,
+          phone,
+          newUser.photoURL || null, // Use Firebase user's photoURL if available
+          'user' // Default role for new signups
+        );
+      }
+      
+      onClose(); // Close the modal after successful signup and verification email sent
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
     } finally {
@@ -38,7 +56,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
 
   const handleSwitchToLogin = () => {
     onClose();
-    onSwitchToLogin(); // Use the prop
+    onSwitchToLogin();
   };
 
   return (
@@ -51,6 +69,28 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input
+              id="firstName"
+              type="text"
+              placeholder="Juan"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              disabled={isFormDisabled}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              type="text"
+              placeholder="Dela Cruz"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              disabled={isFormDisabled}
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -69,6 +109,17 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isFormDisabled}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="phone">Phone Number (Optional)</Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="+639171234567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               disabled={isFormDisabled}
             />
           </div>

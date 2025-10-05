@@ -5,29 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTasks, Task } from '@/hooks/use-tasks'; // Updated import
+import { useTasks } from '@/hooks/use-tasks';
+import { Task } from '@/lib/task-firestore'; // Import Task interface from new location
 import { toast } from 'sonner';
-import { useFileUpload } from '@/hooks/use-file-upload';
-import { Camera, Image as ImageIcon } from 'lucide-react';
 
 interface EditTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  task: Task | null;
+  task: Task | null; // The task to be edited
 }
 
 const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) => {
-  const { editTask } = useTasks(); // Using editTask
-  const { uploadFile, loading: uploadLoading } = useFileUpload();
+  const { editTask } = useTasks();
   const [taskTitle, setTaskTitle] = React.useState(task?.title || '');
   const [taskDescription, setTaskDescription] = React.useState(task?.description || '');
   const [taskLocation, setTaskLocation] = React.useState(task?.location || '');
-  const [taskBudget, setTaskBudget] = React.useState(String(task?.budget || ''));
+  const [taskBudget, setTaskBudget] = React.useState(task?.budget ? String(task.budget) : '');
   const [taskCategory, setTaskCategory] = React.useState(task?.category || '');
-  const [taskImageFile, setTaskImageFile] = React.useState<File | null>(null);
-  const [taskImagePreview, setTaskImagePreview] = React.useState<string | null>(task?.imageUrl || null);
   const [isLoading, setIsLoading] = React.useState(false);
 
+  // Update form fields when the 'task' prop changes
   React.useEffect(() => {
     if (task) {
       setTaskTitle(task.title);
@@ -35,23 +32,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       setTaskLocation(task.location);
       setTaskBudget(String(task.budget));
       setTaskCategory(task.category);
-      setTaskImagePreview(task.imageUrl || null);
-      setTaskImageFile(null); // Reset file input
     }
-  }, [task, isOpen]);
+  }, [task]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      setTaskImageFile(file);
-      setTaskImagePreview(URL.createObjectURL(file));
-    } else {
-      setTaskImageFile(null);
-      setTaskImagePreview(task?.imageUrl || null); // Revert to original if no new file selected
-    }
-  };
-
-  const handleSaveTask = async () => {
+  const handleEditTask = async () => {
     if (!task) {
       toast.error("No task selected for editing.");
       return;
@@ -60,28 +44,8 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       toast.error("Please fill in all task details.");
       return;
     }
-    if (isNaN(parseFloat(taskBudget)) || parseFloat(taskBudget) <= 0) {
-      toast.error("Budget must be a positive number.");
-      return;
-    }
 
     setIsLoading(true);
-    let imageUrl: string | undefined = task.imageUrl || undefined;
-
-    if (taskImageFile) {
-      const filePath = `task_images/${task.id}_${Date.now()}_${taskImageFile.name}`;
-      const uploadedURL = await uploadFile(taskImageFile, filePath);
-      if (uploadedURL) {
-        imageUrl = uploadedURL;
-      } else {
-        setIsLoading(false);
-        return;
-      }
-    } else if (taskImagePreview === null && task.imageUrl) {
-      // If preview is cleared and there was an original image, it means user wants to remove it
-      imageUrl = undefined; // Explicitly set to undefined to signal removal
-    }
-
     try {
       await editTask(task.id, {
         title: taskTitle,
@@ -89,17 +53,14 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
         location: taskLocation,
         budget: parseFloat(taskBudget),
         category: taskCategory,
-        imageUrl: imageUrl,
       });
-      onClose();
+      onClose(); // Close modal on successful edit
     } catch (error) {
-      // Error handled by useTasks hook
+      // Error handled by useTasks hook, toast will be shown there
     } finally {
       setIsLoading(false);
     }
   };
-
-  const isFormDisabled = isLoading || uploadLoading;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -121,7 +82,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
               className="col-span-3"
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
-              disabled={isFormDisabled}
+              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -134,7 +95,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
               className="col-span-3"
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
-              disabled={isFormDisabled}
+              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -147,7 +108,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
               className="col-span-3"
               value={taskLocation}
               onChange={(e) => setTaskLocation(e.target.value)}
-              disabled={isFormDisabled}
+              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -161,14 +122,14 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
               className="col-span-3"
               value={taskBudget}
               onChange={(e) => setTaskBudget(e.target.value)}
-              disabled={isFormDisabled}
+              disabled={isLoading}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">
               Category
             </Label>
-            <Select value={taskCategory} onValueChange={setTaskCategory} disabled={isFormDisabled}>
+            <Select value={taskCategory} onValueChange={setTaskCategory} disabled={isLoading}>
               <SelectTrigger id="category" className="col-span-3">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
@@ -184,46 +145,11 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="task-image-upload" className="text-right pt-2">
-              Task Image
-            </Label>
-            <div className="col-span-3 flex flex-col gap-2">
-              {taskImagePreview && (
-                <img src={taskImagePreview} alt="Task Preview" className="w-32 h-32 object-cover rounded-md mb-2" />
-              )}
-              <Label htmlFor="task-image-upload" className="cursor-pointer flex items-center gap-2 text-blue-600 hover:text-blue-800">
-                <Camera size={20} /> {taskImageFile ? "Change Image" : (taskImagePreview ? "Update Image" : "Upload Image (Optional)")}
-                <Input
-                  id="task-image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                  disabled={isFormDisabled}
-                />
-              </Label>
-              {taskImagePreview && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTaskImagePreview(null)}
-                  disabled={isFormDisabled}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Remove Image
-                </Button>
-              )}
-              {!taskImageFile && !taskImagePreview && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">Max file size: 5MB</p>
-              )}
-            </div>
-          </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isFormDisabled}>Cancel</Button>
-          <Button onClick={handleSaveTask} disabled={isFormDisabled} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
-            {isFormDisabled ? 'Saving...' : 'Save Changes'}
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>Cancel</Button>
+          <Button onClick={handleEditTask} disabled={isLoading} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
+            {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogFooter>
       </DialogContent>

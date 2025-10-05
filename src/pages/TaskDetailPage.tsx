@@ -1,298 +1,251 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTasks, Task } from '@/hooks/use-tasks';
+import { useTasks } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
+import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useOffers } from '@/hooks/use-offers';
-import { useChat } from '@/hooks/use-chat';
-import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
+import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offer interface
+import { useModal } from '@/components/ModalProvider';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
-
-// Import new modular components
-import TaskDetailHeader from '@/components/task-detail/TaskDetailHeader';
-import TaskInfoSection from '@/components/task-detail/TaskInfoSection';
-import TaskUserCards from '@/components/task-detail/TaskUserCards';
-import TaskReviewDisplay from '@/components/task-detail/TaskReviewDisplay';
-import TaskerActionButtons from '@/components/task-detail/TaskerActionButtons';
-import ClientActionButtons from '@/components/task-detail/ClientActionButtons';
-import TaskOffersSection from '@/components/task-detail/TaskOffersSection';
+import { useChat } from '@/hooks/use-chat'; // New import for useChat
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { profile: currentUserProfile, loadingProfile } = useSupabaseProfile();
-  const { tasks, isLoading: tasksLoading, error: tasksError, updateTaskStatus, deleteTask } = useTasks();
-  const { offers, loading: offersLoading, addOffer, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
-  const { createChatRoom } = useChat();
+  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
+  const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
+  const { openMakeOfferModal } = useModal();
+  const { createChatRoom } = useChat(); // Use createChatRoom from useChat
 
-  const [task, setTask] = useState<Task | null>(null); // Changed type from any to Task | null
-  const [userOffer, setUserOffer] = useState<any>(null);
-  const [isTaskPoster, setIsTaskPoster] = useState(false);
-  const [isAssignedTasker, setIsAssignedTasker] = useState(false);
-  const [offerAmount, setOfferAmount] = useState<number[]>([0]);
-  const [offerMessage, setOfferMessage] = useState('');
-  const [reviewRating, setReviewRating] = useState<number[]>([5]);
-  const [reviewComment, setReviewComment] = useState('');
+  const task = tasks.find(t => t.id === id);
+  const taskOffers = offers.filter(offer => offer.taskId === id);
 
-  const isLoading = authLoading || tasksLoading || offersLoading || loadingProfile;
-
-  useEffect(() => {
-    if (tasks && tasks.length > 0 && id) { // Check if tasks is defined
-      const foundTask = tasks.find(t => t.id === id);
-      setTask(foundTask || null); // Ensure it's Task | null
-      if (foundTask && user) {
-        setIsTaskPoster(foundTask.posterId === user.id);
-        setIsAssignedTasker(foundTask.assignedTaskerId === user.id);
-      }
-    }
-  }, [tasks, id, user]);
-
-  useEffect(() => {
-    if (offers.length > 0 && id && user) {
-      const foundOffer = offers.find(o => o.taskId === id && o.taskerId === user.id);
-      setUserOffer(foundOffer);
-      if (foundOffer) {
-        setOfferAmount([foundOffer.offerAmount]);
-        setOfferMessage(foundOffer.message);
-      }
-    }
-  }, [offers, id, user]);
-
-  const handleCreateOffer = async () => {
-    if (!isAuthenticated || !user || !currentUserProfile) {
-      toast.error("You must be logged in to make an offer.");
-      return;
-    }
-    if (!task) {
-      toast.error("Task not found.");
-      return;
-    }
-    if (user.id === task.posterId) {
-      toast.error("You cannot make an offer on your own task.");
-      return;
-    }
-    if (!currentUserProfile.is_verified_tasker) {
-      toast.error("You must be registered as a tasker to make an offer. Please update your profile.");
-      navigate('/profile');
-      return;
-    }
-
-    try {
-      await addOffer(
-        task.id,
-        task.posterId,
-        offerAmount[0],
-        offerMessage,
-      );
-      toast.success("Offer submitted successfully!");
-      setOfferMessage('');
-    } catch (error) {
-      // Error handled by useOffers hook
-    }
-  };
-
-  const handleAcceptOffer = async (offerId: string, taskerId: string) => {
-    if (!isAuthenticated || !user || !task || !isTaskPoster) {
-      toast.error("You are not authorized to accept this offer.");
-      return;
-    }
-    try {
-      await acceptOffer(offerId, task.id);
-      toast.success("Offer accepted and task assigned!");
-      navigate(`/tasks/${task.id}`); // Refresh page to show updated status
-    } catch (error) {
-      // Error handled by useOffers/useTasks hooks
-    }
-  };
-
-  const handleRejectOffer = async (offerId: string) => {
-    if (!isAuthenticated || !user || !task || !isTaskPoster) {
-      toast.error("You are not authorized to reject this offer.");
-      return;
-    }
-    try {
-      await rejectOffer(offerId);
-      toast.success("Offer rejected.");
-      navigate(`/tasks/${task.id}`); // Refresh page to show updated status
-    } catch (error) {
-      // Error handled by useOffers hook
-    }
-  };
-
-  const handleWithdrawOffer = async (offerId: string) => {
-    if (!isAuthenticated || !user || !task) {
-      toast.error("You are not authorized to withdraw this offer.");
-      return;
-    }
-    try {
-      await withdrawOffer(offerId);
-      toast.success("Offer withdrawn.");
-      navigate(`/tasks/${task.id}`); // Refresh page to show updated status
-    } catch (error) {
-      // Error handled by useOffers hook
-    }
-  };
-
-  const handleCancelTask = async () => {
-    if (!isAuthenticated || !user || !task || !isTaskPoster) {
-      toast.error("You are not authorized to cancel this task.");
-      return;
-    }
-    try {
-      await deleteTask(task.id);
-      toast.success("Task cancelled successfully.");
-      navigate('/my-tasks');
-    } catch (error) {
-      // Error handled by useTasks hook
-    }
-  };
-
-  const handleChatWithUser = async (targetUserId: string) => {
-    if (!isAuthenticated || !user || !currentUserProfile) {
-      toast.error("You must be logged in to start a chat.");
-      return;
-    }
-    if (user.id === targetUserId) {
-      toast.info("You cannot chat with yourself.");
-      navigate('/chat');
-      return;
-    }
-
-    try {
-      const roomId = await createChatRoom(targetUserId);
-      if (roomId) {
-        navigate(`/chat?roomId=${roomId}`);
-      }
-    } catch (err) {
-      // Error handled by useChat hook
-    }
-  };
-
-  const handleMarkInProgress = async () => {
-    if (!isAuthenticated || !user || !task || !isAssignedTasker) {
-      toast.error("You are not authorized to mark this task as in progress.");
-      return;
-    }
-    try {
-      await updateTaskStatus(task.id, 'in_progress');
-      toast.success("Task marked as 'In Progress'!");
-      navigate(`/tasks/${task.id}`); // Refresh page to show updated status
-    } catch (error) {
-      // Error handled by useTasks hook
-    }
-  };
-
-  const handleMarkCompleteAndReview = async () => {
-    if (!isAuthenticated || !user || !task || !isAssignedTasker) {
-      toast.error("You are not authorized to mark this task as complete.");
-      return;
-    }
-    try {
-      await updateTaskStatus(task.id, 'completed', undefined, {
-        rating: reviewRating[0],
-        comment: reviewComment,
-        reviewerId: user.id,
-        reviewedUserId: task.posterId,
-      });
-      toast.success("Task marked as complete and review submitted!");
-      navigate(`/tasks/${task.id}`); // Refresh page to show updated status
-    } catch (error) {
-      // Error handled by useTasks hook
-    }
-  };
+  const isLoading = tasksLoading || authLoading || taskerProfileLoading || offersLoading;
 
   if (isLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading task details...</div>;
   }
 
   if (tasksError) {
-    return <div className="container mx-auto p-4 text-center pt-[80px] text-red-500">Error: {tasksError.message}</div>;
+    return <div className="container mx-auto p-4 text-center text-red-500 pt-[80px]">Error: {tasksError}</div>;
   }
 
   if (!task) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Task not found.</div>;
   }
 
-  const isTaskOpen = task.status === 'open';
-  const isTaskAssigned = task.status === 'assigned';
-  const isTaskInProgress = task.status === 'in_progress';
-  const isTaskCompleted = task.status === 'completed';
-  const isTaskCancelled = task.status === 'cancelled';
+  const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
+  const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
+  const canChatWithPoster = isAuthenticated && user?.uid !== task.posterId; // Can chat if authenticated and not the poster
 
-  const canMakeOffer = isAuthenticated && !isTaskPoster && isTaskOpen && !userOffer && currentUserProfile?.is_verified_tasker;
-  const canEditOffer = isAuthenticated && !isTaskPoster && isTaskOpen && userOffer && userOffer.status === 'pending' && currentUserProfile?.is_verified_tasker;
-  const canDeleteOffer = isAuthenticated && !isTaskPoster && isTaskOpen && userOffer && userOffer.status === 'pending' && currentUserProfile?.is_verified_tasker;
+  const handleMakeOfferClick = () => {
+    if (task) {
+      openMakeOfferModal(task);
+    }
+  };
 
-  const canAcceptRejectOffers = isTaskPoster && isTaskOpen;
-  const canCancelTask = isTaskPoster && (isTaskOpen || isTaskAssigned || isTaskInProgress);
-  const canMarkInProgress = isAssignedTasker && isTaskAssigned;
-  const canMarkCompleteAndReview = isAssignedTasker && isTaskInProgress;
+  const handleChatWithPoster = async () => {
+    if (!user || !task) {
+      toast.error("User or task information is missing.");
+      return;
+    }
+    if (user.uid === task.posterId) {
+      toast.info("You cannot chat with yourself.");
+      return;
+    }
+
+    try {
+      const roomId = await createChatRoom(
+        [user.uid, task.posterId],
+        [user.displayName || user.email || "You", task.posterName]
+      );
+      if (roomId) {
+        navigate('/chat'); // Navigate to the chat page
+      }
+    } catch (error) {
+      console.error("Failed to create or navigate to chat room:", error);
+      toast.error("Failed to start chat.");
+    }
+  };
+
+  const handleAcceptOffer = async (offerId: string) => {
+    if (!isTaskPoster) {
+      toast.error("You are not authorized to accept offers for this task.");
+      return;
+    }
+    try {
+      await acceptOffer(offerId, task.id);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const handleRejectOffer = async (offerId: string) => {
+    if (!isTaskPoster) {
+      toast.error("You are not authorized to reject offers for this task.");
+      return;
+    }
+    try {
+      await rejectOffer(offerId);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const handleWithdrawOffer = async (offerId: string) => {
+    const offer = taskOffers.find(o => o.id === offerId);
+    if (!isAuthenticated || user?.uid !== offer?.taskerId) {
+      toast.error("You are not authorized to withdraw this offer.");
+      return;
+    }
+    try {
+      await withdrawOffer(offerId);
+    } catch (error) {
+      // Error handled by useOffers hook
+    }
+  };
+
+  const getOfferStatusBadge = (status: Offer['status']) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200">Pending</Badge>;
+      case 'accepted':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Rejected</Badge>;
+      case 'withdrawn':
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Withdrawn</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
       <div className="container mx-auto px-4">
         <Button onClick={() => navigate(-1)} variant="outline" className="mb-6 border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
-          <ArrowLeft size={20} className="mr-2" /> Back
+          &larr; Back to Tasks
         </Button>
 
         <Card className="shadow-lg">
-          <TaskDetailHeader task={task} />
+          <CardHeader className="relative p-0">
+            <img src={task.imageUrl} alt={task.title} className="w-full h-64 object-cover rounded-t-lg" />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
+              <CardTitle className="text-3xl font-bold mb-1">{task.title}</CardTitle>
+              <CardDescription className="text-gray-200 flex items-center gap-2">
+                <MapPin size={18} /> {task.location}
+              </CardDescription>
+            </div>
+          </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
-                <TaskInfoSection task={task} />
-                <TaskUserCards
-                  task={task}
-                  isTaskPoster={isTaskPoster}
-                  isAuthenticated={isAuthenticated}
-                  currentUserId={user?.id}
-                  onChatWithUser={handleChatWithUser}
-                />
-                {isTaskCompleted && <TaskReviewDisplay task={task} />}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Task Details</h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">{task.description}</p>
 
-                {/* Tasker Actions */}
-                <TaskerActionButtons
-                  canMarkInProgress={canMarkInProgress}
-                  onMarkInProgress={handleMarkInProgress}
-                  canMarkCompleteAndReview={canMarkCompleteAndReview}
-                  reviewRating={reviewRating}
-                  setReviewRating={setReviewRating}
-                  reviewComment={reviewComment}
-                  setReviewComment={setReviewComment}
-                  onMarkCompleteAndReview={handleMarkCompleteAndReview}
-                />
-
-                {/* Client Actions */}
-                <ClientActionButtons
-                  canCancelTask={canCancelTask}
-                  onCancelTask={handleCancelTask}
-                />
+                <div className="space-y-2 text-gray-700 dark:text-gray-300">
+                  <p className="flex items-center gap-2"><Tag size={18} /> <strong>Category:</strong> {task.category}</p>
+                  <p className="flex items-center gap-2"><Calendar size={18} /> <strong>Posted:</strong> {new Date(task.datePosted).toLocaleDateString()}</p>
+                  <p className="flex items-center gap-2"><DollarSign size={18} /> <strong>Budget:</strong> ₱{task.budget.toLocaleString()}</p>
+                </div>
               </div>
 
-              {/* Offers Section */}
-              <div className="lg:col-span-1">
-                <TaskOffersSection
-                  task={task}
-                  offers={offers}
-                  userOffer={userOffer}
-                  canMakeOffer={canMakeOffer}
-                  canEditOffer={canEditOffer}
-                  canDeleteOffer={canDeleteOffer}
-                  canAcceptRejectOffers={canAcceptRejectOffers}
-                  offerAmount={offerAmount}
-                  setOfferAmount={setOfferAmount}
-                  offerMessage={offerMessage}
-                  setOfferMessage={setOfferMessage}
-                  onCreateOffer={handleCreateOffer}
-                  onAcceptOffer={handleAcceptOffer}
-                  onRejectOffer={handleRejectOffer}
-                  onWithdrawOffer={handleWithdrawOffer}
-                  onChatWithUser={handleChatWithUser}
-                />
+              <div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Posted By</h3>
+                <div className="flex items-center gap-4 mb-4">
+                  <img src={task.posterAvatar} alt={task.posterName} className="w-16 h-16 rounded-full object-cover border-2 border-green-500" />
+                  <div>
+                    <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{task.posterName}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Task Poster</p>
+                  </div>
+                </div>
+                {canMakeOffer && (
+                  <Button onClick={handleMakeOfferClick} className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 mb-2">
+                    <User size={20} /> Make an Offer
+                  </Button>
+                )}
+                {canChatWithPoster && (
+                  <Button onClick={handleChatWithPoster} variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                    <MessageSquare size={20} /> Chat with Poster
+                  </Button>
+                )}
+                {!isAuthenticated && (
+                  <p className="text-sm text-gray-500 mt-2">Log in to make an offer or chat.</p>
+                )}
+                {isAuthenticated && !isTasker && !isTaskPoster && (
+                  <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>
+                )}
               </div>
+            </div>
+
+            {/* Offers Section */}
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Offers ({taskOffers.length})</h3>
+              {taskOffers.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400">No offers yet. Be the first to make one!</p>
+              ) : (
+                <div className="space-y-4">
+                  {taskOffers.map(offer => (
+                    <Card key={offer.id} className="p-4 shadow-sm">
+                      <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-12 h-12 border-2 border-blue-500">
+                            <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                            <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
+                              {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={20} />}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{offer.taskerName}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                              <MessageSquare size={14} /> {offer.message}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end sm:items-center gap-2">
+                          <p className="text-2xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
+                          {getOfferStatusBadge(offer.status)}
+                          {isTaskPoster && offer.status === 'pending' && (
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => handleAcceptOffer(offer.id)}
+                              >
+                                <CheckCircle size={16} className="mr-1" /> Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleRejectOffer(offer.id)}
+                              >
+                                <XCircle size={16} className="mr-1" /> Reject
+                              </Button>
+                            </div>
+                          )}
+                          {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-400 text-gray-700 hover:bg-gray-100 mt-2"
+                              onClick={() => handleWithdrawOffer(offer.id)}
+                            >
+                              <Clock size={16} className="mr-1" /> Withdraw
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

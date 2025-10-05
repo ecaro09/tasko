@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { Chrome } from 'lucide-react'; // Import Google icon
+import { Chrome, Mail } from 'lucide-react'; // Import Mail icon
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -14,7 +14,7 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSignup }) => {
-  const { loginWithEmailPassword, signInWithGoogle, loading: authLoading } = useAuth(); // Get authLoading
+  const { loginWithEmailPassword, signInWithGoogle, sendLoginLinkToEmail, loading: authLoading } = useAuth(); // Get sendLoginLinkToEmail
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
@@ -45,8 +45,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
       // No onClose() here, as the page will redirect.
       // The AuthProvider's useEffect will handle the post-redirect state.
     } catch (error) {
-      // Error handled by useAuth hook, toast already shown
-      // If an error occurs before redirect, ensure loading state is reset
+      // Error handled by useAuth hook, ensure loading state is reset
+      setIsLoadingLocal(false);
+    }
+  };
+
+  const handleSendLoginLink = async () => {
+    if (!email) {
+      toast.error("Please enter your email to receive a login link.");
+      return;
+    }
+    setIsLoadingLocal(true);
+    try {
+      await sendLoginLinkToEmail(email);
+      onClose(); // Close modal after sending link
+    } catch (error) {
+      // Error handled by useAuth hook
+    } finally {
       setIsLoadingLocal(false);
     }
   };
@@ -92,7 +107,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
             disabled={isFormDisabled}
             className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
           >
-            {isLoadingLocal ? 'Logging In...' : 'Login with Email'}
+            {isLoadingLocal && !authLoading ? 'Logging In...' : 'Login with Email'}
+          </Button>
+          <Button
+            onClick={handleSendLoginLink}
+            disabled={isFormDisabled}
+            variant="outline"
+            className="w-full flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <Mail size={20} /> {isLoadingLocal && !authLoading ? 'Sending Link...' : 'Login with Email Link'}
           </Button>
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">

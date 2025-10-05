@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/hooks/use-auth';
-import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
-import { useFileUpload } from '@/hooks/use-file-upload';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Camera } from 'lucide-react';
+import { useFileUpload } from '@/hooks/use-file-upload';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
 
 interface EditProfileSectionProps {
   onCancel: () => void;
@@ -17,41 +17,35 @@ interface EditProfileSectionProps {
 
 const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSaveSuccess }) => {
   const { user, updateUserProfile } = useAuth();
-  const { profile, updateProfile, loadingProfile } = useSupabaseProfile();
+  const { profile, loadingProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile();
   const { uploadFile, loading: uploadLoading } = useFileUpload();
-
-  const [firstName, setFirstName] = React.useState(user?.user_metadata?.first_name || '');
-  const [lastName, setLastName] = React.useState(user?.user_metadata?.last_name || '');
-  const [phone, setPhone] = React.useState(profile?.phone || ''); // New state for phone
+  const [firstName, setFirstName] = React.useState(profile?.first_name || '');
+  const [lastName, setLastName] = React.useState(profile?.last_name || '');
+  const [phone, setPhone] = React.useState(profile?.phone || '');
   const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(user?.user_metadata?.avatar_url || null);
+  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(user?.photoURL || profile?.avatar_url || null);
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
-    if (user) {
-      setFirstName(user.user_metadata?.first_name || '');
-      setLastName(user.user_metadata?.last_name || '');
-      setAvatarPreview(user.user_metadata?.avatar_url || null);
-    }
     if (profile) {
-      setPhone(profile.phone || ''); // Update phone from profile
+      setFirstName(profile.first_name || '');
+      setLastName(profile.last_name || '');
+      setPhone(profile.phone || '');
+      setAvatarPreview(user?.photoURL || profile?.avatar_url || null);
     }
-  }, [user, profile]);
+  }, [profile, user?.photoURL]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    } else {
-      setAvatarFile(null);
-      setAvatarPreview(user?.user_metadata?.avatar_url || null); // Revert to original if no new file selected
+      setAvatarPreview(URL.createObjectURL(file)); // Create a preview URL
     }
   };
 
   const handleSave = async () => {
     if (!user || !profile) {
-      toast.error("No user or profile data available.");
+      toast.error("No user profile found.");
       return;
     }
     if (firstName.trim() === '' || lastName.trim() === '') {
@@ -60,56 +54,42 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
     }
 
     setIsLoading(true);
-    let newAvatarUrl: string | undefined = user.user_metadata?.avatar_url || undefined;
+    let newPhotoURL = user.photoURL || profile.avatar_url;
 
     if (avatarFile) {
-      const filePath = `avatars/${user.id}/${Date.now()}_${avatarFile.name}`;
+      const filePath = `avatars/${user.uid}/${avatarFile.name}`;
       const uploadedURL = await uploadFile(avatarFile, filePath);
       if (uploadedURL) {
-        newAvatarUrl = uploadedURL;
+        newPhotoURL = uploadedURL;
       } else {
         setIsLoading(false);
-        return; // Stop if avatar upload fails
+        return; // Stop if upload failed
       }
-    } else if (avatarPreview === null && user.user_metadata?.avatar_url) {
-      // If preview is cleared and there was an original image, it means user wants to remove it
-      newAvatarUrl = undefined; // Explicitly set to undefined to signal removal
     }
 
     try {
-      // Update Supabase auth.users metadata (firstName, lastName, avatarUrl)
-      await updateUserProfile(firstName, lastName, newAvatarUrl);
+      // Update Firebase profile (displayName, photoURL)
+      await updateUserProfile(firstName, lastName, newPhotoURL || undefined);
 
-      // Update public.profiles table (firstName, lastName, phone, avatarUrl, etc.)
-      await updateProfile(
-        user.id,
+      // Update Supabase profile (first_name, last_name, phone, avatar_url, role)
+      await updateSupabaseProfile(
+        user.uid,
         firstName,
         lastName,
-        phone.trim() === '' ? null : phone, // Pass phone number
-        newAvatarUrl || null,
-        profile.role,
-        profile.rating,
-        profile.is_verified_tasker
+        phone,
+        newPhotoURL || null,
+        profile.role // Keep existing role
       );
 
       onSaveSuccess();
     } catch (error) {
-      // Errors handled by useAuth and useSupabaseProfile, toasts already shown
+      // Error handled by useAuth or useSupabaseProfile, toast already shown
     } finally {
       setIsLoading(false);
     }
   };
 
   const isFormDisabled = isLoading || uploadLoading || loadingProfile;
-
-  const getFallbackInitials = () => {
-    const firstInitial = firstName.charAt(0).toUpperCase();
-    const lastInitial = lastName.charAt(0).toUpperCase();
-    if (firstInitial && lastInitial) return `${firstInitial}${lastInitial}`;
-    if (firstInitial) return firstInitial;
-    if (lastInitial) return lastInitial;
-    return <UserIcon size={24} />;
-  };
 
   return (
     <Card className="shadow-lg p-6">
@@ -119,13 +99,13 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
       <CardContent className="p-0 space-y-4">
         <div className="flex flex-col items-center gap-4 mb-6">
           <Avatar className="w-24 h-24 border-4 border-green-500">
-            <AvatarImage src={avatarPreview || undefined} alt={user?.email || "User"} />
+            <AvatarImage src={avatarPreview || undefined} alt={user?.displayName || "User Avatar"} />
             <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
-              {getFallbackInitials()}
+              {user?.displayName ? user.displayName.charAt(0).toUpperCase() : <UserIcon size={48} />}
             </AvatarFallback>
           </Avatar>
           <Label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-2 text-blue-600 hover:text-blue-800">
-            <Camera size={20} /> {avatarFile ? "Change Avatar" : (avatarPreview ? "Update Avatar" : "Upload Avatar (Optional)")}
+            <Camera size={20} /> Change Avatar
             <Input
               id="avatar-upload"
               type="file"
@@ -135,17 +115,6 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
               disabled={isFormDisabled}
             />
           </Label>
-          {avatarPreview && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAvatarPreview(null)}
-              disabled={isFormDisabled}
-              className="text-red-500 hover:text-red-700"
-            >
-              Remove Avatar
-            </Button>
-          )}
         </div>
 
         <div className="grid gap-2">
@@ -167,14 +136,13 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="phone">Phone Number (Optional)</Label>
+          <Label htmlFor="phone">Phone Number</Label>
           <Input
             id="phone"
-            type="tel"
-            placeholder="e.g., +639171234567"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             disabled={isFormDisabled}
+            placeholder="e.g., +639171234567"
           />
         </div>
         <div className="flex justify-end gap-2 mt-6">

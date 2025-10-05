@@ -1,15 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Define the structure for the Supabase profile
 export interface UserProfile {
   id: string;
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
-  phone: string | null; // Added phone field
-  role: string;
-  rating: number;
-  is_verified_tasker: boolean;
+  phone: string | null;
+  role: string; // 'user' or 'tasker'
   updated_at: string;
 }
 
@@ -21,18 +20,15 @@ export const fetchUserProfileSupabase = async (userId: string): Promise<UserProf
       .eq('id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine for new users
+    if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
       throw error;
     }
 
-    if (data) {
-      return data as UserProfile;
-    }
+    return data as UserProfile | null;
+  } catch (error: any) {
+    console.error("Error fetching Supabase profile:", error);
+    toast.error(`Failed to load user profile: ${error.message}`);
     return null;
-  } catch (err: any) {
-    console.error("Error fetching Supabase profile:", err);
-    toast.error(`Failed to fetch user profile: ${err.message}`);
-    throw err;
   }
 };
 
@@ -40,41 +36,31 @@ export const createOrUpdateUserProfileSupabase = async (
   userId: string,
   firstName: string | null,
   lastName: string | null,
-  phone: string | null, // Added phone parameter
+  phone: string | null,
   avatarUrl: string | null,
-  role: string,
-  rating: number,
-  isVerifiedTasker: boolean
+  role: string = 'user' // Default role
 ): Promise<UserProfile | null> => {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .upsert(
-        {
-          id: userId,
-          first_name: firstName,
-          last_name: lastName,
-          phone: phone, // Included phone in upsert
-          avatar_url: avatarUrl,
-          role: role,
-          rating: rating,
-          is_verified_tasker: isVerifiedTasker,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' } // Upsert based on id
-      )
+      .upsert({
+        id: userId,
+        first_name: firstName,
+        last_name: lastName,
+        avatar_url: avatarUrl,
+        phone: phone,
+        role: role,
+        updated_at: new Date().toISOString(),
+      })
       .select()
       .single();
 
     if (error) throw error;
 
-    if (data) {
-      return data as UserProfile;
-    }
+    return data as UserProfile;
+  } catch (error: any) {
+    console.error("Error creating/updating Supabase profile:", error);
+    toast.error(`Failed to save user profile: ${error.message}`);
     return null;
-  } catch (err: any) {
-    console.error("Error creating or updating Supabase profile:", err);
-    toast.error(`Failed to save user profile: ${err.message}`);
-    throw err;
   }
 };
