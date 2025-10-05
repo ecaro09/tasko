@@ -99,9 +99,9 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
-  const handleAcceptOffer = async (offerId: string, taskId: string) => {
+  const handleAcceptOffer = async (offerId: string, taskId: string) => { // Corrected parameter name
     try {
-      const roomId = await acceptOffer(offerId, taskId); // Fixed: Changed 'task.id' to 'taskId'
+      const roomId = await acceptOffer(offerId, taskId); // <--- FIXED: Changed 'task.id' to 'taskId'
       if (roomId) {
         navigate('/chat'); // Navigate to the chat page after accepting the offer
       }

@@ -14,7 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { chatRooms, messages, loadingRooms, loadingMessages, error, sendMessage, fetchMessagesForRoom } = useChat();
+  const { chatRooms, messages, loadingRooms, loadingMessages, error, sendMessage, fetchMessagesForRoom, sendTypingStatus } = useChat();
   const [selectedRoom, setSelectedRoom] = React.useState<ChatRoom | null>(null);
   const [messageInput, setMessageInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,6 +46,14 @@ const ChatPage: React.FC = () => {
     if (selectedRoom && messageInput.trim()) {
       await sendMessage(selectedRoom.id, messageInput);
       setMessageInput('');
+      sendTypingStatus(selectedRoom.id, false); // Clear typing status after sending message
+    }
+  };
+
+  const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageInput(e.target.value);
+    if (selectedRoom) {
+      sendTypingStatus(selectedRoom.id, e.target.value.length > 0);
     }
   };
 
@@ -61,6 +69,26 @@ const ChatPage: React.FC = () => {
     // For simplicity, we'll just use a generic avatar or the first other participant's avatar if available
     // In a real app, you'd fetch the avatar URL for the other participant(s)
     return undefined; // Placeholder
+  };
+
+  const getTypingIndicator = (room: ChatRoom) => {
+    if (!user || !room.typingUsers) return null;
+    const otherTypingUsers = room.typingUsers.filter(uid => uid !== user.uid);
+    if (otherTypingUsers.length === 0) return null;
+
+    const typingNames = otherTypingUsers.map(uid => {
+      const participantIndex = room.participants.indexOf(uid);
+      return room.participantNames[participantIndex] || "Someone";
+    });
+
+    return (
+      <div className="text-sm text-gray-500 dark:text-gray-400 italic flex items-center gap-1">
+        {typingNames.join(', ')} is typing...
+        <span className="typing-dots">
+          <span>.</span><span>.</span><span>.</span>
+        </span>
+      </div>
+    );
   };
 
   if (authLoading) {
@@ -122,6 +150,7 @@ const ChatPage: React.FC = () => {
                       <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                         {room.lastMessage || "Start a conversation"}
                       </p>
+                      {getTypingIndicator(room)} {/* Display typing indicator in room list */}
                     </div>
                     {room.lastMessageTimestamp && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -212,11 +241,16 @@ const ChatPage: React.FC = () => {
                   )}
                   <div ref={messagesEndRef} />
                 </ScrollArea>
+                {selectedRoom && getTypingIndicator(selectedRoom) && (
+                  <div className="px-4 pb-2">
+                    {getTypingIndicator(selectedRoom)}
+                  </div>
+                )}
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
                   <Input
                     placeholder="Type your message..."
                     value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
+                    onChange={handleMessageInputChange}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     className="flex-grow"
                     disabled={loadingMessages}

@@ -14,6 +14,7 @@ import {
   doc, // Import doc
   updateDoc, // Import updateDoc
   getDocs, // Import getDocs
+  getDoc, // <--- ADDED: Import getDoc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -36,6 +37,7 @@ export interface ChatRoom {
   lastMessage?: string;
   lastMessageTimestamp?: string;
   createdAt: string;
+  typingUsers?: string[]; // New field for typing indicator
 }
 
 interface ChatContextType {
@@ -47,6 +49,7 @@ interface ChatContextType {
   sendMessage: (roomId: string, text: string) => Promise<void>;
   createChatRoom: (participantIds: string[], participantNames: string[]) => Promise<string | null>;
   fetchMessagesForRoom: (roomId: string) => void;
+  sendTypingStatus: (roomId: string, isTyping: boolean) => void; // New function
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -60,6 +63,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loadingMessages, setLoadingMessages] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [currentRoomId, setCurrentRoomId] = React.useState<string | null>(null);
+  const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null); // For debouncing typing status
 
   // Fetch chat rooms for the current user
   React.useEffect(() => {
@@ -89,6 +93,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           lastMessage: data.lastMessage,
           lastMessageTimestamp: data.lastMessageTimestamp?.toDate().toISOString(),
           createdAt: data.createdAt?.toDate().toISOString(),
+          typingUsers: data.typingUsers || [], // Include typingUsers
         };
       });
       setChatRooms(fetchedRooms);
@@ -161,11 +166,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         timestamp: serverTimestamp(),
       });
 
-      // Update last message in chat room
-      const roomRef = doc(collection(db, 'chatRooms'), roomId); // Fixed: Use doc function
-      await updateDoc(roomRef, { // Fixed: Use updateDoc function
+      // Update last message in chat room and clear typing status
+      const roomRef = doc(collection(db, 'chatRooms'), roomId);
+      await updateDoc(roomRef, {
         lastMessage: text.trim(),
         lastMessageTimestamp: serverTimestamp(),
+        typingUsers: chatRooms.find(room => room.id === roomId)?.typingUsers?.filter(uid => uid !== user.uid) || [],
       });
 
     } catch (err: any) {
@@ -194,7 +200,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         where('participants', '==', participantIds),
         limit(1)
       );
-      const existingRoomSnapshot = await getDocs(existingRoomQuery); // Fixed: getDocs is now imported
+      const existingRoomSnapshot = await getDocs(existingRoomQuery);
 
       if (!existingRoomSnapshot.empty) {
         const existingRoomId = existingRoomSnapshot.docs[0].id;
@@ -208,6 +214,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createdAt: serverTimestamp(),
         lastMessage: "New chat started.",
         lastMessageTimestamp: serverTimestamp(),
+        typingUsers: [], // Initialize typingUsers
       });
       toast.success("Chat room created!");
       return newRoomRef.id;
@@ -218,6 +225,42 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const sendTypingStatus = React.useCallback((roomId: string, isTyping: boolean) => {
+    if (!user || !roomId) return;
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    const updateTypingStatus = async () => {
+      const roomRef = doc(db, 'chatRooms', roomId);
+      const roomSnap = await getDoc(roomRef);
+      if (roomSnap.exists()) {
+        const currentTypingUsers = (roomSnap.data()?.typingUsers || []) as string[];
+        let newTypingUsers = [...currentTypingUsers];
+
+        if (isTyping && !newTypingUsers.includes(user.uid)) {
+          newTypingUsers.push(user.uid);
+        } else if (!isTyping && newTypingUsers.includes(user.uid)) {
+          newTypingUsers = newTypingUsers.filter(uid => uid !== user.uid);
+        }
+
+        if (newTypingUsers.length !== currentTypingUsers.length || newTypingUsers.some((uid, i) => uid !== currentTypingUsers[i])) {
+          await updateDoc(roomRef, { typingUsers: newTypingUsers });
+        }
+      }
+    };
+
+    if (isTyping) {
+      updateTypingStatus(); // Send typing status immediately
+      typingTimeoutRef.current = setTimeout(() => {
+        sendTypingStatus(roomId, false); // Stop typing after a delay
+      }, 3000); // 3 seconds debounce
+    } else {
+      updateTypingStatus(); // Send not typing status
+    }
+  }, [user]);
+
   const value = {
     chatRooms,
     messages,
@@ -227,6 +270,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     sendMessage,
     createChatRoom,
     fetchMessagesForRoom,
+    sendTypingStatus,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
