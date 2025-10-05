@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star } from 'lucide-react'; // Import Star icon
 import { Badge } from '@/components/ui/badge';
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import image placeholder
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +59,14 @@ const TaskerProfileViewPage: React.FC = () => {
         <Card className="shadow-lg p-6">
           <CardContent className="flex flex-col items-center text-center p-0">
             <Avatar className="w-32 h-32 mb-4 border-4 border-green-500">
-              <AvatarImage src={tasker.photoURL || undefined} alt={tasker.displayName} />
+              <AvatarImage 
+                src={tasker.photoURL || DEFAULT_AVATAR_URL} 
+                alt={tasker.displayName} 
+                onError={(e) => {
+                  e.currentTarget.src = DEFAULT_AVATAR_URL;
+                  e.currentTarget.onerror = null;
+                }}
+              />
               <AvatarFallback className="bg-green-200 text-green-800 text-5xl font-semibold">
                 {tasker.displayName ? tasker.displayName.charAt(0).toUpperCase() : <UserIcon size={48} />}
               </AvatarFallback>

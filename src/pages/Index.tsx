@@ -18,6 +18,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import image placeholders
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -41,7 +42,7 @@ const Index = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { openPostTaskModal, openLoginModal } = useModal();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
+  const { tasks, isLoading: tasksLoading, error: tasksError } = useTasks(); // Updated destructuring
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
@@ -65,7 +66,7 @@ const Index = () => {
 
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
   const filteredTasks = React.useMemo(() => {
-    let currentFilteredTasks = tasks;
+    let currentFilteredTasks = tasks || []; // Ensure tasks is an array
 
     if (selectedCategory && selectedCategory !== 'all') {
       currentFilteredTasks = currentFilteredTasks.filter(task => task.category === selectedCategory);
@@ -119,7 +120,7 @@ const Index = () => {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
+            {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError.message}</p>}
             {tasksLoading && <p className="col-span-full text-center text-gray-500 italic py-8">Loading tasks...</p>}
             {!tasksLoading && (filteredTasks || []).length === 0 && !tasksError ? (
               <p className="col-span-full text-center text-gray-500 italic py-8">No tasks found. Be the first to post one!</p>
@@ -127,7 +128,16 @@ const Index = () => {
               (filteredTasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
+                    <img 
+                      src={task.imageUrl || DEFAULT_TASK_IMAGE_URL} 
+                      alt={task.title} 
+                      className="w-full h-full object-cover" 
+                      loading="lazy" 
+                      onError={(e) => {
+                        e.currentTarget.src = DEFAULT_TASK_IMAGE_URL;
+                        e.currentTarget.onerror = null;
+                      }}
+                    />
                     <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
                       {getCategoryName(task.category)}
                     </div>
@@ -140,7 +150,15 @@ const Index = () => {
                     <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
+                        <img 
+                          src={task.posterAvatar || DEFAULT_AVATAR_URL} 
+                          alt={task.posterName} 
+                          className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" 
+                          onError={(e) => {
+                            e.currentTarget.src = DEFAULT_AVATAR_URL;
+                            e.currentTarget.onerror = null;
+                          }}
+                        />
                         <span className="font-medium">{task.posterName}</span>
                       </div>
                       <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">

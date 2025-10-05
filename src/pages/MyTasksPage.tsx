@@ -21,10 +21,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 import { useModal } from '@/components/ModalProvider';
+import { DEFAULT_TASK_IMAGE_URL } from '@/utils/image-placeholders'; // Import image placeholder
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
+  const { tasks, isLoading: tasksLoading, error: tasksError, deleteTask } = useTasks(); // Updated destructuring
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers();
   const navigate = useNavigate();
   const { openReviewTaskModal, openEditTaskModal } = useModal();
@@ -54,7 +55,7 @@ const MyTasksPage: React.FC = () => {
     );
   }
 
-  const userTasks = tasks.filter(task => task.posterId === user.id);
+  const userTasks = (tasks || []).filter(task => task.posterId === user.id); // Ensure tasks is an array
 
   const handleDeleteClick = (taskId: string) => {
     setTaskToDelete(taskId);
@@ -118,7 +119,7 @@ const MyTasksPage: React.FC = () => {
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">My Posted Tasks</h1>
 
-        {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
+        {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError.message}</p>}
 
         {userTasks.length === 0 && !tasksLoading && !tasksError ? (
           <div className="text-center py-12">
@@ -136,7 +137,15 @@ const MyTasksPage: React.FC = () => {
               return (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
                   <div className="h-40 overflow-hidden relative">
-                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" />
+                    <img 
+                      src={task.imageUrl || DEFAULT_TASK_IMAGE_URL} 
+                      alt={task.title} 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => {
+                        e.currentTarget.src = DEFAULT_TASK_IMAGE_URL;
+                        e.currentTarget.onerror = null;
+                      }}
+                    />
                     <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
                       task.status === 'open' ? 'bg-blue-600 text-white' :
                       task.status === 'assigned' ? 'bg-yellow-600 text-white' :
