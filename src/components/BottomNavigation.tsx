@@ -33,6 +33,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
             "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
             isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
           )}
+          aria-label="Go to Home page"
         >
           <Home size={20} className="mb-1" />
           <span>Home</span>
@@ -40,6 +41,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
         <a
           href="#categories"
           className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          aria-label="Scroll to Services section"
         >
           <LayoutGrid size={20} className="mb-1" />
           <span>Services</span>
@@ -50,6 +52,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
             "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
             isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
           )}
+          aria-label="Go to My Tasks page"
         >
           <ListTodo size={20} className="mb-1" />
           <span>My Tasks</span>
@@ -61,6 +64,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
               "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
               isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
             )}
+            aria-label="Go to Tasker Dashboard"
           >
             <Briefcase size={20} className="mb-1" />
             <span>Dashboard</span>
@@ -73,6 +77,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
             "flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200",
             isActive ? "text-[hsl(var(--primary-color))] bg-[rgba(0,168,45,0.1)]" : "text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
           )}
+          aria-label="Go to Chat page"
         >
           <MessageSquare size={20} className="mb-1" />
           <span>Chat</span>
@@ -80,6 +85,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = () => {
         <button
           onClick={handleProfileClick}
           className="flex flex-col items-center text-xs font-medium p-2 rounded-md transition-colors duration-200 text-[hsl(var(--text-light))] hover:text-[hsl(var(--primary-color))] hover:bg-gray-50"
+          aria-label="Go to Profile page"
         >
           <User size={20} className="mb-1" />
           <span>Profile</span>
