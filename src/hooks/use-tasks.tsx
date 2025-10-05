@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client'; // Fixed import path
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
-export interface Task { // Exported Task interface
+export interface Task {
   id: string;
   title: string;
   description: string;
@@ -38,8 +38,8 @@ interface TaskContextType {
   createTask: (taskData: Omit<Task, 'id' | 'status' | 'posterName' | 'posterAvatar' | 'assignedTaskerId' | 'assignedTaskerName' | 'assignedTaskerAvatar' | 'review' | 'created_at'>) => Promise<void>;
   updateTaskStatus: (taskId: string, status: 'assigned' | 'in_progress' | 'completed' | 'cancelled', assignedTaskerId?: string, reviewData?: { rating: number; comment: string; reviewerId: string; reviewedUserId: string; }) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'created_at' | 'dueDate'>>) => Promise<void>; // Added editTask
-  completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>; // Added completeTaskWithReview
+  editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'created_at' | 'dueDate'>>) => Promise<void>;
+  completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -155,7 +155,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
     try {
-      const updatePayload: { status: 'assigned' | 'in_progress' | 'completed' | 'cancelled'; assignedTaskerId?: string | null } = { status };
+      const updatePayload: { status: 'assigned' | 'in_progress' | 'completed' | 'cancelled'; assignedTaskerId?: string | null; date_completed?: string } = { status };
 
       if (status === 'assigned' && assignedTaskerId) {
         updatePayload.assignedTaskerId = assignedTaskerId;
@@ -163,18 +163,21 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updatePayload.assignedTaskerId = null; // Unassign tasker if cancelled
       } else if (status === 'in_progress') {
         // No additional fields needed for 'in_progress' beyond status
-      } else if (status === 'completed' && reviewData) {
-        // Insert review first
-        const { error: reviewError } = await supabase
-          .from('reviews')
-          .insert({
-            task_id: taskId,
-            rating: reviewData.rating,
-            comment: reviewData.comment,
-            reviewerId: reviewData.reviewerId,
-            reviewedUserId: reviewData.reviewedUserId,
-          });
-        if (reviewError) throw reviewError;
+      } else if (status === 'completed') {
+        updatePayload.date_completed = new Date().toISOString(); // Set completion date
+        // If reviewData is provided, it means the client is completing and reviewing
+        if (reviewData) {
+          const { error: reviewError } = await supabase
+            .from('reviews')
+            .insert({
+              task_id: taskId,
+              rating: reviewData.rating,
+              comment: reviewData.comment,
+              reviewerId: reviewData.reviewerId,
+              reviewedUserId: reviewData.reviewedUserId,
+            });
+          if (reviewError) throw reviewError;
+        }
       }
 
       const { error } = await supabase
