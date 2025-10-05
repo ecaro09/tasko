@@ -7,7 +7,7 @@ import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus } from 'lucide-react';
+import { MapPin, Plus, Cloud } from 'lucide-react'; // Import Cloud icon
 import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
@@ -19,6 +19,8 @@ import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
 import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default image URL and avatar URL
+import { useEdgeFunction } from '@/hooks/use-edge-function'; // Import useEdgeFunction
+import { toast } from 'sonner'; // Import toast
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -43,6 +45,8 @@ const Index = () => {
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
 
+  const { invoke: invokeHelloFunction, loading: helloFunctionLoading } = useEdgeFunction<{ message: string }>('hello'); // Use the new hook
+
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
 
@@ -61,6 +65,13 @@ const Index = () => {
 
   const handleViewTaskDetails = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
+  };
+
+  const handleInvokeHelloFunction = async () => {
+    const result = await invokeHelloFunction();
+    if (result) {
+      toast.info(result.message);
+    }
   };
 
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
@@ -114,9 +125,19 @@ const Index = () => {
         <section id="tasks" className="py-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))]">📋 Available Tasks Near You</h2>
-            <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-2">
-              <Plus size={20} /> Post a Task
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleInvokeHelloFunction}
+                disabled={helloFunctionLoading}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <Cloud size={20} /> {helloFunctionLoading ? 'Calling Edge Function...' : 'Call Edge Function'}
+              </Button>
+              <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-2">
+                <Plus size={20} /> Post a Task
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
