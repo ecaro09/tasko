@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 import { useModal } from '@/components/ModalProvider';
 import { DEFAULT_TASK_IMAGE_URL } from '@/utils/image-placeholders'; // Import image placeholder
+import { cn } from '@/lib/utils'; // Import cn for conditional class names
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -146,12 +147,15 @@ const MyTasksPage: React.FC = () => {
                         e.currentTarget.onerror = null;
                       }}
                     />
-                    <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                      task.status === 'open' ? 'bg-blue-600 text-white' :
-                      task.status === 'assigned' ? 'bg-yellow-600 text-white' :
-                      'bg-green-600 text-white'
-                    }`}>
-                      {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                    <div className={cn(
+                      "absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold",
+                      task.status === 'open' && 'bg-blue-600 text-white',
+                      task.status === 'assigned' && 'bg-yellow-600 text-white',
+                      task.status === 'in_progress' && 'bg-orange-600 text-white',
+                      task.status === 'completed' && 'bg-green-600 text-white',
+                      task.status === 'cancelled' && 'bg-gray-600 text-white'
+                    )}>
+                      {task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
                     </div>
                   </div>
                   <CardContent className="p-4">

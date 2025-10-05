@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTasks } from '@/hooks/use-tasks';
+import { useTasks, Task } from '@/hooks/use-tasks';
 import { useAuth } from '@/hooks/use-auth';
 import { useOffers } from '@/hooks/use-offers';
 import { useChat } from '@/hooks/use-chat';
@@ -24,11 +24,11 @@ const TaskDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { profile: currentUserProfile, loadingProfile } = useSupabaseProfile();
-  const { tasks, loading: tasksLoading, error: tasksError, updateTaskStatus, deleteTask } = useTasks();
+  const { tasks, isLoading: tasksLoading, error: tasksError, updateTaskStatus, deleteTask } = useTasks();
   const { offers, loading: offersLoading, addOffer, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { createChatRoom } = useChat();
 
-  const [task, setTask] = useState<any>(null);
+  const [task, setTask] = useState<Task | null>(null); // Changed type from any to Task | null
   const [userOffer, setUserOffer] = useState<any>(null);
   const [isTaskPoster, setIsTaskPoster] = useState(false);
   const [isAssignedTasker, setIsAssignedTasker] = useState(false);
@@ -40,9 +40,9 @@ const TaskDetailPage: React.FC = () => {
   const isLoading = authLoading || tasksLoading || offersLoading || loadingProfile;
 
   useEffect(() => {
-    if (tasks.length > 0 && id) {
+    if (tasks && tasks.length > 0 && id) { // Check if tasks is defined
       const foundTask = tasks.find(t => t.id === id);
-      setTask(foundTask);
+      setTask(foundTask || null); // Ensure it's Task | null
       if (foundTask && user) {
         setIsTaskPoster(foundTask.posterId === user.id);
         setIsAssignedTasker(foundTask.assignedTaskerId === user.id);
@@ -209,7 +209,7 @@ const TaskDetailPage: React.FC = () => {
   }
 
   if (tasksError) {
-    return <div className="container mx-auto p-4 text-center pt-[80px] text-red-500">Error: {tasksError}</div>;
+    return <div className="container mx-auto p-4 text-center pt-[80px] text-red-500">Error: {tasksError.message}</div>;
   }
 
   if (!task) {
