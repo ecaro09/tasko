@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
+import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle, Lock } from 'lucide-react'; // Added Lock icon
 import { useNavigate } from 'react-router-dom';
 import { useChat, ChatRoom, ChatMessage } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Badge } from '@/components/ui/badge'; // New import
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -109,6 +110,8 @@ const ChatPage: React.FC = () => {
     );
   }
 
+  const isChatClosed = selectedRoom?.status === 'closed';
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col md:flex-row w-full">
       <div className="container mx-auto px-4 flex flex-grow">
@@ -152,11 +155,19 @@ const ChatPage: React.FC = () => {
                       </p>
                       {getTypingIndicator(room)} {/* Display typing indicator in room list */}
                     </div>
-                    {room.lastMessageTimestamp && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(room.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    )}
+                    <div className="flex flex-col items-end gap-1">
+                      {room.lastMessageTimestamp && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(room.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                      <Badge variant="outline" className={cn(
+                        "text-xs px-2 py-0.5",
+                        room.status === 'active' ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
+                      )}>
+                        {room.status === 'active' ? 'Active' : 'Closed'}
+                      </Badge>
+                    </div>
                   </div>
                 ))
               )}
@@ -183,6 +194,12 @@ const ChatPage: React.FC = () => {
                     </AvatarFallback>
                   </Avatar>
                   <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getParticipantName(selectedRoom)}</h3>
+                  <Badge variant="outline" className={cn(
+                    "ml-auto text-xs px-2 py-0.5",
+                    selectedRoom.status === 'active' ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
+                  )}>
+                    {selectedRoom.status === 'active' ? 'Active' : 'Closed'}
+                  </Badge>
                 </div>
 
                 {/* Scam Detection Alert Banner */}
@@ -247,15 +264,20 @@ const ChatPage: React.FC = () => {
                   </div>
                 )}
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  {isChatClosed && (
+                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm italic w-full justify-center">
+                      <Lock size={16} /> This chat is closed. You can no longer send messages.
+                    </div>
+                  )}
                   <Input
                     placeholder="Type your message..."
                     value={messageInput}
                     onChange={handleMessageInputChange}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     className="flex-grow"
-                    disabled={loadingMessages}
+                    disabled={loadingMessages || isChatClosed}
                   />
-                  <Button onClick={handleSendMessage} disabled={loadingMessages || !messageInput.trim()} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
+                  <Button onClick={handleSendMessage} disabled={loadingMessages || !messageInput.trim() || isChatClosed} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
                     <Send size={20} />
                   </Button>
                 </div>
