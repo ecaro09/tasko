@@ -7,37 +7,19 @@ import { useOffers, Offer } from '@/hooks/use-offers'; // Import Offer interface
 import { useModal } from '@/components/ModalProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock, Ban } from 'lucide-react'; // Added Ban icon
+import { MapPin, Calendar, Tag, DollarSign, User, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
-import { useChat } from '@/hooks/use-chat'; // Import useChat
-import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
-import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default image URL and avatar URL
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"; // Import AlertDialog components
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, error: tasksError, cancelTask } = useTasks(); // Added cancelTask
+  const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { profile: currentUserProfile } = useSupabaseProfile(); // Get current user's Supabase profile
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { createChatRoom } = useChat(); // Get chat functions
-
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false); // State for cancel dialog
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -56,10 +38,8 @@ const TaskDetailPage: React.FC = () => {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Task not found.</div>;
   }
 
-  const isTaskPoster = isAuthenticated && user?.id === task.posterId;
+  const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
   const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
-  const assignedOffer = taskOffers.find(offer => offer.status === 'accepted');
-  const isAssignedTasker = isAuthenticated && user?.id === assignedOffer?.taskerId;
 
   const handleMakeOfferClick = () => {
     if (task) {
@@ -93,7 +73,7 @@ const TaskDetailPage: React.FC = () => {
 
   const handleWithdrawOffer = async (offerId: string) => {
     const offer = taskOffers.find(o => o.id === offerId);
-    if (!isAuthenticated || user?.id !== offer?.taskerId) {
+    if (!isAuthenticated || user?.uid !== offer?.taskerId) {
       toast.error("You are not authorized to withdraw this offer.");
       return;
     }
@@ -101,38 +81,6 @@ const TaskDetailPage: React.FC = () => {
       await withdrawOffer(offerId);
     } catch (error) {
       // Error handled by useOffers hook
-    }
-  };
-
-  const handleChatWithParticipant = async (participantId: string) => {
-    if (!isAuthenticated || !user || !currentUserProfile) {
-      toast.error("You must be logged in to start a chat.");
-      return;
-    }
-    if (user.id === participantId) {
-      toast.info("You cannot chat with yourself.");
-      navigate('/chat');
-      return;
-    }
-
-    try {
-      const roomId = await createChatRoom(participantId);
-      if (roomId) {
-        navigate(`/chat?roomId=${roomId}`);
-      }
-    } catch (err) {
-      // Error handled by useChat hook
-    }
-  };
-
-  const handleCancelTask = async () => {
-    if (!task) return;
-    try {
-      await cancelTask(task.id);
-      setIsCancelDialogOpen(false);
-      navigate('/my-tasks'); // Redirect to my tasks page after cancellation
-    } catch (error) {
-      // Error handled by useTasks hook
     }
   };
 
@@ -160,24 +108,7 @@ const TaskDetailPage: React.FC = () => {
 
         <Card className="shadow-lg">
           <CardHeader className="relative p-0">
-            <img 
-              src={task.imageUrl} 
-              alt={task.title} 
-              className="w-full h-64 object-cover rounded-t-lg" 
-              onError={(e) => {
-                e.currentTarget.src = DEFAULT_TASK_IMAGE_URL;
-                e.currentTarget.onerror = null; // Prevent infinite loop if fallback also fails
-              }}
-            />
-            <div className={cn(
-              "absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold bg-opacity-80 backdrop-blur-sm text-white",
-              task.status === 'open' && 'bg-blue-600',
-              task.status === 'assigned' && 'bg-yellow-600',
-              task.status === 'completed' && 'bg-green-600',
-              task.status === 'cancelled' && 'bg-gray-600'
-            )}>
-              {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
-            </div>
+            <img src={task.imageUrl} alt={task.title} className="w-full h-64 object-cover rounded-t-lg" />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
               <CardTitle className="text-3xl font-bold mb-1">{task.title}</CardTitle>
               <CardDescription className="text-gray-200 flex items-center gap-2">
@@ -201,15 +132,7 @@ const TaskDetailPage: React.FC = () => {
               <div>
                 <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Posted By</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  <img 
-                    src={task.posterAvatar || DEFAULT_AVATAR_URL} 
-                    alt={task.posterName} 
-                    className="w-16 h-16 rounded-full object-cover border-2 border-green-500" 
-                    onError={(e) => {
-                      e.currentTarget.src = DEFAULT_AVATAR_URL;
-                      e.currentTarget.onerror = null;
-                    }}
-                  />
+                  <img src={task.posterAvatar} alt={task.posterName} className="w-16 h-16 rounded-full object-cover border-2 border-green-500" />
                   <div>
                     <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{task.posterName}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Task Poster</p>
@@ -226,23 +149,6 @@ const TaskDetailPage: React.FC = () => {
                 {isAuthenticated && !isTasker && !isTaskPoster && (
                   <p className="text-sm text-gray-500 mt-2">Register as a tasker to make an offer.</p>
                 )}
-                {isAssignedTasker && (
-                  <Button
-                    onClick={() => handleChatWithParticipant(task.posterId)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-4"
-                  >
-                    <MessageSquare size={20} /> Chat with Client
-                  </Button>
-                )}
-                {isTaskPoster && (task.status === 'open' || task.status === 'assigned') && (
-                  <Button
-                    onClick={() => setIsCancelDialogOpen(true)}
-                    variant="destructive"
-                    className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 mt-4"
-                  >
-                    <Ban size={20} /> Cancel Task
-                  </Button>
-                )}
               </div>
             </div>
 
@@ -258,14 +164,7 @@ const TaskDetailPage: React.FC = () => {
                       <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-12 h-12 border-2 border-blue-500">
-                            <AvatarImage 
-                              src={offer.taskerAvatar || DEFAULT_AVATAR_URL} 
-                              alt={offer.taskerName} 
-                              onError={(e) => {
-                                e.currentTarget.src = DEFAULT_AVATAR_URL;
-                                e.currentTarget.onerror = null;
-                              }}
-                            />
+                            <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
                             <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
                               {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={20} />}
                             </AvatarFallback>
@@ -298,16 +197,7 @@ const TaskDetailPage: React.FC = () => {
                               </Button>
                             </div>
                           )}
-                          {isTaskPoster && offer.status === 'accepted' && (
-                            <Button
-                              size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 mt-2"
-                              onClick={() => handleChatWithParticipant(offer.taskerId)}
-                            >
-                              <MessageSquare size={16} /> Chat with Tasker
-                            </Button>
-                          )}
-                          {isAuthenticated && user?.id === offer.taskerId && offer.status === 'pending' && (
+                          {isAuthenticated && user?.uid === offer.taskerId && offer.status === 'pending' && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -327,24 +217,6 @@ const TaskDetailPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Cancel Task Confirmation Dialog */}
-      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure you want to cancel this task?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will change the task status to 'cancelled' and unassign any accepted tasker.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Task</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelTask} className="bg-red-600 hover:bg-red-700 text-white">
-              Confirm Cancellation
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

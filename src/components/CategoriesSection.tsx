@@ -25,7 +25,7 @@ interface CategoriesSectionProps {
   onCategorySelect: (category: string) => void;
 }
 
-const CategoriesSection: React.FC<CategoriesSectionProps> = React.memo(({ activeCategory, onCategorySelect }) => {
+const CategoriesSection: React.FC<CategoriesSectionProps> = ({ activeCategory, onCategorySelect }) => {
   return (
     <section id="categories" className="py-12 bg-[hsl(var(--bg-light))] dark:bg-gray-800">
       <div className="container mx-auto px-4 text-center">
@@ -51,6 +51,6 @@ const CategoriesSection: React.FC<CategoriesSectionProps> = React.memo(({ active
       </div>
     </section>
   );
-});
+};
 
 export default CategoriesSection;

@@ -1,10 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
-import { useTaskerProfile } from './use-tasker-profile';
-import { useSupabaseProfile } from './use-supabase-profile';
-import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders';
+import { useTaskerProfile } from './use-tasker-profile'; // Import useTaskerProfile
 
 export interface Task {
   id: string;
@@ -17,27 +15,24 @@ export interface Task {
   posterName: string;
   posterAvatar: string;
   datePosted: string;
-  status: 'open' | 'assigned' | 'completed' | 'cancelled'; // Added 'cancelled' status
-  imageUrl?: string | null;
+  status: 'open' | 'assigned' | 'completed';
+  imageUrl?: string;
   assignedTaskerId?: string;
   assignedOfferId?: string;
   rating?: number;
   review?: string;
   dateCompleted?: string;
   dateUpdated?: string;
-  assignedTaskerName?: string; // Added assignedTaskerName
-  assignedTaskerAvatar?: string; // Added assignedTaskerAvatar
 }
 
 interface UseTasksContextType {
   tasks: Task[];
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>>) => Promise<void>;
+  editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>>) => Promise<void>;
   completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
-  cancelTask: (taskId: string) => Promise<void>; // New function
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -48,104 +43,19 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const { profile: currentUserProfile } = useSupabaseProfile();
-  const { updateTaskerRating } = useTaskerProfile();
-  const { fetchProfile: fetchSupabaseProfile } = useSupabaseProfile();
+  const { updateTaskerRating } = useTaskerProfile(); // Use the new function
   const [allTasks, setAllTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Memoized function to fetch tasks
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('date_posted', { ascending: false });
-
-      if (fetchError) {
-        console.error("Error fetching tasks:", fetchError);
-        setError("Failed to fetch tasks.");
-        toast.error("Failed to load tasks.");
-        return;
-      }
-
-      // Collect all unique poster and assigned tasker IDs
-      const uniqueUserIds = Array.from(new Set([
-        ...data.map(item => item.poster_id),
-        ...data.map(item => item.assigned_tasker_id).filter(Boolean) // Filter out null/undefined
-      ]));
-
-      // Fetch all unique user profiles
-      const userProfiles = await Promise.all(
-        uniqueUserIds.map(id => fetchSupabaseProfile(id))
-      );
-      const userProfileMap = new Map(userProfiles.filter(p => p).map(p => [p!.id, p!]));
-
-      const fetchedTasks: Task[] = data.map((item: any) => {
-        const posterProfile = userProfileMap.get(item.poster_id);
-        const posterAvatar = posterProfile?.avatar_url || DEFAULT_AVATAR_URL;
-        const posterName = posterProfile?.first_name && posterProfile?.last_name
-          ? `${posterProfile.first_name} ${posterProfile.last_name}`
-          : item.poster_name || "Anonymous User"; // Fallback to stored name if profile not found
-
-        const assignedTaskerProfile = item.assigned_tasker_id ? userProfileMap.get(item.assigned_tasker_id) : null;
-        const assignedTaskerName = assignedTaskerProfile?.first_name && assignedTaskerProfile?.last_name
-          ? `${assignedTaskerProfile.first_name} ${assignedTaskerProfile.last_name}`
-          : "Anonymous Tasker"; // Fallback to a generic name
-        const assignedTaskerAvatar = assignedTaskerProfile?.avatar_url || undefined;
-
-        return {
-          id: item.id,
-          title: item.title,
-          category: item.category,
-          description: item.description,
-          location: item.location,
-          budget: item.budget,
-          posterId: item.poster_id,
-          posterName: posterName,
-          posterAvatar: posterAvatar,
-          datePosted: new Date(item.date_posted).toISOString().split('T')[0],
-          status: item.status || 'open',
-          imageUrl: item.image_url || DEFAULT_TASK_IMAGE_URL,
-          assignedTaskerId: item.assigned_tasker_id || undefined,
-          assignedOfferId: item.assigned_offer_id || undefined,
-          rating: item.rating || undefined,
-          review: item.review || undefined,
-          dateCompleted: item.date_completed ? new Date(item.date_completed).toISOString().split('T')[0] : undefined,
-          dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString().split('T')[0] : undefined,
-          assignedTaskerName: assignedTaskerName, // Populate new field
-          assignedTaskerAvatar: assignedTaskerAvatar, // Populate new field
-        };
-      });
-      setAllTasks(fetchedTasks);
-
-      // Only seed if no tasks were fetched initially
-      if (fetchedTasks.length === 0) {
-        // Call seed function, which is also memoized
-        // The seed function will call fetchTasks again after seeding
-        // to update the state, so no need to set loading/error here.
-      }
-
-    } catch (err: any) {
-      console.error("Error in fetchTasks:", err);
-      setError(`Failed to load tasks: ${err.message}`);
-      toast.error(`Failed to load tasks: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchSupabaseProfile]); // Dependencies for useCallback
-
-  // Memoized function to seed initial tasks
-  const seedInitialTasks = useCallback(async () => {
+  // Function to seed initial tasks
+  const seedInitialTasks = async () => {
     const { data: existingTasks, error: fetchError } = await supabase
       .from('tasks')
       .select('id');
 
     if (fetchError) {
-      console.error("Error checking for existing tasks for seeding:", fetchError);
+      console.error("Error checking for existing tasks:", fetchError);
       return;
     }
 
@@ -199,24 +109,57 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         toast.error("Failed to seed initial tasks.");
       } else {
         toast.info("Initial marketing tasks added!");
-        // After seeding, re-fetch tasks to display them
-        await fetchTasks(); // This will trigger a re-fetch
       }
     }
-  }, [fetchTasks]); // seedInitialTasks depends on fetchTasks
+  };
 
   React.useEffect(() => {
-    fetchTasks(); // Initial fetch
+    setLoading(true);
+    setError(null);
 
-    // Call seed function after initial fetch, but only if no tasks were found
-    // This ensures seeding happens only once and only if the table is empty
-    const checkAndSeed = async () => {
-      const { data: existingTasks } = await supabase.from('tasks').select('id');
-      if (existingTasks && existingTasks.length === 0) {
-        await seedInitialTasks();
+    const fetchTasks = async () => {
+      const { data, error: fetchError } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('date_posted', { ascending: false });
+
+      if (fetchError) {
+        console.error("Error fetching tasks:", fetchError);
+        setError("Failed to fetch tasks.");
+        toast.error("Failed to load tasks.");
+        setLoading(false);
+        return;
+      }
+
+      const fetchedTasks: Task[] = data.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        description: item.description,
+        location: item.location,
+        budget: item.budget,
+        posterId: item.poster_id,
+        posterName: item.poster_name,
+        posterAvatar: item.poster_avatar || "https://randomuser.me/api/portraits/lego/1.jpg",
+        datePosted: new Date(item.date_posted).toISOString().split('T')[0],
+        status: item.status || 'open',
+        imageUrl: item.image_url || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        assignedTaskerId: item.assigned_tasker_id || undefined,
+        assignedOfferId: item.assigned_offer_id || undefined,
+        rating: item.rating || undefined,
+        review: item.review || undefined,
+        dateCompleted: item.date_completed ? new Date(item.date_completed).toISOString().split('T')[0] : undefined,
+        dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString().split('T')[0] : undefined,
+      }));
+      setAllTasks(fetchedTasks);
+      setLoading(false);
+
+      if (fetchedTasks.length === 0) {
+        seedInitialTasks();
       }
     };
-    checkAndSeed();
+
+    fetchTasks();
 
     const subscription = supabase
       .channel('public:tasks')
@@ -229,10 +172,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [fetchTasks, seedInitialTasks]); // Now depends on memoized fetchTasks and seedInitialTasks
+  }, []);
 
-  const addTask = useCallback(async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>) => {
-    if (!isAuthenticated || !user || !currentUserProfile) {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => {
+    if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
     }
@@ -243,12 +186,12 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         .insert({
           ...newTaskData,
           poster_id: user.id,
-          poster_name: currentUserProfile.first_name && currentUserProfile.last_name
-            ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
+          poster_name: user.user_metadata?.first_name && user.user_metadata?.last_name
+            ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
             : user.email || "Anonymous User",
-          poster_avatar: currentUserProfile.avatar_url || DEFAULT_AVATAR_URL,
+          poster_avatar: user.user_metadata?.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg",
           status: 'open',
-          image_url: newTaskData.imageUrl || DEFAULT_TASK_IMAGE_URL,
+          image_url: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
         });
 
       if (insertError) throw insertError;
@@ -258,9 +201,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to post task: ${err.message}`);
       throw err;
     }
-  }, [isAuthenticated, user, currentUserProfile]);
+  };
 
-  const deleteTask = useCallback(async (taskId: string) => {
+  const deleteTask = async (taskId: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to delete a task.");
       return;
@@ -280,9 +223,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to delete task: ${err.message}`);
       throw err;
     }
-  }, [isAuthenticated, user]);
+  };
 
-  const editTask = useCallback(async (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>>) => {
+  const editTask = async (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to edit a task.");
       return;
@@ -310,9 +253,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to update task: ${err.message}`);
       throw err;
     }
-  }, [isAuthenticated, user]);
+  };
 
-  const completeTaskWithReview = useCallback(async (taskId: string, rating: number, review: string) => {
+  const completeTaskWithReview = async (taskId: string, rating: number, review: string) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to complete a task.");
       return;
@@ -363,55 +306,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error(`Failed to complete task: ${err.message}`);
       throw err;
     }
-  }, [isAuthenticated, user, updateTaskerRating]);
+  };
 
-  const cancelTask = useCallback(async (taskId: string) => {
-    if (!isAuthenticated || !user) {
-      toast.error("You must be logged in to cancel a task.");
-      return;
-    }
-
-    try {
-      const { data: taskData, error: fetchError } = await supabase
-        .from('tasks')
-        .select('poster_id, status')
-        .eq('id', taskId)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!taskData) {
-        toast.error("Task not found.");
-        return;
-      }
-      if (taskData.poster_id !== user.id) {
-        toast.error("You are not authorized to cancel this task.");
-        return;
-      }
-      if (taskData.status === 'completed' || taskData.status === 'cancelled') {
-        toast.info("This task is already completed or cancelled.");
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update({
-          status: 'cancelled',
-          date_updated: new Date().toISOString(),
-          assigned_tasker_id: null, // Clear assigned tasker if cancelled
-          assigned_offer_id: null, // Clear assigned offer if cancelled
-        })
-        .eq('id', taskId);
-
-      if (updateError) throw updateError;
-      toast.success("Task cancelled successfully!");
-    } catch (err: any) {
-      console.error("Error cancelling task:", err);
-      toast.error(`Failed to cancel task: ${err.message}`);
-      throw err;
-    }
-  }, [isAuthenticated, user]);
-
-  const value = React.useMemo(() => ({
+  const value = {
     tasks: allTasks,
     loading,
     error,
@@ -419,17 +316,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     deleteTask,
     editTask,
     completeTaskWithReview,
-    cancelTask, // Added new function
-  }), [
-    allTasks,
-    loading,
-    error,
-    addTask,
-    deleteTask,
-    editTask,
-    completeTaskWithReview,
-    cancelTask,
-  ]);
+  };
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;
 };

@@ -38,7 +38,13 @@ export const fetchUserProfileSupabase = async (userId: string): Promise<UserProf
 
 export const createOrUpdateUserProfileSupabase = async (
   userId: string,
-  updatedFields: Partial<Omit<UserProfile, 'id' | 'updated_at'>> // Changed signature
+  firstName: string | null,
+  lastName: string | null,
+  phone: string | null, // Added phone parameter
+  avatarUrl: string | null,
+  role: string,
+  rating: number,
+  isVerifiedTasker: boolean
 ): Promise<UserProfile | null> => {
   try {
     const { data, error } = await supabase
@@ -46,8 +52,14 @@ export const createOrUpdateUserProfileSupabase = async (
       .upsert(
         {
           id: userId,
-          ...updatedFields, // Spread the updated fields
-          updated_at: new Date().toISOString(), // Always update timestamp
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone, // Included phone in upsert
+          avatar_url: avatarUrl,
+          role: role,
+          rating: rating,
+          is_verified_tasker: isVerifiedTasker,
+          updated_at: new Date().toISOString(),
         },
         { onConflict: 'id' } // Upsert based on id
       )

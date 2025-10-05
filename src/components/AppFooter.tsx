@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
-const AppFooter: React.FC = React.memo(() => {
+const AppFooter: React.FC = () => {
   return (
     <footer className="bg-gray-800 text-gray-300 py-10 mt-12">
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -33,7 +33,7 @@ const AppFooter: React.FC = React.memo(() => {
           <ul className="space-y-2">
             <li><Link to="/faq" className="text-sm hover:text-green-400 transition-colors">FAQ</Link></li>
             <li><Link to="/contact" className="text-sm hover:text-green-400 transition-colors">Contact Us</Link></li>
-            <li><Link to="/chat" className="text-sm hover:text-green-400 transition-colors">Chat</Link></li>
+            <li><Link to="/chat" className="text-sm hover:text-green-400 transition-colors">Chat</Link></li> {/* New Link */}
             <li><Link to="/privacy" className="text-sm hover:text-green-400 transition-colors">Privacy Policy</Link></li>
             <li><Link to="/terms" className="text-sm hover:text-green-400 transition-colors">Terms of Service</Link></li>
           </ul>
@@ -70,6 +70,6 @@ const AppFooter: React.FC = React.memo(() => {
       </div>
     </footer>
   );
-});
+};
 
 export default AppFooter;

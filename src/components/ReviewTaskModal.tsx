@@ -22,11 +22,9 @@ const ReviewTaskModal: React.FC<ReviewTaskModalProps> = ({ isOpen, onClose, task
 
   React.useEffect(() => {
     if (isOpen && task) {
-      // Pre-fill if task already has a rating/review (e.g., for editing, though current flow is one-time)
       setRating(task.rating || 0);
       setReview(task.review || '');
     } else {
-      // Reset form when modal closes or no task is selected
       setRating(0);
       setReview('');
     }

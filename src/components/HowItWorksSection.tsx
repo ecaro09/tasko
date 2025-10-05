@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClipboardList, Handshake, UserCheck, CheckCircle } from 'lucide-react';
 
-const HowItWorksSection: React.FC = React.memo(() => {
+const HowItWorksSection: React.FC = () => {
   const steps = [
     {
       icon: ClipboardList,
@@ -48,6 +48,6 @@ const HowItWorksSection: React.FC = React.memo(() => {
       </div>
     </section>
   );
-});
+};
 
 export default HowItWorksSection;

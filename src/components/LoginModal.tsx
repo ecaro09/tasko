@@ -13,7 +13,7 @@ interface LoginModalProps {
   onSwitchToSignup: () => void; // New prop
 }
 
-const LoginModal: React.FC<LoginModalProps> = React.memo(({ isOpen, onClose, onSwitchToSignup }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSignup }) => {
   const { loginWithEmailPassword, signInWithGoogle, loading: authLoading } = useAuth(); // Get authLoading
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -119,6 +119,6 @@ const LoginModal: React.FC<LoginModalProps> = React.memo(({ isOpen, onClose, onS
       </DialogContent>
     </Dialog>
   );
-});
+};
 
 export default LoginModal;

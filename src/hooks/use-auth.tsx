@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => subscription.unsubscribe();
   }, []);
 
-  const signupWithEmailPassword = useCallback(async (email: string, password: string, firstName?: string, lastName?: string) => {
+  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -72,8 +72,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           data: {
             first_name: firstName,
             last_name: lastName,
-            // Removed avatar_url, phone, role, rating, is_verified_tasker
-            // These will be handled by the handle_new_user trigger and public.profiles table
+            avatar_url: null, // Default avatar
+            phone: null,
+            role: 'user', // Default role
+            rating: 0,
+            is_verified_tasker: false,
           },
         },
       });
@@ -97,9 +100,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toast.error(errorMessage);
       throw error;
     }
-  }, []);
+  };
 
-  const loginWithEmailPassword = useCallback(async (email: string, password: string) => {
+  const loginWithEmailPassword = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -123,9 +126,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toast.error(errorMessage);
       throw error;
     }
-  }, []);
+  };
 
-  const logout = useCallback(async () => {
+  const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -136,9 +139,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toast.error(`Failed to log out: ${error.message}`);
       console.log(`[Auth Log] Logout failed at ${new Date().toISOString()} - Error: ${error.message}`);
     }
-  }, []);
+  };
 
-  const updateUserProfile = useCallback(async (firstName: string, lastName: string, avatarUrl?: string) => {
+  const updateUserProfile = async (firstName: string, lastName: string, avatarUrl?: string) => {
     if (!authState.user) {
       toast.error("You must be logged in to update your profile.");
       return;
@@ -167,9 +170,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log(`[Auth Log] Profile update failed for user: ${authState.user.id} at ${new Date().toISOString()} - Error: ${error.message}`);
       throw error;
     }
-  }, [authState.user]); // Dependency on authState.user
+  };
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = async () => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -198,23 +201,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toast.error(errorMessage);
       throw error;
     }
-  }, []);
+  };
 
-  const value = React.useMemo(() => ({
-    ...authState,
-    signupWithEmailPassword,
-    loginWithEmailPassword,
-    logout,
-    updateUserProfile,
-    signInWithGoogle
-  }), [
-    authState,
-    signupWithEmailPassword,
-    loginWithEmailPassword,
-    logout,
-    updateUserProfile,
-    signInWithGoogle
-  ]);
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

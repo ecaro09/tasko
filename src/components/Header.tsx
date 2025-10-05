@@ -5,25 +5,19 @@ import { useModal } from './ModalProvider';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from 'lucide-react';
-import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
-import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // Import useTaskerProfile
-import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 interface HeaderProps {
   isAuthenticated: boolean;
   onSignOut: () => void;
 }
 
-const Header: React.FC<HeaderProps> = React.memo(({ isAuthenticated, onSignOut }) => {
+const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
   const { openLoginModal, openSignupModal } = useModal();
   const { user } = useAuth();
-  const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Get isTasker status
 
-  // Use profile data if available, fallback to user_metadata or email
-  const userFirstName = profile?.first_name || user?.user_metadata?.first_name as string | undefined;
-  const userLastName = profile?.last_name || user?.user_metadata?.last_name as string | undefined;
-  const userAvatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url as string | undefined;
+  const userFirstName = user?.user_metadata?.first_name as string | undefined;
+  const userLastName = user?.user_metadata?.last_name as string | undefined;
+  const userAvatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
   const displayUserName = userFirstName && userLastName
     ? `${userFirstName} ${userLastName}`
@@ -43,12 +37,7 @@ const Header: React.FC<HeaderProps> = React.memo(({ isAuthenticated, onSignOut }
           <Link to="/" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Home</Link>
           <a href="#categories" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Services</a>
           {isAuthenticated && (
-            <>
-              <Link to="/my-tasks" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">My Tasks</Link>
-              {isTasker && (
-                <Link to="/my-assigned-tasks" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">My Assigned Tasks</Link>
-              )}
-            </>
+            <Link to="/my-tasks" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">My Tasks</Link>
           )}
           <a href="#how-it-works" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">How It Works</a>
           <Link to="/features-earnings" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Become a Tasker</Link>
@@ -61,14 +50,7 @@ const Header: React.FC<HeaderProps> = React.memo(({ isAuthenticated, onSignOut }
             <>
               <Link to="/profile" className="flex items-center">
                 <Avatar className="w-8 h-8 border-2 border-[hsl(var(--primary-color))]">
-                  <AvatarImage 
-                    src={userAvatarUrl || DEFAULT_AVATAR_URL} 
-                    alt={displayUserName} 
-                    onError={(e) => {
-                      e.currentTarget.src = DEFAULT_AVATAR_URL;
-                      e.currentTarget.onerror = null;
-                    }}
-                  />
+                  <AvatarImage src={userAvatarUrl} alt={displayUserName} />
                   <AvatarFallback className="bg-[hsl(var(--primary-color))] text-white text-sm font-semibold">
                     {avatarFallbackText}
                   </AvatarFallback>
@@ -92,6 +74,6 @@ const Header: React.FC<HeaderProps> = React.memo(({ isAuthenticated, onSignOut }
       </div>
     </header>
   );
-});
+};
 
 export default Header;

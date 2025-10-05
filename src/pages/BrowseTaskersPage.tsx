@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 const BrowseTaskersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -56,14 +55,7 @@ const BrowseTaskersPage: React.FC = () => {
               <Card key={tasker.userId} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                 <CardContent className="p-4 flex flex-col items-center text-center">
                   <Avatar className="w-20 h-20 mb-3 border-2 border-green-500">
-                    <AvatarImage 
-                      src={tasker.photoURL || DEFAULT_AVATAR_URL} 
-                      alt={tasker.displayName} 
-                      onError={(e) => {
-                        e.currentTarget.src = DEFAULT_AVATAR_URL;
-                        e.currentTarget.onerror = null;
-                      }}
-                    />
+                    <AvatarImage src={tasker.photoURL || undefined} alt={tasker.displayName} />
                     <AvatarFallback className="bg-green-200 text-green-800 text-2xl font-semibold">
                       {tasker.displayName ? tasker.displayName.charAt(0).toUpperCase() : <UserIcon size={24} />}
                     </AvatarFallback>

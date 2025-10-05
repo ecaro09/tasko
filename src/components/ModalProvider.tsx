@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/use-auth';
@@ -10,7 +10,7 @@ import PostTaskModal from './PostTaskModal';
 import TaskerRegistrationModal from './TaskerRegistrationModal';
 import MakeOfferModal from './MakeOfferModal';
 import EditTaskModal from './EditTaskModal';
-import ReviewTaskModal from './ReviewTaskModal'; // Import the new ReviewTaskModal
+import ReviewTaskModal from './ReviewTaskModal';
 
 interface ModalContextType {
   openLoginModal: () => void;
@@ -19,7 +19,7 @@ interface ModalContextType {
   openTaskerRegistrationModal: () => void;
   openMakeOfferModal: (task: Task) => void;
   openEditTaskModal: (task: Task) => void;
-  openReviewTaskModal: (task: Task) => void; // Add new function for review modal
+  openReviewTaskModal: (task: Task) => void;
   closeAllModals: () => void;
 }
 
@@ -32,46 +32,31 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isTaskerRegistrationModalOpen, setIsTaskerRegistrationModalOpen] = React.useState(false);
   const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = React.useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = React.useState(false);
-  const [isReviewTaskModalOpen, setIsReviewTaskModalOpen] = React.useState(false); // New state for review modal
+  const [isReviewTaskModalOpen, setIsReviewTaskModalOpen] = React.useState(false);
 
   const [selectedTaskForOffer, setSelectedTaskForOffer] = React.useState<Task | null>(null);
   const [selectedTaskForEdit, setSelectedTaskForEdit] = React.useState<Task | null>(null);
-  const [selectedTaskForReview, setSelectedTaskForReview] = React.useState<Task | null>(null); // New state for task to review
+  const [selectedTaskForReview, setSelectedTaskForReview] = React.useState<Task | null>(null);
 
   const { isAuthenticated } = useAuth();
 
-  const closeAllModals = useCallback(() => {
-    setIsLoginModalOpen(false);
-    setIsSignupModalOpen(false);
-    setIsPostTaskModalOpen(false);
-    setIsTaskerRegistrationModalOpen(false);
-    setIsMakeOfferModalOpen(false);
-    setIsEditTaskModalOpen(false);
-    setIsReviewTaskModalOpen(false); // Close review modal
-    setSelectedTaskForOffer(null);
-    setSelectedTaskForEdit(null);
-    setSelectedTaskForReview(null); // Clear selected task for review
-  }, []);
-
-  const openLoginModal = useCallback(() => {
+  const openLoginModal = () => {
     if (isAuthenticated) {
       toast.info("You are already logged in.");
       return;
     }
     closeAllModals();
     setIsLoginModalOpen(true);
-  }, [isAuthenticated, closeAllModals]);
-
-  const openSignupModal = useCallback(() => {
+  };
+  const openSignupModal = () => {
     if (isAuthenticated) {
       toast.info("You are already logged in.");
       return;
     }
     closeAllModals();
     setIsSignupModalOpen(true);
-  }, [isAuthenticated, closeAllModals]);
-
-  const openPostTaskModal = useCallback(() => {
+  };
+  const openPostTaskModal = () => {
     if (!isAuthenticated) {
       toast.error("Please log in to post a task.");
       openLoginModal();
@@ -79,9 +64,9 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
     closeAllModals();
     setIsPostTaskModalOpen(true);
-  }, [isAuthenticated, openLoginModal, closeAllModals]);
+  };
 
-  const openTaskerRegistrationModal = useCallback(() => {
+  const openTaskerRegistrationModal = () => {
     if (!isAuthenticated) {
       toast.error("Please log in to register as a tasker.");
       openLoginModal();
@@ -89,9 +74,9 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
     closeAllModals();
     setIsTaskerRegistrationModalOpen(true);
-  }, [isAuthenticated, openLoginModal, closeAllModals]);
+  };
 
-  const openMakeOfferModal = useCallback((task: Task) => {
+  const openMakeOfferModal = (task: Task) => {
     if (!isAuthenticated) {
       toast.error("Please log in to make an offer.");
       openLoginModal();
@@ -100,9 +85,9 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     closeAllModals();
     setSelectedTaskForOffer(task);
     setIsMakeOfferModalOpen(true);
-  }, [isAuthenticated, openLoginModal, closeAllModals]);
+  };
 
-  const openEditTaskModal = useCallback((task: Task) => {
+  const openEditTaskModal = (task: Task) => {
     if (!isAuthenticated) {
       toast.error("Please log in to edit a task.");
       openLoginModal();
@@ -111,9 +96,9 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     closeAllModals();
     setSelectedTaskForEdit(task);
     setIsEditTaskModalOpen(true);
-  }, [isAuthenticated, openLoginModal, closeAllModals]);
+  };
 
-  const openReviewTaskModal = useCallback((task: Task) => { // New function
+  const openReviewTaskModal = (task: Task) => {
     if (!isAuthenticated) {
       toast.error("Please log in to review a task.");
       openLoginModal();
@@ -122,18 +107,22 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     closeAllModals();
     setSelectedTaskForReview(task);
     setIsReviewTaskModalOpen(true);
-  }, [isAuthenticated, openLoginModal, closeAllModals]);
+  };
 
-  const value = React.useMemo(() => ({
-    openLoginModal,
-    openSignupModal,
-    openPostTaskModal,
-    openTaskerRegistrationModal,
-    openMakeOfferModal,
-    openEditTaskModal,
-    openReviewTaskModal, // Add to memoized value
-    closeAllModals,
-  }), [
+  const closeAllModals = () => {
+    setIsLoginModalOpen(false);
+    setIsSignupModalOpen(false);
+    setIsPostTaskModalOpen(false);
+    setIsTaskerRegistrationModalOpen(false);
+    setIsMakeOfferModalOpen(false);
+    setIsEditTaskModalOpen(false);
+    setIsReviewTaskModalOpen(false);
+    setSelectedTaskForOffer(null);
+    setSelectedTaskForEdit(null);
+    setSelectedTaskForReview(null);
+  };
+
+  const value = {
     openLoginModal,
     openSignupModal,
     openPostTaskModal,
@@ -142,7 +131,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     openEditTaskModal,
     openReviewTaskModal,
     closeAllModals,
-  ]);
+  };
 
   return (
     <ModalContext.Provider value={value}>
@@ -153,7 +142,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <TaskerRegistrationModal isOpen={isTaskerRegistrationModalOpen} onClose={closeAllModals} />
       <MakeOfferModal isOpen={isMakeOfferModalOpen} onClose={closeAllModals} task={selectedTaskForOffer} />
       <EditTaskModal isOpen={isEditTaskModalOpen} onClose={closeAllModals} task={selectedTaskForEdit} />
-      <ReviewTaskModal isOpen={isReviewTaskModalOpen} onClose={closeAllModals} task={selectedTaskForReview} /> {/* Render new modal */}
+      <ReviewTaskModal isOpen={isReviewTaskModalOpen} onClose={closeAllModals} task={selectedTaskForReview} />
     </ModalContext.Provider>
   );
 };

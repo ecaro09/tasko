@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface UseFileUploadResult {
-  uploadFile: (file: File, filePath: string, bucketName?: string) => Promise<string | null>;
+  uploadFile: (file: File, filePath: string) => Promise<string | null>;
   loading: boolean;
   error: string | null;
 }
@@ -12,12 +12,12 @@ export const useFileUpload = (): UseFileUploadResult => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const uploadFile = useCallback(async (file: File, filePath: string, bucketName: string = 'avatars'): Promise<string | null> => {
+  const uploadFile = async (file: File, filePath: string): Promise<string | null> => {
     setLoading(true);
     setError(null);
     try {
       const { data, error: uploadError } = await supabase.storage
-        .from(bucketName)
+        .from('avatars') // Using a generic 'avatars' bucket, can be changed to 'task_images' or other
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
@@ -29,7 +29,7 @@ export const useFileUpload = (): UseFileUploadResult => {
 
       // Get public URL
       const { data: publicUrlData } = supabase.storage
-        .from(bucketName)
+        .from('avatars')
         .getPublicUrl(filePath);
 
       if (publicUrlData?.publicUrl) {
@@ -46,7 +46,7 @@ export const useFileUpload = (): UseFileUploadResult => {
     } finally {
       setLoading(false);
     }
-  }, []); // No dependencies needed as supabase, toast, setLoading, setError are stable
+  };
 
   return { uploadFile, loading, error };
 };

@@ -7,7 +7,7 @@ import AppFooter from "@/components/AppFooter";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus, Cloud } from 'lucide-react'; // Import Cloud icon
+import { MapPin, Plus } from 'lucide-react';
 import SplashScreen from '@/components/SplashScreen';
 import InstallPrompt from '@/components/InstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
@@ -18,9 +18,6 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
-import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default image URL and avatar URL
-import { useEdgeFunction } from '@/hooks/use-edge-function'; // Import useEdgeFunction
-import { toast } from 'sonner'; // Import toast
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -31,6 +28,7 @@ const getCategoryName = (category: string) => {
     repairs: 'Repairs',
     delivery: 'Delivery',
     mounting: 'Mounting',
+    painting: 'Painting',
     marketing: 'Marketing', // Added marketing category
     other: 'Other'
   };
@@ -45,33 +43,24 @@ const Index = () => {
   const navigate = useNavigate();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
 
-  const { invoke: invokeHelloFunction, loading: helloFunctionLoading } = useEdgeFunction<{ message: string }>('hello'); // Use the new hook
-
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
 
-  const handleSignOut = React.useCallback(async () => {
+  const handleSignOut = async () => {
     await logout();
-  }, [logout]);
+  };
 
-  const handleSearchSubmit = React.useCallback(() => {
+  const handleSearchSubmit = () => {
     console.log("Searching for:", searchTerm, "in category:", selectedCategory);
-  }, [searchTerm, selectedCategory]); // Dependencies for useCallback
+  };
 
-  const handleCategorySelect = React.useCallback((category: string) => {
+  const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
     setSearchTerm('');
-  }, []); // No dependencies needed as setSelectedCategory and setSearchTerm are stable setters
+  };
 
   const handleViewTaskDetails = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
-  };
-
-  const handleInvokeHelloFunction = async () => {
-    const result = await invokeHelloFunction();
-    if (result) {
-      toast.info(result.message);
-    }
   };
 
   // Perform filtering locally in Index.tsx using React.useMemo for efficiency
@@ -125,19 +114,9 @@ const Index = () => {
         <section id="tasks" className="py-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-4xl font-bold text-[hsl(var(--primary-color))]">📋 Available Tasks Near You</h2>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleInvokeHelloFunction}
-                disabled={helloFunctionLoading}
-                variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <Cloud size={20} /> {helloFunctionLoading ? 'Calling Edge Function...' : 'Call Edge Function'}
-              </Button>
-              <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-2">
-                <Plus size={20} /> Post a Task
-              </Button>
-            </div>
+            <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-2">
+              <Plus size={20} /> Post a Task
+            </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
@@ -148,16 +127,7 @@ const Index = () => {
               (filteredTasks || []).map((task) => (
                 <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 rounded-[var(--border-radius)] overflow-hidden">
                   <div className="h-40 overflow-hidden relative">
-                    <img 
-                      src={task.imageUrl} 
-                      alt={task.title} 
-                      className="w-full h-full object-cover" 
-                      loading="lazy" 
-                      onError={(e) => {
-                        e.currentTarget.src = DEFAULT_TASK_IMAGE_URL;
-                        e.currentTarget.onerror = null; // Prevent infinite loop if fallback also fails
-                      }}
-                    />
+                    <img src={task.imageUrl} alt={task.title} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute top-2 left-2 bg-[hsl(var(--primary-color))] text-white px-3 py-1 rounded-full text-xs font-semibold">
                       {getCategoryName(task.category)}
                     </div>
@@ -170,15 +140,7 @@ const Index = () => {
                     <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <img 
-                          src={task.posterAvatar || DEFAULT_AVATAR_URL} 
-                          alt={task.posterName} 
-                          className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" 
-                          onError={(e) => {
-                            e.currentTarget.src = DEFAULT_AVATAR_URL;
-                            e.currentTarget.onerror = null;
-                          }}
-                        />
+                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
                         <span className="font-medium">{task.posterName}</span>
                       </div>
                       <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">

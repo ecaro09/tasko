@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTasks, Task } from '@/hooks/use-tasks';
 import { toast } from 'sonner';
 import { useFileUpload } from '@/hooks/use-file-upload';
-import { Camera, Image as ImageIcon, Link as LinkIcon } from 'lucide-react'; // Import Link icon
+import { Camera, Image as ImageIcon } from 'lucide-react';
 
 interface EditTaskModalProps {
   isOpen: boolean;
@@ -26,7 +26,6 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
   const [taskCategory, setTaskCategory] = React.useState(task?.category || '');
   const [taskImageFile, setTaskImageFile] = React.useState<File | null>(null);
   const [taskImagePreview, setTaskImagePreview] = React.useState<string | null>(task?.imageUrl || null);
-  const [taskImageUrlInput, setTaskImageUrlInput] = React.useState(task?.imageUrl || ''); // New state for image URL input
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -37,18 +36,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       setTaskBudget(String(task.budget));
       setTaskCategory(task.category);
       setTaskImagePreview(task.imageUrl || null);
-      setTaskImageUrlInput(task.imageUrl || ''); // Initialize URL input with existing URL
       setTaskImageFile(null); // Reset file input
-    } else {
-      // Reset form if no task is selected (e.g., modal opened without a task)
-      setTaskTitle('');
-      setTaskDescription('');
-      setTaskLocation('');
-      setTaskBudget('');
-      setTaskCategory('');
-      setTaskImageFile(null);
-      setTaskImagePreview(null);
-      setTaskImageUrlInput('');
     }
   }, [task, isOpen]);
 
@@ -57,18 +45,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       const file = event.target.files[0];
       setTaskImageFile(file);
       setTaskImagePreview(URL.createObjectURL(file));
-      setTaskImageUrlInput(''); // Clear URL input if file is uploaded
     } else {
       setTaskImageFile(null);
       setTaskImagePreview(task?.imageUrl || null); // Revert to original if no new file selected
-      setTaskImageUrlInput(task?.imageUrl || ''); // Revert URL input
     }
-  };
-
-  const handleImageUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTaskImageUrlInput(e.target.value);
-    setTaskImageFile(null); // Clear file input if URL is provided
-    setTaskImagePreview(e.target.value || null); // Show URL preview
   };
 
   const handleSaveTask = async () => {
@@ -86,22 +66,20 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
     }
 
     setIsLoading(true);
-    let finalImageUrl: string | null | undefined = task.imageUrl; // Start with current image URL
+    let imageUrl: string | undefined = task.imageUrl;
 
     if (taskImageFile) {
       const filePath = `task_images/${task.id}_${Date.now()}_${taskImageFile.name}`;
-      const uploadedURL = await uploadFile(taskImageFile, filePath, 'task_images');
+      const uploadedURL = await uploadFile(taskImageFile, filePath);
       if (uploadedURL) {
-        finalImageUrl = uploadedURL;
+        imageUrl = uploadedURL;
       } else {
         setIsLoading(false);
         return;
       }
-    } else if (taskImageUrlInput.trim()) {
-      finalImageUrl = taskImageUrlInput.trim();
-    } else if (taskImagePreview === null && (task.imageUrl || taskImageUrlInput)) {
-      // If preview is cleared and there was an original image or URL, it means user wants to remove it
-      finalImageUrl = null;
+    } else if (taskImagePreview === null && task.imageUrl) {
+      // If preview is cleared and there was an original image, it means user wants to remove it
+      imageUrl = undefined; // Explicitly set to undefined to signal removal
     }
 
     try {
@@ -111,7 +89,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
         location: taskLocation,
         budget: parseFloat(taskBudget),
         category: taskCategory,
-        imageUrl: finalImageUrl,
+        imageUrl: imageUrl,
       });
       onClose();
     } catch (error) {
@@ -215,7 +193,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                 <img src={taskImagePreview} alt="Task Preview" className="w-32 h-32 object-cover rounded-md mb-2" />
               )}
               <Label htmlFor="task-image-upload" className="cursor-pointer flex items-center gap-2 text-blue-600 hover:text-blue-800">
-                <Camera size={20} /> {taskImageFile ? "Change Uploaded Image" : (taskImagePreview ? "Update Image" : "Upload Image (Optional)")}
+                <Camera size={20} /> {taskImageFile ? "Change Image" : (taskImagePreview ? "Update Image" : "Upload Image (Optional)")}
                 <Input
                   id="task-image-upload"
                   type="file"
@@ -225,41 +203,19 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                   disabled={isFormDisabled}
                 />
               </Label>
-              <div className="relative my-2">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                    Or
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <LinkIcon size={20} className="text-gray-500" />
-                <Input
-                  id="task-image-url"
-                  type="url"
-                  placeholder="Paste image URL (e.g., from Google Drive)"
-                  className="flex-1"
-                  value={taskImageUrlInput}
-                  onChange={handleImageUrlInputChange}
-                  disabled={isFormDisabled}
-                />
-              </div>
-              {(taskImageFile || taskImageUrlInput) && (
+              {taskImagePreview && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setTaskImageFile(null); setTaskImagePreview(null); setTaskImageUrlInput(''); }}
+                  onClick={() => setTaskImagePreview(null)}
                   disabled={isFormDisabled}
                   className="text-red-500 hover:text-red-700"
                 >
                   Remove Image
                 </Button>
               )}
-              {!taskImageFile && !taskImageUrlInput && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">Max file size: 5MB for uploads</p>
+              {!taskImageFile && !taskImagePreview && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Max file size: 5MB</p>
               )}
             </div>
           </div>

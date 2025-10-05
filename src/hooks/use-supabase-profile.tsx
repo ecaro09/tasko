@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './use-auth';
 import { fetchUserProfileSupabase, createOrUpdateUserProfileSupabase, UserProfile } from '@/lib/user-profile-supabase';
 import { toast } from 'sonner';
@@ -10,7 +10,13 @@ interface SupabaseProfileContextType {
   error: string | null;
   updateProfile: (
     userId: string,
-    updatedFields: Partial<Omit<UserProfile, 'id' | 'updated_at'>>
+    firstName: string | null,
+    lastName: string | null,
+    phone: string | null, // Added phone parameter
+    avatarUrl: string | null,
+    role: string,
+    rating: number,
+    isVerifiedTasker: boolean
   ) => Promise<void>;
   fetchProfile: (userId: string) => Promise<UserProfile | null>; // Function to fetch any user's profile
 }
@@ -22,13 +28,13 @@ interface SupabaseProfileProviderProps {
 }
 
 export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = ({ children }) => {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth(); // Use useAuth to get the current user
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   // Function to fetch a specific user's profile (can be used internally or exposed)
-  const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+  const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       const fetchedProfile = await fetchUserProfileSupabase(userId);
       return fetchedProfile;
@@ -37,7 +43,7 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
       setError(err.message);
       return null;
     }
-  }, []); // No dependencies needed as fetchUserProfileSupabase and toast are stable
+  };
 
   React.useEffect(() => {
     const loadProfile = async () => {
@@ -53,15 +59,13 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
             // If no profile exists in public.profiles, create a basic one
             const newProfile = await createOrUpdateUserProfileSupabase(
               user.id,
-              {
-                first_name: user.user_metadata?.first_name as string || null,
-                last_name: user.user_metadata?.last_name as string || null,
-                avatar_url: user.user_metadata?.avatar_url as string || null,
-                phone: null,
-                role: 'user',
-                rating: 0,
-                is_verified_tasker: false
-              }
+              user.user_metadata?.first_name as string || null,
+              user.user_metadata?.last_name as string || null,
+              null, // Default phone to null for new profiles
+              user.user_metadata?.avatar_url as string || null,
+              'user', // Default role
+              0,      // Default rating
+              false   // Default is_verified_tasker
             );
             setProfile(newProfile);
             toast.success("New user profile created in Supabase!");
@@ -77,21 +81,33 @@ export const SupabaseProfileProvider: React.FC<SupabaseProfileProviderProps> = (
       setLoadingProfile(false);
     };
 
-    if (!authLoading) {
+    if (!authLoading) { // Only load profile once auth state is known
       loadProfile();
     }
-  }, [isAuthenticated, user, authLoading, fetchProfile]); // Added fetchProfile to dependencies
+  }, [isAuthenticated, user, authLoading]); // Re-run when auth state changes
 
   const updateProfile = async (
     userId: string,
-    updatedFields: Partial<Omit<UserProfile, 'id' | 'updated_at'>>
+    firstName: string | null,
+    lastName: string | null,
+    phone: string | null, // Added phone parameter
+    avatarUrl: string | null,
+    role: string,
+    rating: number,
+    isVerifiedTasker: boolean
   ) => {
     setLoadingProfile(true);
     setError(null);
     try {
       const updated = await createOrUpdateUserProfileSupabase(
         userId,
-        updatedFields
+        firstName,
+        lastName,
+        phone, // Passed phone to the upsert function
+        avatarUrl,
+        role,
+        rating,
+        isVerifiedTasker
       );
       if (updated) {
         setProfile(updated);

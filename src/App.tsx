@@ -16,7 +16,6 @@ import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
-import MyAssignedTasksPage from "./pages/MyAssignedTasksPage"; // Import the new page
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -27,7 +26,7 @@ import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { ChatProvider } from "./hooks/use-chat";
-import { SupabaseProfileProvider } from "./hooks/use-supabase-profile";
+import { SupabaseProfileProvider } from "./hooks/use-supabase-profile"; // Import SupabaseProfileProvider
 
 const queryClient = new QueryClient();
 
@@ -38,12 +37,12 @@ const App = () => {
         <TooltipProvider>
           <BrowserRouter>
             <AuthProvider>
-              <SupabaseProfileProvider>
-                <TaskerProfileProvider> {/* Moved TaskerProfileProvider here */}
-                  <PWAProvider>
-                    <TasksProvider>
-                      <OffersProvider>
-                        <ChatProvider>
+              <PWAProvider>
+                <TasksProvider>
+                  <TaskerProfileProvider>
+                    <OffersProvider>
+                      <ChatProvider>
+                        <SupabaseProfileProvider> {/* Wrap with SupabaseProfileProvider */}
                           <ModalProvider>
                             <div className="min-h-screen w-full flex flex-col items-center">
                               <Routes>
@@ -51,7 +50,6 @@ const App = () => {
                                 <Route path="/tasks/:id" element={<TaskDetailPage />} />
                                 <Route path="/my-tasks" element={<MyTasksPage />} />
                                 <Route path="/my-offers" element={<MyOffersPage />} />
-                                <Route path="/my-assigned-tasks" element={<MyAssignedTasksPage />} /> {/* New route */}
                                 <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
                                 <Route path="/profile" element={<ProfilePage />} />
                                 <Route path="/settings" element={<SettingsPage />} />
@@ -67,12 +65,12 @@ const App = () => {
                               </Routes>
                             </div>
                           </ModalProvider>
-                        </ChatProvider>
-                      </OffersProvider>
-                    </TasksProvider>
-                  </PWAProvider>
-                </TaskerProfileProvider>
-              </SupabaseProfileProvider>
+                        </SupabaseProfileProvider>
+                      </ChatProvider>
+                    </OffersProvider>
+                  </TaskerProfileProvider>
+                </TasksProvider>
+              </PWAProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>

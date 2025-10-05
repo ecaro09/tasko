@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { toast } from 'sonner';
 
 interface PWAContextType {
@@ -92,7 +92,7 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
            (window.navigator as any).standalone === true;
   };
 
-  const installApp = useCallback(async () => {
+  const installApp = async () => {
     if (deferredPrompt) {
       (deferredPrompt as any).prompt();
       const { outcome } = await (deferredPrompt as any).userChoice;
@@ -102,19 +102,19 @@ export const PWAProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setShowInstallPromptState(false);
       }
     }
-  }, [deferredPrompt, setDeferredPrompt, setShowInstallPromptState]);
+  };
 
-  const closeInstallPrompt = useCallback(() => {
+  const closeInstallPrompt = () => {
     setShowInstallPromptState(false);
-  }, [setShowInstallPromptState]);
+  };
 
-  const value = React.useMemo(() => ({
+  const value = {
     isOnline,
     showInstallPrompt: showInstallPromptState,
     installApp,
     closeInstallPrompt,
     showSplashScreen,
-  }), [isOnline, showInstallPromptState, installApp, closeInstallPrompt, showSplashScreen]);
+  };
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>;
 };
