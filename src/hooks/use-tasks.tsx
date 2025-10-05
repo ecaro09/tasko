@@ -25,15 +25,17 @@ export interface Task {
   review?: string;
   dateCompleted?: string;
   dateUpdated?: string;
+  assignedTaskerName?: string; // Added assignedTaskerName
+  assignedTaskerAvatar?: string; // Added assignedTaskerAvatar
 }
 
 interface UseTasksContextType {
   tasks: Task[];
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>>) => Promise<void>;
+  editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>>) => Promise<void>;
   completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
   cancelTask: (taskId: string) => Promise<void>; // New function
 }
@@ -70,19 +72,30 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         return;
       }
 
-      // Fetch all unique poster profiles to avoid N+1 queries
-      const uniquePosterIds = Array.from(new Set(data.map(item => item.poster_id)));
-      const posterProfiles = await Promise.all(
-        uniquePosterIds.map(id => fetchSupabaseProfile(id))
+      // Collect all unique poster and assigned tasker IDs
+      const uniqueUserIds = Array.from(new Set([
+        ...data.map(item => item.poster_id),
+        ...data.map(item => item.assigned_tasker_id).filter(Boolean) // Filter out null/undefined
+      ]));
+
+      // Fetch all unique user profiles
+      const userProfiles = await Promise.all(
+        uniqueUserIds.map(id => fetchSupabaseProfile(id))
       );
-      const posterProfileMap = new Map(posterProfiles.filter(p => p).map(p => [p!.id, p!]));
+      const userProfileMap = new Map(userProfiles.filter(p => p).map(p => [p!.id, p!]));
 
       const fetchedTasks: Task[] = data.map((item: any) => {
-        const posterProfile = posterProfileMap.get(item.poster_id);
+        const posterProfile = userProfileMap.get(item.poster_id);
         const posterAvatar = posterProfile?.avatar_url || DEFAULT_AVATAR_URL;
         const posterName = posterProfile?.first_name && posterProfile?.last_name
           ? `${posterProfile.first_name} ${posterProfile.last_name}`
           : item.poster_name || "Anonymous User"; // Fallback to stored name if profile not found
+
+        const assignedTaskerProfile = item.assigned_tasker_id ? userProfileMap.get(item.assigned_tasker_id) : null;
+        const assignedTaskerName = assignedTaskerProfile?.first_name && assignedTaskerProfile?.last_name
+          ? `${assignedTaskerProfile.first_name} ${assignedTaskerProfile.last_name}`
+          : "Anonymous Tasker"; // Fallback to a generic name
+        const assignedTaskerAvatar = assignedTaskerProfile?.avatar_url || undefined;
 
         return {
           id: item.id,
@@ -103,6 +116,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           review: item.review || undefined,
           dateCompleted: item.date_completed ? new Date(item.date_completed).toISOString().split('T')[0] : undefined,
           dateUpdated: item.date_updated ? new Date(item.date_updated).toISOString().split('T')[0] : undefined,
+          assignedTaskerName: assignedTaskerName, // Populate new field
+          assignedTaskerAvatar: assignedTaskerAvatar, // Populate new field
         };
       });
       setAllTasks(fetchedTasks);
@@ -216,7 +231,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     };
   }, [fetchTasks, seedInitialTasks]); // Now depends on memoized fetchTasks and seedInitialTasks
 
-  const addTask = useCallback(async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>) => {
+  const addTask = useCallback(async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>) => {
     if (!isAuthenticated || !user || !currentUserProfile) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -267,7 +282,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   }, [isAuthenticated, user]);
 
-  const editTask = useCallback(async (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>>) => {
+  const editTask = useCallback(async (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'assignedTaskerName' | 'assignedTaskerAvatar'>>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to edit a task.");
       return;

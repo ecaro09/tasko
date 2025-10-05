@@ -10,7 +10,7 @@ import PostTaskModal from './PostTaskModal';
 import TaskerRegistrationModal from './TaskerRegistrationModal';
 import MakeOfferModal from './MakeOfferModal';
 import EditTaskModal from './EditTaskModal';
-import ReviewTaskModal from './ReviewTaskModal';
+import ReviewTaskModal from './ReviewTaskModal'; // Import the new ReviewTaskModal
 
 interface ModalContextType {
   openLoginModal: () => void;
@@ -19,7 +19,7 @@ interface ModalContextType {
   openTaskerRegistrationModal: () => void;
   openMakeOfferModal: (task: Task) => void;
   openEditTaskModal: (task: Task) => void;
-  openReviewTaskModal: (task: Task) => void;
+  openReviewTaskModal: (task: Task) => void; // Add new function for review modal
   closeAllModals: () => void;
 }
 
@@ -32,11 +32,11 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isTaskerRegistrationModalOpen, setIsTaskerRegistrationModalOpen] = React.useState(false);
   const [isMakeOfferModalOpen, setIsMakeOfferModalOpen] = React.useState(false);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = React.useState(false);
-  const [isReviewTaskModalOpen, setIsReviewTaskModalOpen] = React.useState(false);
+  const [isReviewTaskModalOpen, setIsReviewTaskModalOpen] = React.useState(false); // New state for review modal
 
   const [selectedTaskForOffer, setSelectedTaskForOffer] = React.useState<Task | null>(null);
   const [selectedTaskForEdit, setSelectedTaskForEdit] = React.useState<Task | null>(null);
-  const [selectedTaskForReview, setSelectedTaskForReview] = React.useState<Task | null>(null);
+  const [selectedTaskForReview, setSelectedTaskForReview] = React.useState<Task | null>(null); // New state for task to review
 
   const { isAuthenticated } = useAuth();
 
@@ -47,10 +47,10 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsTaskerRegistrationModalOpen(false);
     setIsMakeOfferModalOpen(false);
     setIsEditTaskModalOpen(false);
-    setIsReviewTaskModalOpen(false);
+    setIsReviewTaskModalOpen(false); // Close review modal
     setSelectedTaskForOffer(null);
     setSelectedTaskForEdit(null);
-    setSelectedTaskForReview(null);
+    setSelectedTaskForReview(null); // Clear selected task for review
   }, []);
 
   const openLoginModal = useCallback(() => {
@@ -113,7 +113,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsEditTaskModalOpen(true);
   }, [isAuthenticated, openLoginModal, closeAllModals]);
 
-  const openReviewTaskModal = useCallback((task: Task) => {
+  const openReviewTaskModal = useCallback((task: Task) => { // New function
     if (!isAuthenticated) {
       toast.error("Please log in to review a task.");
       openLoginModal();
@@ -131,7 +131,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     openTaskerRegistrationModal,
     openMakeOfferModal,
     openEditTaskModal,
-    openReviewTaskModal,
+    openReviewTaskModal, // Add to memoized value
     closeAllModals,
   }), [
     openLoginModal,
@@ -153,7 +153,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <TaskerRegistrationModal isOpen={isTaskerRegistrationModalOpen} onClose={closeAllModals} />
       <MakeOfferModal isOpen={isMakeOfferModalOpen} onClose={closeAllModals} task={selectedTaskForOffer} />
       <EditTaskModal isOpen={isEditTaskModalOpen} onClose={closeAllModals} task={selectedTaskForEdit} />
-      <ReviewTaskModal isOpen={isReviewTaskModalOpen} onClose={closeAllModals} task={selectedTaskForReview} />
+      <ReviewTaskModal isOpen={isReviewTaskModalOpen} onClose={closeAllModals} task={selectedTaskForReview} /> {/* Render new modal */}
     </ModalContext.Provider>
   );
 };
