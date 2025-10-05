@@ -18,6 +18,8 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile';
+import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+import { fetchUserProfileSupabase, UserProfile } from '@/lib/user-profile-supabase'; // Import UserProfile interface
 
 export interface ChatMessage {
   id: string;
@@ -33,6 +35,7 @@ export interface ChatRoom {
   id: string;
   participants: string[]; // Array of user UIDs
   participantNames: string[]; // Array of user display names
+  participantAvatars?: (string | null)[]; // Array of participant avatar URLs
   lastMessage?: string;
   lastMessageTimestamp?: string;
   createdAt: string;
@@ -79,7 +82,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       orderBy('lastMessageTimestamp', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => { // Make callback async
       const fetchedRooms: ChatRoom[] = snapshot.docs.map((doc) => {
         const data = doc.data() as DocumentData;
         return {
@@ -89,9 +92,37 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           lastMessage: data.lastMessage,
           lastMessageTimestamp: data.lastMessageTimestamp?.toDate().toISOString(),
           createdAt: data.createdAt?.toDate().toISOString(),
+          // participantAvatars will be populated below
         };
       });
-      setChatRooms(fetchedRooms);
+
+      // Collect all unique participant UIDs from all rooms
+      const allParticipantIds = new Set<string>();
+      fetchedRooms.forEach(room => {
+        room.participants.forEach(id => allParticipantIds.add(id));
+      });
+
+      // Fetch all unique profiles from Supabase
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, avatar_url')
+        .in('id', Array.from(allParticipantIds));
+
+      if (profilesError) {
+        console.error("Error fetching participant profiles from Supabase:", profilesError);
+        toast.error("Failed to load participant avatars.");
+      }
+
+      const profileMap = new Map<string, string | null>();
+      profilesData?.forEach(p => profileMap.set(p.id, p.avatar_url));
+
+      // Map avatars back to rooms
+      const roomsWithAvatars = fetchedRooms.map(room => ({
+        ...room,
+        participantAvatars: room.participants.map(id => profileMap.get(id) || null),
+      }));
+
+      setChatRooms(roomsWithAvatars);
       setLoadingRooms(false);
     }, (err) => {
       console.error("Error fetching chat rooms:", err);
