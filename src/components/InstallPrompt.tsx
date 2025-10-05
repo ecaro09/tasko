@@ -12,7 +12,7 @@ const InstallPrompt: React.FC<InstallPromptProps> = React.memo(({ isVisible, onI
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 bg-white rounded-lg shadow-xl p-4 z-50 flex flex-col md:flex-row items-center gap-4 animate-slideUp md:max-w-md md:mx-auto">
+    <div className="fixed bottom-[calc(var(--safe-area-bottom)+80px)] left-4 right-4 bg-white rounded-lg shadow-xl p-4 z-50 flex flex-col md:flex-row items-center gap-4 animate-slideUp md:max-w-md md:mx-auto">
       <div className="text-3xl text-[hsl(var(--primary-color))]">🛠️</div>
       <div className="flex-1 text-center md:text-left">
         <h3 className="font-semibold text-[hsl(var(--text-dark))]">Install Tasko App</h3>
