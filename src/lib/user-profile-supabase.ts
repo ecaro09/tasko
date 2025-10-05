@@ -9,6 +9,7 @@ export interface UserProfile {
   avatar_url: string | null;
   phone: string | null;
   role: string; // 'user' or 'tasker'
+  is_verified_tasker?: boolean; // New: Added for verification status
   updated_at: string;
 }
 

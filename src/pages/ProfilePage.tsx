@@ -5,7 +5,7 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, DollarSign, Star, ShieldCheck, Clock, XCircle } from 'lucide-react'; // Added ShieldCheck, Clock, XCircle icons
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, DollarSign, Star, ShieldCheck, Clock, XCircle, CheckCircle } from 'lucide-react'; // Added CheckCircle icon
 import EditProfileSection from '@/components/EditProfileSection';
 import { useModal } from '@/components/ModalProvider'; // Import useModal
 import { Badge } from '@/components/ui/badge'; // Import Badge
@@ -74,9 +74,10 @@ const ProfilePage: React.FC = () => {
     ? `${profile.first_name} ${profile.last_name}`
     : user.displayName || "Anonymous User";
 
-  const isVerified = verificationRequest?.status === 'approved';
-  const isPendingVerification = verificationRequest?.status === 'pending';
-  const isRejectedVerification = verificationRequest?.status === 'rejected';
+  // Use profile.is_verified_tasker for the actual verification status
+  const isUserVerified = profile?.is_verified_tasker; // This is the source of truth from Supabase profiles table
+  const isPendingVerificationRequest = verificationRequest?.status === 'pending';
+  const isRejectedVerificationRequest = verificationRequest?.status === 'rejected';
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
@@ -105,15 +106,15 @@ const ProfilePage: React.FC = () => {
 
                 {/* Verification Status */}
                 <div className="mt-4 flex items-center gap-2">
-                  {isVerified ? (
+                  {isUserVerified ? ( // Use isUserVerified here
                     <Badge className="bg-green-500 text-white flex items-center gap-1">
                       <ShieldCheck size={16} /> Verified User
                     </Badge>
-                  ) : isPendingVerification ? (
+                  ) : isPendingVerificationRequest ? ( // Use isPendingVerificationRequest here
                     <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200 flex items-center gap-1">
                       <Clock size={16} /> Pending Verification
                     </Badge>
-                  ) : isRejectedVerification ? (
+                  ) : isRejectedVerificationRequest ? ( // Use isRejectedVerificationRequest here
                     <Badge variant="destructive" className="flex items-center gap-1">
                       <XCircle size={16} /> Verification Rejected
                     </Badge>
@@ -145,11 +146,11 @@ const ProfilePage: React.FC = () => {
                 <p className="text-gray-700 dark:text-gray-300">
                   Get your account verified to build trust with clients and taskers. Verified users often receive more task opportunities.
                 </p>
-                {isVerified ? (
+                {isUserVerified ? ( // Use isUserVerified here
                   <p className="text-green-600 dark:text-green-400 font-semibold flex items-center gap-2">
                     <CheckCircle size={20} /> Your account is successfully verified!
                   </p>
-                ) : isPendingVerification ? (
+                ) : isPendingVerificationRequest ? ( // Use isPendingVerificationRequest here
                   <div className="flex flex-col sm:flex-row items-center gap-2">
                     <Button
                       variant="outline"
@@ -172,7 +173,7 @@ const ProfilePage: React.FC = () => {
                     <ShieldCheck size={20} /> {verificationLoading ? 'Submitting...' : 'Request Verification'}
                   </Button>
                 )}
-                {isRejectedVerification && verificationRequest?.admin_notes && (
+                {isRejectedVerificationRequest && verificationRequest?.admin_notes && ( // Use isRejectedVerificationRequest here
                   <p className="text-red-500 text-sm italic">
                     Admin Notes: {verificationRequest.admin_notes}
                   </p>

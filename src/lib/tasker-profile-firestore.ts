@@ -41,6 +41,9 @@ export const createOrUpdateTaskerProfileFirestore = async (
       photoURL: user.photoURL || undefined,
       isTasker: true,
       dateJoined: new Date().toISOString(),
+      skills: data.skills, // Added missing property
+      bio: data.bio,       // Added missing property
+      hourlyRate: data.hourlyRate, // Added missing property
     };
 
     await setDoc(docRef, { ...profileData, ...data }, { merge: true }); // Use merge to update existing fields or create new doc
