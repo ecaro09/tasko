@@ -4,22 +4,25 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
+import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useChat, ChatRoom, ChatMessage } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { chatRooms, messages, loadingRooms, loadingMessages, error, sendMessage, fetchMessagesForRoom } = useChat();
+  const { fetchProfile } = useSupabaseProfile(); // Get fetchProfile from useSupabaseProfile
   const [selectedRoom, setSelectedRoom] = React.useState<ChatRoom | null>(null);
   const [messageInput, setMessageInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [showRoomsList, setShowRoomsList] = React.useState(true); // For mobile view
+  const [participantProfiles, setParticipantProfiles] = React.useState<Map<string, { displayName: string; avatarUrl?: string }>>(new Map());
 
   // Scroll to bottom of messages when messages change
   useEffect(() => {
@@ -33,6 +36,42 @@ const ChatPage: React.FC = () => {
       fetchMessagesForRoom(chatRooms[0].id);
     }
   }, [chatRooms, selectedRoom, fetchMessagesForRoom]);
+
+  // Fetch participant profiles for all chat rooms
+  useEffect(() => {
+    const loadParticipantProfiles = async () => {
+      if (!isAuthenticated || !user || chatRooms.length === 0) return;
+
+      const newProfiles = new Map<string, { displayName: string; avatarUrl?: string }>();
+      const uniqueParticipantIds = new Set<string>();
+
+      chatRooms.forEach(room => {
+        room.participants.forEach(pId => uniqueParticipantIds.add(pId));
+      });
+
+      for (const pId of Array.from(uniqueParticipantIds)) {
+        if (pId === user.uid) {
+          // For the current user, use Firebase auth data
+          newProfiles.set(pId, {
+            displayName: user.displayName || user.email || "You",
+            avatarUrl: user.photoURL || undefined,
+          });
+        } else {
+          // For other participants, fetch from Supabase
+          const profile = await fetchProfile(pId);
+          newProfiles.set(pId, {
+            displayName: profile?.first_name && profile?.last_name
+              ? `${profile.first_name} ${profile.last_name}`
+              : profile?.id || "Unknown User",
+            avatarUrl: profile?.avatar_url || undefined,
+          });
+        }
+      }
+      setParticipantProfiles(newProfiles);
+    };
+
+    loadParticipantProfiles();
+  }, [chatRooms, isAuthenticated, user, fetchProfile]);
 
   const handleRoomSelect = (room: ChatRoom) => {
     setSelectedRoom(room);
@@ -49,18 +88,29 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const getParticipantName = (room: ChatRoom) => {
+  const getRoomDisplayName = (room: ChatRoom) => {
     if (!user) return "Unknown";
-    const otherParticipants = room.participantNames.filter(name => name !== (user.displayName || user.email));
-    return otherParticipants.length > 0 ? otherParticipants.join(', ') : "Self Chat";
+    const otherParticipantIds = room.participants.filter(id => id !== user.uid);
+    const names = otherParticipantIds.map(pId => participantProfiles.get(pId)?.displayName || "Unknown");
+    return names.length > 0 ? names.join(', ') : "Self Chat";
   };
 
-  const getParticipantAvatar = (room: ChatRoom) => {
+  const getRoomDisplayAvatar = (room: ChatRoom) => {
     if (!user) return undefined;
     const otherParticipantIds = room.participants.filter(id => id !== user.uid);
-    // For simplicity, we'll just use a generic avatar or the first other participant's avatar if available
-    // In a real app, you'd fetch the avatar URL for the other participant(s)
-    return undefined; // Placeholder
+    // For simplicity, use the avatar of the first other participant
+    if (otherParticipantIds.length > 0) {
+      return participantProfiles.get(otherParticipantIds[0])?.avatarUrl;
+    }
+    return undefined;
+  };
+
+  const getMessageSenderDisplayName = (senderId: string) => {
+    return participantProfiles.get(senderId)?.displayName || "Unknown";
+  };
+
+  const getMessageSenderAvatar = (senderId: string) => {
+    return participantProfiles.get(senderId)?.avatarUrl;
   };
 
   if (authLoading) {
@@ -112,13 +162,13 @@ const ChatPage: React.FC = () => {
                     onClick={() => handleRoomSelect(room)}
                   >
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={getParticipantAvatar(room)} alt={getParticipantName(room)} />
+                      <AvatarImage src={getRoomDisplayAvatar(room)} alt={getRoomDisplayName(room)} />
                       <AvatarFallback className="bg-blue-200 text-blue-800">
-                        {getParticipantName(room).charAt(0).toUpperCase()}
+                        {getRoomDisplayName(room).charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-800 dark:text-gray-100">{getParticipantName(room)}</p>
+                      <p className="font-semibold text-gray-800 dark:text-gray-100">{getRoomDisplayName(room)}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                         {room.lastMessage || "Start a conversation"}
                       </p>
@@ -148,12 +198,12 @@ const ChatPage: React.FC = () => {
                     </Button>
                   )}
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={getParticipantAvatar(selectedRoom)} alt={getParticipantName(selectedRoom)} />
+                    <AvatarImage src={getRoomDisplayAvatar(selectedRoom)} alt={getRoomDisplayName(selectedRoom)} />
                     <AvatarFallback className="bg-blue-200 text-blue-800">
-                      {getParticipantName(selectedRoom).charAt(0).toUpperCase()}
+                      {getRoomDisplayName(selectedRoom).charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getParticipantName(selectedRoom)}</h3>
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getRoomDisplayName(selectedRoom)}</h3>
                 </div>
 
                 {/* Scam Detection Alert Banner */}
@@ -180,9 +230,9 @@ const ChatPage: React.FC = () => {
                       >
                         {message.senderId !== user.uid && (
                           <Avatar className="w-8 h-8">
-                            <AvatarImage src={message.senderAvatar || undefined} alt={message.senderName} />
+                            <AvatarImage src={getMessageSenderAvatar(message.senderId)} alt={getMessageSenderDisplayName(message.senderId)} />
                             <AvatarFallback className="bg-gray-200 text-gray-700 text-sm">
-                              {message.senderName.charAt(0).toUpperCase()}
+                              {getMessageSenderDisplayName(message.senderId).charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                         )}
@@ -201,9 +251,9 @@ const ChatPage: React.FC = () => {
                         </div>
                         {message.senderId === user.uid && (
                           <Avatar className="w-8 h-8">
-                            <AvatarImage src={message.senderAvatar || undefined} alt={message.senderName} />
+                            <AvatarImage src={getMessageSenderAvatar(message.senderId)} alt={getMessageSenderDisplayName(message.senderId)} />
                             <AvatarFallback className="bg-green-200 text-green-800 text-sm">
-                              {message.senderName.charAt(0).toUpperCase()}
+                              {getMessageSenderDisplayName(message.senderId).charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                         )}

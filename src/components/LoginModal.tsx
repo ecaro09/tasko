@@ -5,71 +5,66 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { Chrome, Mail } from 'lucide-react'; // Import Mail icon
+import { Loader2, Mail, Lock, LogIn, Google } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSwitchToSignup: () => void; // New prop
+  onSwitchToSignup: () => void;
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSignup }) => {
-  const { loginWithEmailPassword, signInWithGoogle, sendLoginLinkToEmail, loading: authLoading } = useAuth(); // Get sendLoginLinkToEmail
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [isLoadingLocal, setIsLoadingLocal] = React.useState(false); // Local loading for email/password
+  const { loginWithEmailPassword, signInWithGoogle, sendLoginLinkToEmail, loading: authLoading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showMagicLinkInput, setShowMagicLinkInput] = useState(false);
 
-  const isFormDisabled = isLoadingLocal || authLoading; // Combine local and global auth loading
-
-  const handleEmailPasswordLogin = async () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       toast.error("Please enter both email and password.");
       return;
     }
-    setIsLoadingLocal(true);
+    setIsLoading(true);
     try {
       await loginWithEmailPassword(email, password);
       onClose();
     } catch (error) {
-      // Error handled by useAuth hook, toast already shown
+      // Error handled by useAuth hook
     } finally {
-      setIsLoadingLocal(false);
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setIsLoadingLocal(true); // Set local loading for immediate feedback
+    setIsLoading(true);
     try {
-      onClose(); // Close the modal immediately before initiating the redirect
       await signInWithGoogle();
-      // No onClose() here, as the page will redirect.
-      // The AuthProvider's useEffect will handle the post-redirect state.
-    } catch (error) {
-      // Error handled by useAuth hook, ensure loading state is reset
-      setIsLoadingLocal(false);
-    }
-  };
-
-  const handleSendLoginLink = async () => {
-    if (!email) {
-      toast.error("Please enter your email to receive a login link.");
-      return;
-    }
-    setIsLoadingLocal(true);
-    try {
-      await sendLoginLinkToEmail(email);
-      onClose(); // Close modal after sending link
+      onClose();
     } catch (error) {
       // Error handled by useAuth hook
     } finally {
-      setIsLoadingLocal(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSwitchToSignup = () => {
-    onClose();
-    onSwitchToSignup(); // Use the prop
+  const handleSendMagicLink = async () => {
+    if (!email) {
+      toast.error("Please enter your email to receive a magic link.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await sendLoginLinkToEmail(email);
+      // No direct close, user needs to check email
+    } catch (error) {
+      // Error handled by useAuth hook
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const isFormDisabled = isLoading || authLoading;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -77,7 +72,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Login to Tasko</DialogTitle>
           <DialogDescription className="text-[hsl(var(--text-light))]">
-            Access your tasks and connect with taskers.
+            Enter your credentials to access your account.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -86,58 +81,79 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isFormDisabled}
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isFormDisabled}
-            />
-          </div>
+          {!showMagicLinkInput && (
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isFormDisabled}
+              />
+            </div>
+          )}
           <Button
-            onClick={handleEmailPasswordLogin}
-            disabled={isFormDisabled}
-            className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white"
+            onClick={handleLogin}
+            disabled={isFormDisabled || showMagicLinkInput}
+            className="w-full bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white flex items-center gap-2"
           >
-            {isLoadingLocal && !authLoading ? 'Logging In...' : 'Login with Email'}
-          </Button>
-          <Button
-            onClick={handleSendLoginLink}
-            disabled={isFormDisabled}
-            variant="outline"
-            className="w-full flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
-          >
-            <Mail size={20} /> {isLoadingLocal && !authLoading ? 'Sending Link...' : 'Login with Email Link'}
+            {isFormDisabled && !showMagicLinkInput ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn size={18} />}
+            Login
           </Button>
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-300" />
+              <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              <span className="bg-background px-2 text-muted-foreground">
                 Or continue with
               </span>
             </div>
           </div>
           <Button
+            variant="outline"
             onClick={handleGoogleLogin}
             disabled={isFormDisabled}
-            variant="outline"
-            className="w-full flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+            className="w-full flex items-center gap-2"
           >
-            <Chrome size={20} /> {isFormDisabled ? 'Signing In...' : 'Sign in with Google'}
+            {isFormDisabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Google size={18} />}
+            Google
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowMagicLinkInput(!showMagicLinkInput)}
+            disabled={isFormDisabled}
+            className="w-full flex items-center gap-2"
+          >
+            <Mail size={18} />
+            {showMagicLinkInput ? "Login with Password" : "Login with Magic Link"}
+          </Button>
+          {showMagicLinkInput && (
+            <Button
+              onClick={handleSendMagicLink}
+              disabled={isFormDisabled || !email}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            >
+              {isFormDisabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail size={18} />}
+              Send Magic Link
+            </Button>
+          )}
         </div>
-        <DialogFooter className="text-sm text-center text-[hsl(var(--text-light))]">
-          Don't have an account? <Button variant="link" className="p-0 h-auto text-[hsl(var(--primary-color))] hover:text-[hsl(var(--primary-color))]" onClick={handleSwitchToSignup}>Sign Up</Button>
+        <DialogFooter className="flex flex-col gap-2">
+          <p className="text-sm text-center text-[hsl(var(--text-light))]">
+            Don't have an account?{' '}
+            <Button variant="link" onClick={onSwitchToSignup} className="p-0 h-auto text-[hsl(var(--primary-color))]">
+              Sign Up
+            </Button>
+          </p>
         </DialogFooter>
       </DialogContent>
     </Dialog>

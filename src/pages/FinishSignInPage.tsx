@@ -1,61 +1,57 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEmailLinkLogin } from '@/hooks/use-email-link-login'; // Import the hook
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const FinishSignInPage: React.FC = () => {
   const navigate = useNavigate();
-  const { loading, error } = useEmailLinkLogin(); // Use the hook
 
   useEffect(() => {
-    if (!loading && !error) {
-      // If sign-in is successful and not loading, navigate to home or profile
-      // A small delay can help ensure Firebase auth state is fully updated
-      const timer = setTimeout(() => {
-        navigate('/profile'); // Redirect to profile page after successful login
-        toast.success("Successfully logged in!");
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (error) {
-      // If there's an error, display it and offer to go home
-      toast.error(`Login failed: ${error}`);
-    }
-  }, [loading, error, navigate]);
+    const handleSignIn = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.session) {
+          toast.success("Successfully logged in!");
+          navigate('/'); // Redirect to home page
+        } else {
+          // If no session, it might be a fresh redirect from a magic link
+          // Supabase's onAuthStateChange listener in useAuth will handle the session.
+          // We just need to ensure the URL parameters are processed.
+          const { error: parseError } = await supabase.auth.verifyOtp({
+            email: localStorage.getItem('emailForSignIn') || '',
+            token: new URLSearchParams(window.location.hash.substring(1)).get('access_token') || '',
+            type: 'magiclink',
+          });
+
+          if (parseError) {
+            throw parseError;
+          }
+          toast.success("Successfully logged in!");
+          navigate('/'); // Redirect to home page
+        }
+      } catch (error: any) {
+        console.error("Error finishing sign-in:", error);
+        toast.error(`Failed to log in: ${error.message}`);
+        navigate('/login'); // Redirect to login page on error
+      }
+    };
+
+    handleSignIn();
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <Card className="w-full max-w-md text-center shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">
-            {loading ? "Logging you in..." : "Sign-in Complete"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex flex-col items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--primary-color))] mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Please wait while we complete your sign-in.</p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center">
-              <p className="text-red-500 mb-4">An error occurred during sign-in: {error}</p>
-              <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700 text-white">
-                Go to Home
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">You have successfully logged in.</p>
-              <Button onClick={() => navigate('/profile')} className="bg-green-600 hover:bg-green-700 text-white">
-                Go to Profile
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md text-center shadow-lg bg-white dark:bg-gray-800 p-8 rounded-lg">
+        <Loader2 className="h-12 w-12 animate-spin text-[hsl(var(--primary-color))] mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-2">Finishing Sign In...</h1>
+        <p className="text-gray-600 dark:text-gray-400">Please wait while we log you in.</p>
+      </div>
     </div>
   );
 };
