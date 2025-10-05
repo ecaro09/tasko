@@ -102,6 +102,15 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
 
   const isFormDisabled = isLoading || uploadLoading || loadingProfile;
 
+  const getFallbackInitials = () => {
+    const firstInitial = firstName.charAt(0).toUpperCase();
+    const lastInitial = lastName.charAt(0).toUpperCase();
+    if (firstInitial && lastInitial) return `${firstInitial}${lastInitial}`;
+    if (firstInitial) return firstInitial;
+    if (lastInitial) return lastInitial;
+    return <UserIcon size={24} />;
+  };
+
   return (
     <Card className="shadow-lg p-6">
       <CardHeader className="p-0 mb-4">
@@ -112,7 +121,7 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
           <Avatar className="w-24 h-24 border-4 border-green-500">
             <AvatarImage src={avatarPreview || undefined} alt={user?.email || "User"} />
             <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
-              {firstName.charAt(0).toUpperCase()}{lastName.charAt(0).toUpperCase()}
+              {getFallbackInitials()}
             </AvatarFallback>
           </Avatar>
           <Label htmlFor="avatar-upload" className="cursor-pointer flex items-center gap-2 text-blue-600 hover:text-blue-800">

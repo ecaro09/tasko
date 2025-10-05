@@ -78,6 +78,11 @@ const ChatMessageView: React.FC<ChatMessageViewProps> = ({ roomId, onBack }) => 
     return participantProfiles[senderId]?.avatar || DEFAULT_AVATAR_URL;
   };
 
+  const getFallbackInitials = (name: string) => {
+    const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase();
+    return initials || <UserIcon size={24} />;
+  };
+
   const otherParticipant = currentRoom?.participants.find(pId => pId !== user?.id);
   const chatTitle = otherParticipant ? participantProfiles[otherParticipant]?.name : "Chat";
 
@@ -113,7 +118,7 @@ const ChatMessageView: React.FC<ChatMessageViewProps> = ({ roomId, onBack }) => 
                       }}
                     />
                     <AvatarFallback className="bg-gray-200 text-gray-600">
-                      {getParticipantName(message.senderId).charAt(0).toUpperCase()}
+                      {getFallbackInitials(getParticipantName(message.senderId))}
                     </AvatarFallback>
                   </Avatar>
                 )}
@@ -141,7 +146,7 @@ const ChatMessageView: React.FC<ChatMessageViewProps> = ({ roomId, onBack }) => 
                       }}
                     />
                     <AvatarFallback className="bg-blue-200 text-blue-800">
-                      {getParticipantName(message.senderId).charAt(0).toUpperCase()}
+                      {getFallbackInitials(getParticipantName(message.senderId))}
                     </AvatarFallback>
                   </Avatar>
                 )}

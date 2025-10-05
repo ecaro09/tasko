@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface TaskerRegistrationModalProps {
   isOpen: boolean;
@@ -95,7 +96,9 @@ const TaskerRegistrationModal: React.FC<TaskerRegistrationModalProps> = ({ isOpe
                   variant={skills.includes(skill) ? "default" : "outline"}
                   onClick={() => handleSkillChange(skill)}
                   disabled={isLoading || profileLoading}
-                  className={skills.includes(skill) ? "bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white" : "border-[hsl(var(--border-color))] text-[hsl(var(--text-dark))] hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700"}
+                  className={cn(
+                    skills.includes(skill) ? "bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white" : "border-[hsl(var(--border-color))] text-[hsl(var(--text-dark))] hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700"
+                  )}
                 >
                   {skill}
                 </Button>

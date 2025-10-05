@@ -43,6 +43,11 @@ const ChatRoomList: React.FC<ChatRoomListProps> = ({ onSelectRoom, selectedRoomI
     return { name: otherParticipantName, avatar: otherParticipantAvatar };
   };
 
+  const getFallbackInitials = (name: string) => {
+    const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase();
+    return initials || <UserIcon size={24} />;
+  };
+
   return (
     <div className="space-y-2">
       {chatRooms.map(room => {
@@ -67,7 +72,7 @@ const ChatRoomList: React.FC<ChatRoomListProps> = ({ onSelectRoom, selectedRoomI
                   }}
                 />
                 <AvatarFallback className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                  {otherParticipantName.charAt(0).toUpperCase()}
+                  {getFallbackInitials(otherParticipantName)}
                 </AvatarFallback>
               </Avatar>
               <div className="ml-4 flex-1">

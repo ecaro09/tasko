@@ -90,7 +90,7 @@ const MyAssignedTasksPage: React.FC = () => {
         </Button>
         <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">My Assigned Tasks</h1>
 
-        {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
+        {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError.message}</p>}
 
         {myAssignedTasks.length === 0 && !tasksLoading && !tasksError ? (
           <div className="text-center py-12">
