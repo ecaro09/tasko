@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
+import { useChat } from './use-chat'; // New import
 import {
   Task, // Import Task interface
   addTaskFirestore,
@@ -25,8 +26,8 @@ interface UseTasksContextType {
   tasks: Task[];
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted'> & { imageUrl?: string }) => Promise<void>; // Updated addTask signature
-  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted'>>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'> & { imageUrl?: string }) => Promise<void>; // Updated addTask signature
+  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'>>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
   cancelTask: (taskId: string) => Promise<void>; // New function
@@ -40,6 +41,7 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
+  const { updateChatRoomStatus } = useChat(); // Use updateChatRoomStatus from useChat
   const [allTasks, setAllTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -80,6 +82,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
+          chatRoomId: data.chatRoomId || undefined, // New: Include chatRoomId
           rating: data.rating || undefined, // Include rating
           review: data.review || undefined, // Include review
           dateUpdated: data.dateUpdated?.toDate().toISOString(),
@@ -103,7 +106,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted'> & { imageUrl?: string }) => {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'> & { imageUrl?: string }) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -111,7 +114,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     await addTaskFirestore(newTaskData, user);
   };
 
-  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted'>>) => {
+  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'>>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to edit a task.");
       return;
@@ -132,6 +135,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error("You must be logged in to complete and review a task.");
       return;
     }
+    const taskToUpdate = allTasks.find(t => t.id === taskId);
+    if (taskToUpdate?.chatRoomId) {
+      await updateChatRoomStatus(taskToUpdate.chatRoomId, 'closed');
+    }
     await completeTaskWithReviewFirestore(taskId, rating, review, user);
   };
 
@@ -141,6 +148,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       return;
     }
     try {
+      const taskToUpdate = allTasks.find(t => t.id === taskId);
+      if (taskToUpdate?.chatRoomId) {
+        await updateChatRoomStatus(taskToUpdate.chatRoomId, 'closed');
+      }
       await cancelTaskFirestore(taskId, user);
       await cancelOffersForTaskFirestore(taskId, user); // Cancel associated offers
     } catch (error) {

@@ -45,7 +45,7 @@ export const addOfferFirestore = async (
   }
 };
 
-export const acceptOfferFirestore = async (offerId: string, taskId: string, user: FirebaseUser): Promise<{ taskerId: string; clientId: string } | null> => {
+export const acceptOfferFirestore = async (offerId: string, taskId: string, user: FirebaseUser, chatRoomId: string): Promise<{ taskerId: string; clientId: string } | null> => {
   try {
     const offerRef = doc(db, 'offers', offerId);
     const offerSnap = await getDoc(offerRef);
@@ -81,12 +81,13 @@ export const acceptOfferFirestore = async (offerId: string, taskId: string, user
       dateUpdated: serverTimestamp(),
     });
 
-    // Update the task status to 'assigned' and set the correct assignedTaskerId
+    // Update the task status to 'assigned' and set the correct assignedTaskerId and chatRoomId
     const taskRef = doc(db, 'tasks', taskId);
     await updateDoc(taskRef, {
       status: 'assigned',
       assignedTaskerId: offerData.taskerId,
       assignedOfferId: offerId,
+      chatRoomId: chatRoomId, // New: Store the chat room ID
       dateUpdated: serverTimestamp(),
     });
 

@@ -38,6 +38,7 @@ export interface ChatRoom {
   lastMessageTimestamp?: string;
   createdAt: string;
   typingUsers?: string[]; // New field for typing indicator
+  status: 'active' | 'closed'; // New: Status of the chat room
 }
 
 interface ChatContextType {
@@ -50,6 +51,7 @@ interface ChatContextType {
   createChatRoom: (participantIds: string[], participantNames: string[]) => Promise<string | null>;
   fetchMessagesForRoom: (roomId: string) => void;
   sendTypingStatus: (roomId: string, isTyping: boolean) => void; // New function
+  updateChatRoomStatus: (roomId: string, status: ChatRoom['status']) => Promise<void>; // New function
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -94,6 +96,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           lastMessageTimestamp: data.lastMessageTimestamp?.toDate().toISOString(),
           createdAt: data.createdAt?.toDate().toISOString(),
           typingUsers: data.typingUsers || [], // Include typingUsers
+          status: data.status || 'active', // New: Include status, default to 'active'
         };
       });
       setChatRooms(fetchedRooms);
@@ -215,6 +218,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         lastMessage: "New chat started.",
         lastMessageTimestamp: serverTimestamp(),
         typingUsers: [], // Initialize typingUsers
+        status: 'active', // New: Initialize status as 'active'
       });
       toast.success("Chat room created!");
       return newRoomRef.id;
@@ -261,6 +265,18 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [user]);
 
+  const updateChatRoomStatus = async (roomId: string, status: ChatRoom['status']) => {
+    try {
+      const roomRef = doc(db, 'chatRooms', roomId);
+      await updateDoc(roomRef, { status: status, dateUpdated: serverTimestamp() });
+      toast.success(`Chat room status updated to ${status}.`);
+    } catch (err: any) {
+      console.error("Error updating chat room status:", err);
+      toast.error(`Failed to update chat room status: ${err.message}`);
+      throw err;
+    }
+  };
+
   const value = {
     chatRooms,
     messages,
@@ -271,6 +287,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     createChatRoom,
     fetchMessagesForRoom,
     sendTypingStatus,
+    updateChatRoomStatus, // New: Expose updateChatRoomStatus
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -26,6 +26,7 @@ export interface Task {
   imageUrl?: string; // Made optional
   assignedTaskerId?: string;
   assignedOfferId?: string;
+  chatRoomId?: string; // New: Link to the chat room for this task
   rating?: number;
   review?: string;
   dateUpdated?: string; // Added dateUpdated for consistency
@@ -33,7 +34,7 @@ export interface Task {
 }
 
 export const addTaskFirestore = async (
-  newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted'> & { imageUrl?: string }, // Allow imageUrl
+  newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'> & { imageUrl?: string }, // Allow imageUrl
   user: FirebaseUser
 ) => {
   try {
@@ -56,7 +57,7 @@ export const addTaskFirestore = async (
 
 export const editTaskFirestore = async (
   taskId: string,
-  updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted'>>,
+  updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'>>,
   user: FirebaseUser
 ) => {
   try {
@@ -139,6 +140,7 @@ export const cancelTaskFirestore = async (taskId: string, user: FirebaseUser) =>
       status: 'cancelled',
       assignedTaskerId: null, // Clear assigned tasker
       assignedOfferId: null, // Clear assigned offer
+      chatRoomId: null, // Clear chat room link
       dateUpdated: serverTimestamp(),
     });
     toast.success("Task cancelled successfully!");

@@ -91,25 +91,36 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setLoading(true);
     try {
-      const result = await acceptOfferFirestore(offerId, taskId, user);
-      if (result) {
-        const { taskerId, clientId } = result;
+      // Fetch tasker's profile to get display name for chat
+      const offerRef = doc(db, 'offers', offerId);
+      const offerSnap = await getDoc(offerRef);
+      if (!offerSnap.exists()) {
+        toast.error("Offer not found.");
+        return null;
+      }
+      const offerData = offerSnap.data() as Offer;
+      const taskerId = offerData.taskerId;
+      const clientId = offerData.clientId;
 
-        // Fetch tasker's profile to get display name for chat
-        const taskerProfileForChat = await fetchTaskerProfileById(taskerId);
-        const taskerDisplayName = taskerProfileForChat?.displayName || "Tasker";
-        const clientDisplayName = user.displayName || user.email || "Client";
+      const taskerProfileForChat = await fetchTaskerProfileById(taskerId);
+      const taskerDisplayName = taskerProfileForChat?.displayName || "Tasker";
+      const clientDisplayName = user.displayName || user.email || "Client";
 
-        // Create or get chat room
-        const roomId = await createChatRoom(
-          [clientId, taskerId],
-          [clientDisplayName, taskerDisplayName]
-        );
-        return roomId; // Return the roomId for navigation
+      // Create or get chat room
+      const roomId = await createChatRoom(
+        [clientId, taskerId],
+        [clientDisplayName, taskerDisplayName]
+      );
+
+      if (roomId) {
+        const result = await acceptOfferFirestore(offerId, taskId, user, roomId); // Pass roomId to firestore function
+        if (result) {
+          return roomId; // Return the roomId for navigation
+        }
       }
       return null;
     } catch (err) {
-      // Error handled by acceptOfferFirestore
+      // Error handled by acceptOfferFirestore or createChatRoom
       return null;
     } finally {
       setLoading(false);
