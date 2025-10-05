@@ -4,13 +4,14 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, MessageSquare } from 'lucide-react';
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, MessageSquare, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth'; // Import useAuth
 import { useChat } from '@/hooks/use-chat'; // Import useChat
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
 import { toast } from 'sonner';
 import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
+import { cn } from '@/lib/utils'; // Import cn for conditional class names
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,6 +109,28 @@ const TaskerProfileViewPage: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
               <Mail size={18} /> {tasker.userId} {/* Using userId as a placeholder for email/contact */}
             </p>
+
+            {/* Rating and Review Count */}
+            <div className="flex items-center gap-2 mb-6">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={24}
+                    className={cn(
+                      "transition-colors",
+                      i < Math.round(tasker.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"
+                    )}
+                  />
+                ))}
+              </div>
+              <span className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+                {tasker.rating.toFixed(1)}
+              </span>
+              <span className="text-gray-600 dark:text-gray-400">
+                ({tasker.reviewCount} reviews)
+              </span>
+            </div>
 
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
               {tasker.bio}
