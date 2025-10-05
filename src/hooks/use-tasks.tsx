@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client'; // Corrected import path
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTaskerProfile } from './use-tasker-profile'; // Import useTaskerProfile
 
 export interface Task {
   id: string;
@@ -50,7 +49,6 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { updateTaskerRatingAndReviewCount } = useTaskerProfile(); // Use the new function
   const queryClient = useQueryClient();
 
   const fetchTasks = useCallback(async () => {
@@ -166,7 +164,12 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } else if (status === 'in_progress') {
         // No additional fields needed for 'in_progress' beyond status
       } else if (status === 'completed') {
-        updatePayload.date_completed = new Date().toISOString(); // Set completion date
+        // Only set date_completed if it's the tasker marking it complete
+        // If reviewData is provided, it means the client is completing and reviewing,
+        // and date_completed might have already been set by the tasker.
+        // We only set it here if it's not already set, or if this is the initial completion.
+        updatePayload.date_completed = new Date().toISOString(); 
+        
         // If reviewData is provided, it means the client is completing and reviewing
         if (reviewData) {
           const { error: reviewError } = await supabase
@@ -248,7 +251,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const completeTaskWithReview = async (taskId: string, rating: number, comment: string) => { // Renamed review to comment for clarity
+  const completeTaskWithReview = async (taskId: string, rating: number, comment: string) => {
     if (!user) {
       toast.error("You must be logged in to complete a task.");
       return;
@@ -257,7 +260,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const { data: taskData, error: fetchError } = await supabase
         .from('tasks')
-        .select('poster_id, assigned_tasker_id, status') // Select status to check if already completed
+        .select('poster_id, assigned_tasker_id')
         .eq('id', taskId)
         .single();
 
@@ -276,70 +279,49 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return;
       }
 
-      // Check if a review already exists for this task by this client
-      const { data: existingReview, error: existingReviewError } = await supabase
+      // Insert review first
+      const { error: reviewError } = await supabase
         .from('reviews')
-        .select('id')
-        .eq('task_id', taskId)
-        .eq('reviewerId', user.id)
-        .single();
+        .insert({
+          task_id: taskId,
+          rating: rating,
+          comment: comment,
+          reviewerId: user.id, // Client is the reviewer
+          reviewedUserId: taskData.assigned_tasker_id, // Tasker is the reviewed user
+        });
+      if (reviewError) throw reviewError;
 
-      if (existingReviewError && existingReviewError.code !== 'PGRST116') { // PGRST116 means no rows found
-        throw existingReviewError;
-      }
+      // Update task status to 'completed' (if not already) and set date_completed
+      // The tasker might have already set status to 'completed', but the client's review finalizes it.
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({
+          status: 'completed', // Keep status as 'completed' after client review
+          date_completed: new Date().toISOString(), // Ensure completion date is set/updated
+        })
+        .eq('id', taskId);
 
-      if (existingReview) {
-        toast.info("You have already reviewed this task.");
-        // Optionally, allow updating the review
-        // const { error: updateReviewError } = await supabase
-        //   .from('reviews')
-        //   .update({ rating, comment })
-        //   .eq('id', existingReview.id);
-        // if (updateReviewError) throw updateReviewError;
-      } else {
-        // Insert new review
-        const { error: reviewError } = await supabase
-          .from('reviews')
-          .insert({
-            task_id: taskId,
-            rating: rating,
-            comment: comment,
-            reviewerId: user.id, // Client is the reviewer
-            reviewedUserId: taskData.assigned_tasker_id, // Tasker is the reviewed user
-          });
-        if (reviewError) throw reviewError;
-      }
+      if (updateError) throw updateError;
 
-      // Update task status to 'completed' if it's not already
-      if (taskData.status !== 'completed') {
-        const { error: updateError } = await supabase
-          .from('tasks')
-          .update({
-            status: 'completed',
-            date_completed: new Date().toISOString(),
-          })
-          .eq('id', taskId);
+      // Optionally, update the assigned tasker's overall rating in their profile
+      // This would require a separate function in useTaskerProfile or a Supabase trigger
+      // if (taskData.assigned_tasker_id) {
+      //   await updateTaskerRating(taskData.assigned_tasker_id, rating);
+      // }
 
-        if (updateError) throw updateError;
-      }
-
-      // Update the assigned tasker's overall rating in their profile
-      if (taskData.assigned_tasker_id) {
-        await updateTaskerRatingAndReviewCount(taskData.assigned_tasker_id, rating);
-      }
-
-      toast.success("Task reviewed and finalized successfully!");
-      fetchTasks(); // Re-fetch to reflect status change and review
+      toast.success("Task marked as complete and review submitted!");
+      fetchTasks(); // Re-fetch to reflect status change and new review
     } catch (err: any) {
-      console.error("Error completing task with review:", err);
-      toast.error(`Failed to finalize task: ${err.message}`);
+      console.error("Error completing task:", err);
+      toast.error(`Failed to complete task: ${err.message}`);
       throw err;
     }
   };
 
+  const value = { tasks, loading, error, fetchTasks, createTask, updateTaskStatus, deleteTask, editTask, completeTaskWithReview };
 
   return (
-    <TaskContext.Provider value={{ tasks, loading, error, fetchTasks, createTask, updateTaskStatus, deleteTask, editTask, completeTaskWithReview }}>
+    <TaskContext.Provider value={value}>
       {children}
     </TaskContext.Provider>
   );
