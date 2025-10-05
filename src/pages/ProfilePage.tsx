@@ -6,7 +6,7 @@ import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import use
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, CheckCircle } from 'lucide-react'; // Import Phone and CheckCircle icons
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, CheckCircle, ListTodo } from 'lucide-react'; // Import Phone, CheckCircle, and ListTodo icons
 import EditProfileSection from '@/components/EditProfileSection';
 import { Badge } from '@/components/ui/badge';
 import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
@@ -109,12 +109,20 @@ const ProfilePage: React.FC = () => {
                   View My Posted Tasks
                 </Button>
                 {isTasker && (
-                  <Button
-                    onClick={() => navigate('/my-offers')}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 flex items-center justify-center gap-2"
-                  >
-                    <Briefcase size={20} /> View My Offers
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => navigate('/my-offers')}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                    >
+                      <Briefcase size={20} /> View My Offers
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/my-assigned-tasks')}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                    >
+                      <ListTodo size={20} /> View My Assigned Tasks
+                    </Button>
+                  </>
                 )}
                 <Button
                   onClick={() => navigate('/settings')}

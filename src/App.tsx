@@ -16,6 +16,7 @@ import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
+import MyAssignedTasksPage from "./pages/MyAssignedTasksPage"; // Import the new page
 import { AuthProvider } from "./hooks/use-auth";
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
@@ -50,6 +51,7 @@ const App = () => {
                                 <Route path="/tasks/:id" element={<TaskDetailPage />} />
                                 <Route path="/my-tasks" element={<MyTasksPage />} />
                                 <Route path="/my-offers" element={<MyOffersPage />} />
+                                <Route path="/my-assigned-tasks" element={<MyAssignedTasksPage />} /> {/* New route */}
                                 <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
                                 <Route path="/profile" element={<ProfilePage />} />
                                 <Route path="/settings" element={<SettingsPage />} />
