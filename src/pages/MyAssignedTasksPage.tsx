@@ -1,29 +1,25 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks, Task } from '@/hooks/use-tasks';
-import { useTaskerProfile } from '@/hooks/use-tasker-profile';
+import { useTasks } from '@/hooks/use-tasks';
 import { useChat } from '@/hooks/use-chat';
-import { useModal } from '@/components/ModalProvider';
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Tag, DollarSign, MessageSquare, CheckCircle, User } from 'lucide-react';
+import { ArrowLeft, MapPin, Tag, DollarSign, MessageSquare, User, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders';
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { cn } from '@/lib/utils';
 
 const MyAssignedTasksPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { profile: currentUserProfile } = useSupabaseProfile();
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { tasks, loading: tasksLoading, error: tasksError } = useTasks();
   const { createChatRoom } = useChat();
-  const { openReviewTaskModal } = useModal(); // To allow tasker to mark as complete (client side)
 
-  const isLoading = authLoading || taskerProfileLoading || tasksLoading;
+  const isLoading = authLoading || tasksLoading;
 
   if (isLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your assigned tasks...</div>;
@@ -47,25 +43,7 @@ const MyAssignedTasksPage: React.FC = () => {
     );
   }
 
-  if (!isTasker) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 pt-[60px] px-4">
-        <Card className="w-full max-w-md text-center shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-[hsl(var(--primary-color))]">Not a Tasker</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be registered as a tasker to view assigned tasks.</p>
-            <Button onClick={() => navigate('/features-earnings')} className="bg-green-600 hover:bg-green-700 text-white">
-              Become a Tasker
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const assignedTasks = tasks.filter(task => task.assignedTaskerId === user.id);
+  const myAssignedTasks = tasks.filter(task => task.assignedTaskerId === user.id);
 
   const handleChatWithClient = async (clientId: string) => {
     if (!isAuthenticated || !user || !currentUserProfile) {
@@ -88,14 +66,6 @@ const MyAssignedTasksPage: React.FC = () => {
     }
   };
 
-  const handleMarkAsComplete = (task: Task) => {
-    // As per current design, only the client (poster) can mark a task as complete and leave a review.
-    // This button will inform the tasker about this and suggest contacting the client.
-    toast.info("Only the client can mark a task as complete and leave a review. Please coordinate with the client to finalize the task.");
-    // Optionally, navigate to chat with client
-    handleChatWithClient(task.posterId);
-  };
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px]">
       <div className="container mx-auto px-4">
@@ -106,16 +76,16 @@ const MyAssignedTasksPage: React.FC = () => {
 
         {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
 
-        {assignedTasks.length === 0 && !tasksLoading && !tasksError ? (
+        {myAssignedTasks.length === 0 && !tasksLoading && !tasksError ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">You haven't been assigned any tasks yet.</p>
-            <Button onClick={() => navigate('/browse-taskers')} className="bg-green-600 hover:bg-green-700 text-white">
-              Browse Tasks to Offer
+            <Button onClick={() => navigate('/tasks')} className="bg-green-600 hover:bg-green-700 text-white">
+              Browse Available Tasks
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assignedTasks.map((task) => (
+            {myAssignedTasks.map((task) => (
               <Card key={task.id} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="h-40 overflow-hidden relative">
                   <img 
@@ -129,6 +99,7 @@ const MyAssignedTasksPage: React.FC = () => {
                   />
                   <div className={cn(
                     "absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold",
+                    task.status === 'open' && 'bg-blue-600 text-white',
                     task.status === 'assigned' && 'bg-yellow-600 text-white',
                     task.status === 'completed' && 'bg-green-600 text-white',
                     task.status === 'cancelled' && 'bg-gray-600 text-white'
@@ -169,17 +140,14 @@ const MyAssignedTasksPage: React.FC = () => {
                         <MessageSquare size={20} /> Chat with Client
                       </Button>
                     )}
-                    {task.status === 'assigned' && (
-                      <Button
-                        onClick={() => handleMarkAsComplete(task)}
-                        className="bg-gray-600 hover:bg-gray-700 text-white flex items-center justify-center gap-2 w-full"
-                      >
-                        <CheckCircle size={20} /> Mark as Complete (Client Review)
-                      </Button>
-                    )}
                     {task.status === 'completed' && (
                       <Badge className="bg-green-500 text-white text-center py-2 text-base flex items-center justify-center gap-2">
-                        <CheckCircle size={20} /> Task Completed!
+                        Task Completed!
+                      </Badge>
+                    )}
+                    {task.status === 'cancelled' && (
+                      <Badge className="bg-gray-500 text-white text-center py-2 text-base flex items-center justify-center gap-2">
+                        Task Cancelled
                       </Badge>
                     )}
                   </div>
