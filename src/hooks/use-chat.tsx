@@ -14,12 +14,10 @@ import {
   doc, // Import doc
   updateDoc, // Import updateDoc
   getDocs, // Import getDocs
-  getDoc, // <--- ADDED: Import getDoc
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile';
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client for presence
 
 export interface ChatMessage {
   id: string;
@@ -38,9 +36,6 @@ export interface ChatRoom {
   lastMessage?: string;
   lastMessageTimestamp?: string;
   createdAt: string;
-  typingUsers?: string[]; // New field for typing indicator
-  status: 'active' | 'closed'; // New: Status of the chat room
-  onlineStatus?: Record<string, boolean>; // New: Online status of participants
 }
 
 interface ChatContextType {
@@ -52,8 +47,6 @@ interface ChatContextType {
   sendMessage: (roomId: string, text: string) => Promise<void>;
   createChatRoom: (participantIds: string[], participantNames: string[]) => Promise<string | null>;
   fetchMessagesForRoom: (roomId: string) => void;
-  sendTypingStatus: (roomId: string, isTyping: boolean) => void; // New function
-  updateChatRoomStatus: (roomId: string, status: ChatRoom['status']) => Promise<void>; // New function
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -67,8 +60,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loadingMessages, setLoadingMessages] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [currentRoomId, setCurrentRoomId] = React.useState<string | null>(null);
-  const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null); // For debouncing typing status
-  const [onlineStatuses, setOnlineStatuses] = React.useState<Record<string, boolean>>({}); // New state for online statuses
 
   // Fetch chat rooms for the current user
   React.useEffect(() => {
@@ -98,8 +89,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           lastMessage: data.lastMessage,
           lastMessageTimestamp: data.lastMessageTimestamp?.toDate().toISOString(),
           createdAt: data.createdAt?.toDate().toISOString(),
-          typingUsers: data.typingUsers || [], // Include typingUsers
-          status: data.status || 'active', // New: Include status, default to 'active'
         };
       });
       setChatRooms(fetchedRooms);
@@ -152,44 +141,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, [currentRoomId]);
 
-  // Subscribe to Supabase presence for participants in the selected room
-  React.useEffect(() => {
-    if (!isAuthenticated || !user || !currentRoomId) {
-      setOnlineStatuses({});
-      return;
-    }
-
-    const selectedRoom = chatRooms.find(room => room.id === currentRoomId);
-    if (!selectedRoom) {
-      setOnlineStatuses({});
-      return;
-    }
-
-    const participantIds = selectedRoom.participants;
-    const channel = supabase.channel(`room_presence_${selectedRoom.id}`);
-
-    const subscription = channel
-      .on('presence', { event: 'sync' }, () => {
-        const newState = channel.presenceState();
-        const newOnlineStatuses: Record<string, boolean> = {};
-        participantIds.forEach(pId => {
-          newOnlineStatuses[pId] = newState[pId] && newState[pId].length > 0;
-        });
-        setOnlineStatuses(newOnlineStatuses);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({ user_id: user.uid, online_at: new Date().toISOString() });
-        }
-      });
-
-    return () => {
-      if (channel) {
-        channel.unsubscribe();
-      }
-    };
-  }, [currentRoomId, chatRooms, isAuthenticated, user]);
-
   const fetchMessagesForRoom = (roomId: string) => {
     setCurrentRoomId(roomId);
   };
@@ -210,12 +161,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         timestamp: serverTimestamp(),
       });
 
-      // Update last message in chat room and clear typing status
-      const roomRef = doc(collection(db, 'chatRooms'), roomId);
-      await updateDoc(roomRef, {
+      // Update last message in chat room
+      const roomRef = doc(collection(db, 'chatRooms'), roomId); // Fixed: Use doc function
+      await updateDoc(roomRef, { // Fixed: Use updateDoc function
         lastMessage: text.trim(),
         lastMessageTimestamp: serverTimestamp(),
-        typingUsers: chatRooms.find(room => room.id === roomId)?.typingUsers?.filter(uid => uid !== user.uid) || [],
       });
 
     } catch (err: any) {
@@ -244,7 +194,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         where('participants', '==', participantIds),
         limit(1)
       );
-      const existingRoomSnapshot = await getDocs(existingRoomQuery);
+      const existingRoomSnapshot = await getDocs(existingRoomQuery); // Fixed: getDocs is now imported
 
       if (!existingRoomSnapshot.empty) {
         const existingRoomId = existingRoomSnapshot.docs[0].id;
@@ -258,8 +208,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createdAt: serverTimestamp(),
         lastMessage: "New chat started.",
         lastMessageTimestamp: serverTimestamp(),
-        typingUsers: [], // Initialize typingUsers
-        status: 'active', // New: Initialize status as 'active'
       });
       toast.success("Chat room created!");
       return newRoomRef.id;
@@ -270,63 +218,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const sendTypingStatus = React.useCallback((roomId: string, isTyping: boolean) => {
-    if (!user || !roomId) return;
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    const updateTypingStatus = async () => {
-      const roomRef = doc(db, 'chatRooms', roomId);
-      const roomSnap = await getDoc(roomRef);
-      if (roomSnap.exists()) {
-        const currentTypingUsers = (roomSnap.data()?.typingUsers || []) as string[];
-        let newTypingUsers = [...currentTypingUsers];
-
-        if (isTyping && !newTypingUsers.includes(user.uid)) {
-          newTypingUsers.push(user.uid);
-        } else if (!isTyping && newTypingUsers.includes(user.uid)) {
-          newTypingUsers = newTypingUsers.filter(uid => uid !== user.uid);
-        }
-
-        if (newTypingUsers.length !== currentTypingUsers.length || newTypingUsers.some((uid, i) => uid !== currentTypingUsers[i])) {
-          await updateDoc(roomRef, { typingUsers: newTypingUsers });
-        }
-      }
-    };
-
-    if (isTyping) {
-      updateTypingStatus(); // Send typing status immediately
-      typingTimeoutRef.current = setTimeout(() => {
-        sendTypingStatus(roomId, false); // Stop typing after a delay
-      }, 3000); // 3 seconds debounce
-    } else {
-      updateTypingStatus(); // Send not typing status
-    }
-  }, [user]);
-
-  const updateChatRoomStatus = async (roomId: string, status: ChatRoom['status']) => {
-    try {
-      const roomRef = doc(db, 'chatRooms', roomId);
-      await updateDoc(roomRef, { status: status, dateUpdated: serverTimestamp() });
-      toast.success(`Chat room status updated to ${status}.`);
-    } catch (err: any) {
-      console.error("Error updating chat room status:", err);
-      toast.error(`Failed to update chat room status: ${err.message}`);
-      throw err;
-    }
-  };
-
-  const chatRoomsWithOnlineStatus = React.useMemo(() => {
-    return chatRooms.map(room => ({
-      ...room,
-      onlineStatus: onlineStatuses,
-    }));
-  }, [chatRooms, onlineStatuses]);
-
   const value = {
-    chatRooms: chatRoomsWithOnlineStatus,
+    chatRooms,
     messages,
     loadingRooms: loadingRooms || authLoading,
     loadingMessages,
@@ -334,8 +227,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     sendMessage,
     createChatRoom,
     fetchMessagesForRoom,
-    sendTypingStatus,
-    updateChatRoomStatus, // New: Expose updateChatRoomStatus
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

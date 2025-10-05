@@ -3,281 +3,232 @@
 import * as React from "react";
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   Bar,
   BarChart,
-  Pie,
-  PieChart,
-  RadialBar,
-  RadialBarChart,
   Area,
   AreaChart,
+  ResponsiveContainer,
   Scatter,
   ScatterChart,
-  ComposedChart,
-  ResponsiveContainer,
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
+  type TooltipProps,
+  type LegendProps,
 } from "recharts";
 import type {
-  ContentProps as RechartsTooltipContentProps,
-  TooltipProps,
-  LegendProps,
-} from "recharts";
-import type {
+  Payload,
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
 
 import { cn } from "@/lib/utils";
+import {
+  TooltipContent as TooltipPrimitiveContent,
+} from "@/components/ui/tooltip";
 
-// Derive Payload types from RechartsProps
-type RechartsTooltipPayload = TooltipProps<ValueType, NameType>["payload"][number];
-type RechartsLegendPayload = LegendProps["payload"][number];
-
-const ChartContext = React.createContext<ChartContextProps | undefined>(
-  undefined
-);
-
-interface ChartContextProps {
-  config: ChartConfig;
-  id: string;
+// Extend Recharts Payload type to include 'inactive'
+interface ExtendedPayload extends Payload<ValueType, NameType> {
+  inactive?: boolean;
 }
 
-type ChartConfig = {
-  [k: string]: {
-    label?: string;
-    color?: string;
-    icon?: React.ComponentType<{ className?: string }>;
-    formatter?: (
-      value: ValueType,
-      name: NameType,
-      item: RechartsTooltipPayload,
-      index: number,
-      payload: RechartsTooltipPayload[]
-    ) => React.ReactNode;
-  };
+// ChartContext
+type ChartContextProps = {
+  data: Record<string, any>[];
+  categories: string[];
+  minValue?: number;
+  maxValue?: number;
 };
 
-interface ChartProps extends React.HTMLAttributes<HTMLDivElement> {
-  config: ChartConfig;
+const ChartContext = React.createContext<ChartContextProps>({
+  data: [],
+  categories: [],
+});
+
+function useChart() {
+  const context = React.useContext(ChartContext);
+  if (!context) {
+    throw new Error("useChart must be used within a <Chart />");
+  }
+  return context;
 }
 
-const Chart = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & ChartProps
->(({ config, className, children, ...props }, ref) => {
-  const id = React.useId();
-  const containerRef = React.useRef<HTMLDivElement>(null);
+// ChartContainer
+type ChartContainerProps = React.ComponentProps<typeof ResponsiveContainer> &
+  ChartContextProps & {
+    className?: string;
+    children: React.ReactNode;
+  };
+
+function ChartContainer({
+  data,
+  categories,
+  minValue,
+  maxValue,
+  className,
+  children,
+  ...props
+}: ChartContainerProps) {
+  const chartConfig = React.useMemo(
+    () => ({ data, categories, minValue, maxValue }),
+    [data, categories, minValue, maxValue],
+  );
 
   return (
-    <ChartContext.Provider value={{ config, id }}>
-      <div
-        ref={ref}
-        className={cn("h-[400px] w-full", className)}
-        {...props}
-      >
-        <ResponsiveContainer>
-          {children}
-        </ResponsiveContainer>
+    <ChartContext.Provider value={chartConfig}>
+      <div className={cn("h-[400px] w-full", className)}>
+        <ResponsiveContainer {...props}>{children}</ResponsiveContainer>
       </div>
     </ChartContext.Provider>
   );
-});
-Chart.displayName = "Chart";
-
-const ChartTooltip = ({
-  cursor = false,
-  content,
-  ...props
-}: React.ComponentProps<typeof Tooltip>) => {
-  const { id, config } = React.useContext(ChartContext) as ChartContextProps;
-
-  return (
-    <Tooltip
-      filterNull={true}
-      cursor={cursor}
-      content={content || (<ChartTooltipContent config={config} />)}
-      {...props}
-    />
-  );
-};
-ChartTooltip.displayName = "ChartTooltip";
-
-interface ChartTooltipContentProps
-  extends RechartsTooltipContentProps<ValueType, NameType>,
-    React.HTMLAttributes<HTMLDivElement> {
-  hideLabel?: boolean;
-  hideIndicator?: boolean;
-  formatter?: TooltipProps<ValueType, NameType>["formatter"];
 }
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  ChartTooltipContentProps
->(
-  (
-    {
-      className,
-      content,
-      formatter,
-      hideLabel = false,
-      hideIndicator = false,
-      labelClassName,
-      wrapperClassName,
-      cursor,
-      ...props
-    },
-    ref
-  ) => {
-    const { id, config } = React.useContext(ChartContext) as ChartContextProps;
+// Define a specific type for Recharts Tooltip formatter (4 arguments)
+type RechartsTooltipFormatter = (value: ValueType, name: NameType, props: Payload<ValueType, NameType>, index: number) => React.ReactNode;
 
-    const formattedPayload = props.payload?.map((item) => {
-      const key = item.dataKey as keyof typeof config;
-      const itemConfig = config[key];
-      return {
-        ...item,
-        color: itemConfig?.color || item.color,
-        formatter: itemConfig?.formatter || formatter,
-      };
-    });
+// ChartTooltipContent
+interface ChartTooltipContentProps extends TooltipProps<ValueType, NameType> {
+  className?: string; // Custom prop for styling the shadcn/ui TooltipContent wrapper
+  customContent?: React.ReactNode | ((props: TooltipProps<ValueType, NameType>) => React.ReactNode);
+  payload?: ExtendedPayload[]; // Use ExtendedPayload
+  formatter?: RechartsTooltipFormatter; // Use the specific type for formatter
+}
 
-    return props.active && formattedPayload && formattedPayload.length ? (
-      <div
-        ref={ref}
-        className={cn(
-          "grid min-w-[128px] items-center rounded-md border border-border bg-white/95 px-2.5 py-1.5 text-xs shadow-xl backdrop-blur-sm",
-          className
-        )}
-      >
-        {!hideLabel ? (
-          <div className="border-b border-border pb-1 text-muted-foreground">
-            <span className={labelClassName}>{props.label}</span>
-          </div>
-        ) : null}
-        <div className="grid gap-1 pt-2">
-          {formattedPayload.map((item, index) => (
-            <div
-              key={item.dataKey}
-              className="flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-2">
-                {!hideIndicator ? (
-                  <span
-                    className="flex h-3 w-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                ) : null}
-                <span className="text-muted-foreground">
-                  {item.name}
-                </span>
-              </div>
-              <span className="font-medium text-foreground">
-                {item.formatter
-                  ? item.formatter(item.value, item.name, item, index, formattedPayload)
-                  : item.value}
+const ChartTooltipContent = ({
+  active,
+  payload,
+  label,
+  className,
+  formatter,
+  customContent,
+  ...props
+}: ChartTooltipContentProps) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  return (
+    <TooltipPrimitiveContent
+      className={cn(
+        "z-50 overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        className
+      )}
+    >
+      {typeof customContent === 'function' ? (
+        customContent({ active, payload, label, formatter, ...props })
+      ) : customContent ? (
+        customContent
+      ) : (
+        <div className="grid gap-1">
+          <p className="text-sm font-bold">{label}</p>
+          {payload.map((entry, i) => (
+            <div key={`item-${i}`} className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{entry.name}</span>
+              <span
+                className="text-sm font-bold"
+                style={{ color: entry.color }}
+              >
+                {/* This formatter call is correct for TooltipProps['formatter'] (4 arguments) */}
+                {formatter ? formatter(entry.value, entry.name, entry, i) : entry.value}
               </span>
             </div>
           ))}
         </div>
-      </div>
-    ) : null;
-  }
-);
+      )}
+    </TooltipPrimitiveContent>
+  );
+};
 ChartTooltipContent.displayName = "ChartTooltipContent";
 
-const ChartLegend = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> &
-    LegendProps & {
-      hideIndicator?: boolean;
-      formatter?: LegendProps["formatter"];
-    }
->(
-  (
-    {
-      className,
-      content,
-      formatter,
-      hideIndicator = false,
-      ...props
-    },
-    ref
-  ) => {
-    const { id, config } = React.useContext(ChartContext) as ChartContextProps;
 
-    return (
-      <Legend
-        {...props}
-        content={({ payload }) => {
-          const formattedPayload = payload?.map((item) => {
-            const key = item.dataKey as keyof typeof config;
-            const itemConfig = config[key];
-            return {
-              ...item,
-              color: itemConfig?.color || item.color,
-              formatter: itemConfig?.formatter || formatter,
-            };
-          });
+// ChartLegendContent
+interface ChartLegendContentProps {
+  className?: string; // Custom prop for styling the ul wrapper inside content
+  formatter?: (value: ValueType, entry: ExtendedPayload, index: number) => React.ReactNode; // Corrected formatter signature (3 arguments)
+  payload?: ExtendedPayload[]; // Use ExtendedPayload
+}
 
-          return formattedPayload && formattedPayload.length ? (
-            <div
-              ref={ref}
-              className={cn(
-                "flex flex-wrap items-center gap-2",
-                className
-              )}
-            >
-              {formattedPayload.map((item, index) => (
-                <div
-                  key={item.value}
-                  className={cn(
-                    "flex items-center gap-1",
-                    item.inactive && "text-muted-foreground"
-                  )}
-                >
-                  {!hideIndicator ? (
-                    <span
-                      className="flex h-3 w-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                  ) : null}
-                  {item.formatter
-                    ? item.formatter(item.value, item.name, item, index)
-                    : item.name}
-                </div>
-              ))}
-            </div>
-          ) : null;
-        }}
-      />
-    );
-  }
+const ChartLegendContent = ({ className, formatter, payload }: ChartLegendContentProps) => (
+  <ul // This ul should only receive HTML ul attributes
+    className={cn(
+      "flex flex-wrap items-center justify-center gap-2",
+      className
+    )}
+  >
+    {payload?.map((entry, index) => {
+      if (entry.inactive) return null; // Now 'inactive' exists on ExtendedPayload
+      return (
+        <li
+          key={`item-${index}`}
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium"
+        >
+          <span
+            className="h-3 w-3 shrink-0 rounded-full"
+            style={{
+              backgroundColor: entry.color,
+            }}
+          />
+          {/* Corrected call for Legend formatter (3 arguments) */}
+          {formatter ? (
+            formatter(entry.value, entry, index)
+          ) : (
+            <span className="text-muted-foreground">{entry.value}</span>
+          )}
+        </li>
+      );
+    })}
+  </ul>
 );
-ChartLegend.displayName = "ChartLegend";
+ChartLegendContent.displayName = "ChartLegendContent";
 
+
+// Chart
+type ChartProps = React.ComponentProps<typeof ChartContainer> & {
+  children: React.ReactNode;
+};
+
+function Chart({
+  data,
+  categories,
+  minValue,
+  maxValue,
+  className,
+  children,
+  ...props
+}: ChartProps) {
+  return (
+    <ChartContainer
+      data={data}
+      categories={categories}
+      minValue={minValue}
+      maxValue={maxValue}
+      className={className}
+      {...props}
+    >
+      {children}
+    </ChartContainer>
+  );
+}
+
+// Export components
 export {
   Chart,
-  ChartTooltip,
+  ChartContainer,
   ChartTooltipContent,
-  ChartLegend,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  RadialBarChart,
-  RadialBar,
-  AreaChart,
+  ChartLegendContent,
   Area,
-  ScatterChart,
+  AreaChart,
+  Bar,
+  BarChart,
+  Line,
+  LineChart,
+  ResponsiveContainer,
   Scatter,
-  ComposedChart,
+  ScatterChart,
   XAxis,
   YAxis,
   CartesianGrid,
+  Tooltip,
+  Legend,
 };

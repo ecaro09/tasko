@@ -7,80 +7,61 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTasks } from '@/hooks/use-tasks';
 import { toast } from 'sonner';
-import { useFileUpload } from '@/hooks/use-file-upload';
-import { Camera, Image as ImageIcon } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { cn } from '@/lib/utils'; // Assuming cn utility is available
+import { useFileUpload } from '@/hooks/use-file-upload'; // Import the file upload hook
+import { Camera, Image as ImageIcon } from 'lucide-react'; // Import icons
 
 interface PostTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// Define Zod schema for task creation
-const taskSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters.").max(100, "Title cannot exceed 100 characters."),
-  description: z.string().min(20, "Description must be at least 20 characters.").max(500, "Description cannot exceed 500 characters."),
-  location: z.string().min(3, "Location must be at least 3 characters.").max(100, "Location cannot exceed 100 characters."),
-  budget: z.preprocess(
-    (val) => Number(val),
-    z.number().min(100, "Budget must be at least ₱100.").max(100000, "Budget cannot exceed ₱100,000.")
-  ),
-  category: z.string().min(1, "Please select a category."),
-  // imageUrl is handled separately by file upload, not directly by form input
-});
-
-type TaskFormValues = z.infer<typeof taskSchema>;
-
 const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
   const { addTask } = useTasks();
-  const { uploadFile, loading: uploadLoading } = useFileUpload();
-  const [taskImageFile, setTaskImageFile] = React.useState<File | null>(null);
-  const [taskImagePreview, setTaskImagePreview] = React.useState<string | null>(null);
+  const { uploadFile, loading: uploadLoading } = useFileUpload(); // Use the file upload hook
+  const [taskTitle, setTaskTitle] = React.useState('');
+  const [taskDescription, setTaskDescription] = React.useState('');
+  const [taskLocation, setTaskLocation] = React.useState('');
+  const [taskBudget, setTaskBudget] = React.useState('');
+  const [taskCategory, setTaskCategory] = React.useState('');
+  const [taskImageFile, setTaskImageFile] = React.useState<File | null>(null); // State for the image file
+  const [taskImagePreview, setTaskImagePreview] = React.useState<string | null>(null); // State for image preview
   const [isLoading, setIsLoading] = React.useState(false);
-
-  const form = useForm<TaskFormValues>({
-    resolver: zodResolver(taskSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      location: '',
-      budget: 0,
-      category: '',
-    },
-  });
 
   // Reset form fields when modal opens
   React.useEffect(() => {
     if (isOpen) {
-      form.reset();
+      setTaskTitle('');
+      setTaskDescription('');
+      setTaskLocation('');
+      setTaskBudget('');
+      setTaskCategory('');
       setTaskImageFile(null);
       setTaskImagePreview(null);
       setIsLoading(false);
     }
-  }, [isOpen, form]);
+  }, [isOpen]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      // Basic file size validation (e.g., 5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image file size cannot exceed 5MB.");
-        setTaskImageFile(null);
-        setTaskImagePreview(null);
-        return;
-      }
       setTaskImageFile(file);
-      setTaskImagePreview(URL.createObjectURL(file));
+      setTaskImagePreview(URL.createObjectURL(file)); // Create a preview URL
     } else {
       setTaskImageFile(null);
       setTaskImagePreview(null);
     }
   };
 
-  const onSubmit = async (values: TaskFormValues) => {
+  const handlePostTask = async () => {
+    if (!taskTitle || !taskDescription || !taskLocation || !taskBudget || !taskCategory) {
+      toast.error("Please fill in all task details.");
+      return;
+    }
+    if (isNaN(parseFloat(taskBudget)) || parseFloat(taskBudget) <= 0) {
+      toast.error("Budget must be a positive number.");
+      return;
+    }
+
     setIsLoading(true);
     let imageUrl: string | undefined;
 
@@ -91,20 +72,20 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
         imageUrl = uploadedURL;
       } else {
         setIsLoading(false);
-        return;
+        return; // Stop if upload failed
       }
     }
 
     try {
       await addTask({
-        title: values.title,
-        description: values.description,
-        location: values.location,
-        budget: values.budget,
-        category: values.category,
-        imageUrl: imageUrl,
+        title: taskTitle,
+        description: taskDescription,
+        location: taskLocation,
+        budget: parseFloat(taskBudget),
+        category: taskCategory,
+        imageUrl: imageUrl, // Pass the uploaded image URL
       });
-      onClose();
+      onClose(); // Close modal on successful post
     } catch (error) {
       // Error handled by useTasks hook, toast will be shown there
     } finally {
@@ -123,100 +104,79 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
             Describe your task and let local taskers make offers.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">
               Title
             </Label>
-            <div className="col-span-3">
-              <Input
-                id="title"
-                placeholder="e.g., 'House Cleaning'"
-                {...form.register("title")}
-                disabled={isFormDisabled}
-              />
-              {form.formState.errors.title && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.title.message}</p>
-              )}
-            </div>
+            <Input
+              id="title"
+              placeholder="e.g., 'House Cleaning'"
+              className="col-span-3"
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+              disabled={isFormDisabled}
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
               Description
             </Label>
-            <div className="col-span-3">
-              <Textarea
-                id="description"
-                placeholder="Provide details about your task..."
-                {...form.register("description")}
-                disabled={isFormDisabled}
-              />
-              {form.formState.errors.description && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.description.message}</p>
-              )}
-            </div>
+            <Textarea
+              id="description"
+              placeholder="Provide details about your task..."
+              className="col-span-3"
+              value={taskDescription}
+              onChange={(e) => setTaskDescription(e.target.value)}
+              disabled={isFormDisabled}
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">
               Location
             </Label>
-            <div className="col-span-3">
-              <Input
-                id="location"
-                placeholder="e.g., 'Quezon City, Metro Manila'"
-                {...form.register("location")}
-                disabled={isFormDisabled}
-              />
-              {form.formState.errors.location && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.location.message}</p>
-              )}
-            </div>
+            <Input
+              id="location"
+              placeholder="e.g., 'Quezon City, Metro Manila'"
+              className="col-span-3"
+              value={taskLocation}
+              onChange={(e) => setTaskLocation(e.target.value)}
+              disabled={isFormDisabled}
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="budget" className="text-right">
               Budget (₱)
             </Label>
-            <div className="col-span-3">
-              <Input
-                id="budget"
-                type="number"
-                placeholder="e.g., '1500'"
-                {...form.register("budget", { valueAsNumber: true })}
-                disabled={isFormDisabled}
-              />
-              {form.formState.errors.budget && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.budget.message}</p>
-              )}
-            </div>
+            <Input
+              id="budget"
+              type="number"
+              placeholder="e.g., '1500'"
+              className="col-span-3"
+              value={taskBudget}
+              onChange={(e) => setTaskBudget(e.target.value)}
+              disabled={isFormDisabled}
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">
               Category
             </Label>
-            <div className="col-span-3">
-              <Select
-                value={form.watch("category")}
-                onValueChange={(value) => form.setValue("category", value, { shouldValidate: true })}
-                disabled={isFormDisabled}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cleaning">Home Cleaning</SelectItem>
-                  <SelectItem value="repairs">Handyman Services</SelectItem>
-                  <SelectItem value="moving">Moving & Hauling</SelectItem>
-                  <SelectItem value="delivery">Delivery & Errands</SelectItem>
-                  <SelectItem value="painting">Painting Services</SelectItem>
-                  <SelectItem value="assembly">Assembly Services</SelectItem>
-                  <SelectItem value="marketing">Marketing Services</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              {form.formState.errors.category && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.category.message}</p>
-              )}
-            </div>
+            <Select value={taskCategory} onValueChange={setTaskCategory} disabled={isFormDisabled}>
+              <SelectTrigger id="category" className="col-span-3">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cleaning">Home Cleaning</SelectItem>
+                <SelectItem value="repairs">Handyman Services</SelectItem>
+                <SelectItem value="moving">Moving & Hauling</SelectItem>
+                <SelectItem value="delivery">Delivery & Errands</SelectItem>
+                <SelectItem value="painting">Painting Services</SelectItem>
+                <SelectItem value="assembly">Assembly Services</SelectItem>
+                <SelectItem value="marketing">Marketing Services</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="task-image-upload" className="text-right pt-2">
@@ -242,13 +202,13 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isFormDisabled}>Cancel</Button>
-            <Button type="submit" disabled={isFormDisabled} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
-              {isFormDisabled ? 'Posting...' : 'Post Task'}
-            </Button>
-          </DialogFooter>
-        </form>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isFormDisabled}>Cancel</Button>
+          <Button onClick={handlePostTask} disabled={isFormDisabled} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
+            {isFormDisabled ? 'Posting...' : 'Post Task'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

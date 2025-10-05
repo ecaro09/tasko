@@ -11,15 +11,13 @@ import FAQPage from "./pages/FAQPage";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
-import EULAPage from "./pages/EULAPage";
 import BrowseTaskersPage from "./pages/BrowseTaskersPage";
 import TaskerProfileViewPage from "./pages/TaskerProfileViewPage";
 import ChatPage from "./pages/ChatPage";
 import MyOffersPage from "./pages/MyOffersPage";
 import SettingsPage from "./pages/SettingsPage";
 import TaskerDashboardPage from "./pages/TaskerDashboardPage";
-import FinishSignInPage from "./pages/FinishSignInPage";
-import { AuthProvider, useAuth } from "./hooks/use-auth";
+import { AuthProvider, useAuth } from "./hooks/use-auth"; // Import useAuth to get user for SupabaseProfileProvider
 import { TasksProvider } from "./hooks/use-tasks";
 import { ModalProvider } from "./components/ModalProvider";
 import { PWAProvider } from "./hooks/use-pwa";
@@ -30,9 +28,7 @@ import React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { ChatSessionProvider } from "./hooks/use-chat-session";
-import { SupabaseProfileProvider } from "./hooks/use-supabase-profile";
-import { VerificationProvider } from "./hooks/use-verification-requests"; // New import
-import ErrorBoundary from "./components/ErrorBoundary"; // New import
+import { SupabaseProfileProvider } from "./hooks/use-supabase-profile"; // New import
 
 const queryClient = new QueryClient();
 
@@ -41,7 +37,7 @@ const AppProviders = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   return (
     <SupabaseProfileProvider firebaseUser={user}>
-      <VerificationProvider>{children}</VerificationProvider> {/* Wrap with VerificationProvider */}
+      {children}
     </SupabaseProfileProvider>
   );
 };
@@ -53,7 +49,7 @@ const App = () => {
         <TooltipProvider>
           <BrowserRouter>
             <AuthProvider>
-              <AppProviders>
+              <AppProviders> {/* Wrap other providers with AppProviders */}
                 <PWAProvider>
                   <TasksProvider>
                     <TaskerProfileProvider>
@@ -62,29 +58,25 @@ const App = () => {
                           <ChatSessionProvider>
                             <ModalProvider>
                               <div className="min-h-screen w-full flex flex-col items-center">
-                                <ErrorBoundary> {/* Wrap Routes with ErrorBoundary */}
-                                  <Routes>
-                                    <Route path="/" element={<Index />} />
-                                    <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                                    <Route path="/my-tasks" element={<MyTasksPage />} />
-                                    <Route path="/my-offers" element={<MyOffersPage />} />
-                                    <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
-                                    <Route path="/profile" element={<ProfilePage />} />
-                                    <Route path="/settings" element={<SettingsPage />} />
-                                    <Route path="/faq" element={<FAQPage />} />
-                                    <Route path="/contact" element={<ContactPage />} />
-                                    <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                                    <Route path="/terms" element={<TermsOfServicePage />} />
-                                    <Route path="/eula" element={<EULAPage />} />
-                                    <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
-                                    <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
-                                    <Route path="/chat" element={<ChatPage />} />
-                                    <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} />
-                                    <Route path="/finishSignIn" element={<FinishSignInPage />} />
-                                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                                    <Route path="*" element={<NotFound />} />
-                                  </Routes>
-                                </ErrorBoundary>
+                                <Routes>
+                                  <Route path="/" element={<Index />} />
+                                  <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                                  <Route path="/my-tasks" element={<MyTasksPage />} />
+                                  <Route path="/my-offers" element={<MyOffersPage />} />
+                                  <Route path="/features-earnings" element={<FeaturesAndEarningsPage />} />
+                                  <Route path="/profile" element={<ProfilePage />} />
+                                  <Route path="/settings" element={<SettingsPage />} />
+                                  <Route path="/faq" element={<FAQPage />} />
+                                  <Route path="/contact" element={<ContactPage />} />
+                                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                                  <Route path="/terms" element={<TermsOfServicePage />} />
+                                  <Route path="/browse-taskers" element={<BrowseTaskersPage />} />
+                                  <Route path="/taskers/:id" element={<TaskerProfileViewPage />} />
+                                  <Route path="/chat" element={<ChatPage />} />
+                                  <Route path="/tasker-dashboard" element={<TaskerDashboardPage />} />
+                                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                                  <Route path="*" element={<NotFound />} />
+                                </Routes>
                               </div>
                             </ModalProvider>
                           </ChatSessionProvider>

@@ -22,7 +22,7 @@ const TaskDetailPage: React.FC = () => {
   const { isTasker, loading: taskerProfileLoading } = useTaskerProfile();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer, withdrawOffer } = useOffers();
   const { openMakeOfferModal } = useModal();
-  const { createChatRoom } = useChat();
+  const { createChatRoom } = useChat(); // Use createChatRoom from useChat
 
   const task = tasks.find(t => t.id === id);
   const taskOffers = offers.filter(offer => offer.taskId === id);
@@ -42,7 +42,7 @@ const TaskDetailPage: React.FC = () => {
   }
 
   const isTaskPoster = isAuthenticated && user?.uid === task.posterId;
-  const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster && task.status === 'open'; // Can only make offer if task is open
+  const canMakeOffer = isAuthenticated && isTasker && !isTaskPoster;
   const canChatWithPoster = isAuthenticated && user?.uid !== task.posterId; // Can chat if authenticated and not the poster
 
   const handleMakeOfferClick = () => {
@@ -81,10 +81,7 @@ const TaskDetailPage: React.FC = () => {
       return;
     }
     try {
-      const roomId = await acceptOffer(offerId, task.id);
-      if (roomId) {
-        navigate('/chat'); // Navigate to the chat page after accepting the offer
-      }
+      await acceptOffer(offerId, task.id);
     } catch (error) {
       // Error handled by useOffers hook
     }
@@ -125,8 +122,6 @@ const TaskDetailPage: React.FC = () => {
         return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Rejected</Badge>;
       case 'withdrawn':
         return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Withdrawn</Badge>;
-      case 'cancelled': // New status
-        return <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200">Cancelled</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -159,16 +154,6 @@ const TaskDetailPage: React.FC = () => {
                   <p className="flex items-center gap-2"><Tag size={18} /> <strong>Category:</strong> {task.category}</p>
                   <p className="flex items-center gap-2"><Calendar size={18} /> <strong>Posted:</strong> {new Date(task.datePosted).toLocaleDateString()}</p>
                   <p className="flex items-center gap-2"><DollarSign size={18} /> <strong>Budget:</strong> ₱{task.budget.toLocaleString()}</p>
-                  <p className="flex items-center gap-2">
-                    <Badge className={`text-white px-2 py-1 rounded-full text-xs font-semibold ${
-                      task.status === 'open' ? 'bg-blue-600' :
-                      task.status === 'assigned' ? 'bg-yellow-600' :
-                      task.status === 'completed' ? 'bg-green-600' :
-                      'bg-gray-600' // For 'cancelled' status
-                    }`}>
-                      Status: {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
-                    </Badge>
-                  </p>
                 </div>
               </div>
 

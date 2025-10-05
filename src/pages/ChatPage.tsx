@@ -4,18 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle, Lock, Circle } from 'lucide-react'; // Added Lock and Circle icons
+import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
 import { useNavigate } from 'react-router-dom';
 import { useChat, ChatRoom, ChatMessage } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Badge } from '@/components/ui/badge'; // New import
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { chatRooms, messages, loadingRooms, loadingMessages, error, sendMessage, fetchMessagesForRoom, sendTypingStatus } = useChat();
+  const { chatRooms, messages, loadingRooms, loadingMessages, error, sendMessage, fetchMessagesForRoom } = useChat();
   const [selectedRoom, setSelectedRoom] = React.useState<ChatRoom | null>(null);
   const [messageInput, setMessageInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,14 +46,6 @@ const ChatPage: React.FC = () => {
     if (selectedRoom && messageInput.trim()) {
       await sendMessage(selectedRoom.id, messageInput);
       setMessageInput('');
-      sendTypingStatus(selectedRoom.id, false); // Clear typing status after sending message
-    }
-  };
-
-  const handleMessageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessageInput(e.target.value);
-    if (selectedRoom) {
-      sendTypingStatus(selectedRoom.id, e.target.value.length > 0);
     }
   };
 
@@ -70,26 +61,6 @@ const ChatPage: React.FC = () => {
     // For simplicity, we'll just use a generic avatar or the first other participant's avatar if available
     // In a real app, you'd fetch the avatar URL for the other participant(s)
     return undefined; // Placeholder
-  };
-
-  const getTypingIndicator = (room: ChatRoom) => {
-    if (!user || !room.typingUsers) return null;
-    const otherTypingUsers = room.typingUsers.filter(uid => uid !== user.uid);
-    if (otherTypingUsers.length === 0) return null;
-
-    const typingNames = otherTypingUsers.map(uid => {
-      const participantIndex = room.participants.indexOf(uid);
-      return room.participantNames[participantIndex] || "Someone";
-    });
-
-    return (
-      <div className="text-sm text-gray-500 dark:text-gray-400 italic flex items-center gap-1">
-        {typingNames.join(', ')} is typing...
-        <span className="typing-dots">
-          <span>.</span><span>.</span><span>.</span>
-        </span>
-      </div>
-    );
   };
 
   if (authLoading) {
@@ -109,10 +80,6 @@ const ChatPage: React.FC = () => {
       </div>
     );
   }
-
-  const isChatClosed = selectedRoom?.status === 'closed';
-  const otherParticipantId = selectedRoom?.participants.find(pId => pId !== user.uid);
-  const isOtherParticipantOnline = otherParticipantId ? selectedRoom?.onlineStatus?.[otherParticipantId] : false;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col md:flex-row w-full">
@@ -149,30 +116,18 @@ const ChatPage: React.FC = () => {
                       <AvatarFallback className="bg-blue-200 text-blue-800">
                         {getParticipantName(room).charAt(0).toUpperCase()}
                       </AvatarFallback>
-                      {room.onlineStatus && otherParticipantId && room.onlineStatus[otherParticipantId] && (
-                        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
-                      )}
                     </Avatar>
                     <div className="flex-1">
                       <p className="font-semibold text-gray-800 dark:text-gray-100">{getParticipantName(room)}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                         {room.lastMessage || "Start a conversation"}
                       </p>
-                      {getTypingIndicator(room)} {/* Display typing indicator in room list */}
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {room.lastMessageTimestamp && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(room.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                      <Badge variant="outline" className={cn(
-                        "text-xs px-2 py-0.5",
-                        room.status === 'active' ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
-                      )}>
-                        {room.status === 'active' ? 'Active' : 'Closed'}
-                      </Badge>
-                    </div>
+                    {room.lastMessageTimestamp && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(room.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
                   </div>
                 ))
               )}
@@ -197,26 +152,8 @@ const ChatPage: React.FC = () => {
                     <AvatarFallback className="bg-blue-200 text-blue-800">
                       {getParticipantName(selectedRoom).charAt(0).toUpperCase()}
                     </AvatarFallback>
-                    {isOtherParticipantOnline && (
-                      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
-                    )}
                   </Avatar>
-                  <div className="flex flex-col">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getParticipantName(selectedRoom)}</h3>
-                    {isOtherParticipantOnline ? (
-                      <span className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <Circle size={10} fill="currentColor" /> Online
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Offline</span>
-                    )}
-                  </div>
-                  <Badge variant="outline" className={cn(
-                    "ml-auto text-xs px-2 py-0.5",
-                    selectedRoom.status === 'active' ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
-                  )}>
-                    {selectedRoom.status === 'active' ? 'Active' : 'Closed'}
-                  </Badge>
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getParticipantName(selectedRoom)}</h3>
                 </div>
 
                 {/* Scam Detection Alert Banner */}
@@ -275,26 +212,16 @@ const ChatPage: React.FC = () => {
                   )}
                   <div ref={messagesEndRef} />
                 </ScrollArea>
-                {selectedRoom && getTypingIndicator(selectedRoom) && (
-                  <div className="px-4 pb-2">
-                    {getTypingIndicator(selectedRoom)}
-                  </div>
-                )}
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                  {isChatClosed && (
-                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm italic w-full justify-center">
-                      <Lock size={16} /> This chat is closed. You can no longer send messages.
-                    </div>
-                  )}
                   <Input
                     placeholder="Type your message..."
                     value={messageInput}
-                    onChange={handleMessageInputChange}
+                    onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     className="flex-grow"
-                    disabled={loadingMessages || isChatClosed}
+                    disabled={loadingMessages}
                   />
-                  <Button onClick={handleSendMessage} disabled={loadingMessages || !messageInput.trim() || isChatClosed} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
+                  <Button onClick={handleSendMessage} disabled={loadingMessages || !messageInput.trim()} className="bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white">
                     <Send size={20} />
                   </Button>
                 </div>

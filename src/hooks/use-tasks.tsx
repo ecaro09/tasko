@@ -6,31 +6,26 @@ import {
   orderBy,
   onSnapshot,
   DocumentData,
-  Timestamp, // Import Timestamp type
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
-import { useChat } from './use-chat'; // New import
 import {
   Task, // Import Task interface
   addTaskFirestore,
   editTaskFirestore,
   deleteTaskFirestore,
   completeTaskWithReviewFirestore,
-  cancelTaskFirestore, // New import
 } from '@/lib/task-firestore'; // Import new utility functions
-import { cancelOffersForTaskFirestore } from '@/lib/offer-firestore'; // New import
 import { seedInitialTasks } from '@/lib/seed-tasks'; // Import seed function from new location
 
 interface UseTasksContextType {
   tasks: Task[];
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'> & { imageUrl?: string }) => Promise<void>; // Updated addTask signature
-  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'>>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }) => Promise<void>; // Updated addTask signature
+  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
-  cancelTask: (taskId: string) => Promise<void>; // New function
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -41,7 +36,6 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const { updateChatRoomStatus } = useChat(); // Use updateChatRoomStatus from useChat
   const [allTasks, setAllTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -56,17 +50,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedTasks: Task[] = snapshot.docs.map((doc) => {
         const data = doc.data() as DocumentData;
-        
-        // Handle datePosted which can be a Firebase Timestamp or a string (from seeded data)
-        let datePostedDate: Date;
-        if (data.datePosted instanceof Timestamp) {
-          datePostedDate = data.datePosted.toDate();
-        } else if (typeof data.datePosted === 'string') {
-          datePostedDate = new Date(data.datePosted);
-        } else {
-          datePostedDate = new Date(); // Fallback to current date if unexpected type
-        }
-
         return {
           id: doc.id,
           title: data.title,
@@ -77,16 +60,13 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           posterId: data.posterId,
           posterName: data.posterName,
           posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
-          datePosted: datePostedDate.toISOString().split('T')[0], // Format to YYYY-MM-DD
+          datePosted: data.datePosted?.toDate().toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           status: data.status || 'open',
           imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
           assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
-          chatRoomId: data.chatRoomId || undefined, // New: Include chatRoomId
           rating: data.rating || undefined, // Include rating
           review: data.review || undefined, // Include review
-          dateUpdated: data.dateUpdated?.toDate().toISOString(),
-          dateCompleted: data.dateCompleted?.toDate().toISOString(),
         };
       });
       setAllTasks(fetchedTasks);
@@ -106,7 +86,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'> & { imageUrl?: string }) => {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -114,7 +94,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     await addTaskFirestore(newTaskData, user);
   };
 
-  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted' | 'chatRoomId'>>) => {
+  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to edit a task.");
       return;
@@ -135,28 +115,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       toast.error("You must be logged in to complete and review a task.");
       return;
     }
-    const taskToUpdate = allTasks.find(t => t.id === taskId);
-    if (taskToUpdate?.chatRoomId) {
-      await updateChatRoomStatus(taskToUpdate.chatRoomId, 'closed');
-    }
     await completeTaskWithReviewFirestore(taskId, rating, review, user);
-  };
-
-  const cancelTask = async (taskId: string) => {
-    if (!isAuthenticated || !user) {
-      toast.error("You must be logged in to cancel a task.");
-      return;
-    }
-    try {
-      const taskToUpdate = allTasks.find(t => t.id === taskId);
-      if (taskToUpdate?.chatRoomId) {
-        await updateChatRoomStatus(taskToUpdate.chatRoomId, 'closed');
-      }
-      await cancelTaskFirestore(taskId, user);
-      await cancelOffersForTaskFirestore(taskId, user); // Cancel associated offers
-    } catch (error) {
-      // Errors handled by firestore functions
-    }
   };
 
   const value = {
@@ -167,7 +126,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     editTask,
     deleteTask,
     completeTaskWithReview,
-    cancelTask, // Expose new function
   };
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;

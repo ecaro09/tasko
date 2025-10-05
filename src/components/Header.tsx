@@ -24,27 +24,27 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
           <h1 className="text-2xl text-[hsl(var(--primary-color))] font-bold">Tasko</h1>
         </div>
         <nav className="hidden md:flex gap-8">
-          <Link to="/" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm" aria-label="Go to Home page">Home</Link>
-          <a href="#categories" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm" aria-label="Scroll to Services section">Services</a>
+          <Link to="/" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Home</Link>
+          <a href="#categories" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Services</a>
           {isAuthenticated && (
-            <Link to="/my-tasks" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm" aria-label="Go to My Tasks page">My Tasks</Link>
+            <Link to="/my-tasks" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">My Tasks</Link>
           )}
           {isAuthenticated && isTasker && ( // Conditional link for taskers
-            <Link to="/tasker-dashboard" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm" aria-label="Go to Tasker Dashboard">Tasker Dashboard</Link>
+            <Link to="/tasker-dashboard" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Tasker Dashboard</Link>
           )}
-          <a href="#how-it-works" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm" aria-label="Scroll to How It Works section">How It Works</a>
-          <Link to="/features-earnings" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm" aria-label="Go to Become a Tasker page">Become a Tasker</Link>
+          <a href="#how-it-works" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">How It Works</a>
+          <Link to="/features-earnings" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Become a Tasker</Link>
           {isAuthenticated && (
-            <Link to="/profile" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm" aria-label="Go to Profile page">Profile</Link>
+            <Link to="/profile" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Profile</Link>
           )}
         </nav>
         <div className="flex gap-3 items-center">
           {isAuthenticated ? (
             <>
-              <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-1 px-3 py-2 h-auto text-sm" aria-label="Post a new task">
+              <Button onClick={openPostTaskModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))] flex items-center gap-1 px-3 py-2 h-auto text-sm">
                 <Plus size={16} /> Post Task
               </Button>
-              <Link to="/profile" className="flex items-center" aria-label="View user profile">
+              <Link to="/profile" className="flex items-center">
                 <Avatar className="w-8 h-8 border-2 border-[hsl(var(--primary-color))]">
                   <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
                   <AvatarFallback className="bg-[hsl(var(--primary-color))] text-white text-sm font-semibold">
@@ -52,16 +52,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
                   </AvatarFallback>
                 </Avatar>
               </Link>
-              <Button onClick={onSignOut} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white" aria-label="Sign out of your account">
+              <Button onClick={onSignOut} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
                 Sign Out
               </Button>
             </>
           ) : (
             <>
-              <Button onClick={openLoginModal} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white" aria-label="Log in to your account">
+              <Button onClick={openLoginModal} variant="outline" className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">
                 Login
               </Button>
-              <Button onClick={openSignupModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))]" aria-label="Sign up for a new account">
+              <Button onClick={openSignupModal} className="bg-[hsl(var(--primary-color))] text-white hover:bg-[hsl(var(--primary-color))]">
                 Sign Up
               </Button>
             </>

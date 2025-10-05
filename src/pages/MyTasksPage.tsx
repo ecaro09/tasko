@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTasks } from '@/hooks/use-tasks';
 import { useOffers } from '@/hooks/use-offers';
-import { Offer } from '@/lib/offer-firestore';
+import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offer interface
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit, Ban } from 'lucide-react';
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Star and Edit icons
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -18,25 +18,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { toast } from 'sonner';
-import { useModal } from '@/components/ModalProvider';
-import { cn } from '@/lib/utils'; // Import cn for conditional class names
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // New import
+import { Badge } from "@/components/ui/badge"; // New import
+import { toast } from 'sonner'; // New import
+import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, deleteTask, cancelTask } = useTasks();
-  const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers();
-  const { openReviewTaskModal, openEditTaskModal } = useModal();
+  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks(); // Destructure deleteTask
+  const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
+  const { openReviewTaskModal, openEditTaskModal } = useModal(); // Get the new modal openers
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
-  const [taskToCancel, setTaskToCancel] = React.useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = React.useState<'all' | 'open' | 'assigned' | 'completed' | 'cancelled'>('all'); // New state for filter
 
-  if (authLoading || tasksLoading || offersLoading) {
+  if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
   }
 
@@ -60,13 +56,6 @@ const MyTasksPage: React.FC = () => {
 
   const userTasks = tasks.filter(task => task.posterId === user.uid);
 
-  const filteredTasks = React.useMemo(() => {
-    if (activeFilter === 'all') {
-      return userTasks;
-    }
-    return userTasks.filter(task => task.status === activeFilter);
-  }, [userTasks, activeFilter]);
-
   const handleDeleteClick = (taskId: string) => {
     setTaskToDelete(taskId);
     setIsDeleteDialogOpen(true);
@@ -75,6 +64,14 @@ const MyTasksPage: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (taskToDelete) {
       try {
+        // Before deleting the task, also delete any associated offers
+        const offersToDelete = offers.filter(offer => offer.taskId === taskToDelete);
+        for (const offer of offersToDelete) {
+          // This would ideally be handled by a server-side function or cascade delete in a real DB
+          // For Firebase, we'd need to explicitly delete them.
+          // For now, we'll just delete the task.
+          // In a real app, you'd want to ensure data consistency.
+        }
         await deleteTask(taskToDelete);
       } catch (error) {
         // Error handled by useTasks hook, toast already shown
@@ -85,29 +82,11 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
-  const handleCancelClick = (taskId: string) => {
-    setTaskToCancel(taskId);
-    setIsCancelDialogOpen(true);
-  };
-
-  const handleConfirmCancel = async () => {
-    if (taskToCancel) {
-      try {
-        await cancelTask(taskToCancel);
-      } catch (error) {
-        // Error handled by useTasks hook
-      } finally {
-        setTaskToCancel(null);
-        setIsCancelDialogOpen(false);
-      }
-    }
-  };
-
   const handleAcceptOffer = async (offerId: string, taskId: string) => {
     try {
       const roomId = await acceptOffer(offerId, taskId);
       if (roomId) {
-        navigate('/chat');
+        navigate('/chat'); // Navigate to the chat page after accepting the offer
       }
     } catch (error) {
       // Error handled by useOffers hook
@@ -140,8 +119,6 @@ const MyTasksPage: React.FC = () => {
         return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Rejected</Badge>;
       case 'withdrawn':
         return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Withdrawn</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200">Cancelled</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -154,62 +131,16 @@ const MyTasksPage: React.FC = () => {
 
         {tasksError && <p className="col-span-full text-center text-red-500 italic py-8">Error loading tasks: {tasksError}</p>}
 
-        {/* Filter Buttons */}
-        <div className="flex justify-center gap-2 mb-8 flex-wrap">
-          <Button
-            variant={activeFilter === 'all' ? 'default' : 'outline'}
-            onClick={() => setActiveFilter('all')}
-            className={cn(activeFilter === 'all' ? 'bg-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] text-white' : 'border-gray-400 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700')}
-          >
-            All Tasks ({userTasks.length})
-          </Button>
-          <Button
-            variant={activeFilter === 'open' ? 'default' : 'outline'}
-            onClick={() => setActiveFilter('open')}
-            className={cn(activeFilter === 'open' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-blue-400 text-blue-600 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-700')}
-          >
-            Open ({userTasks.filter(t => t.status === 'open').length})
-          </Button>
-          <Button
-            variant={activeFilter === 'assigned' ? 'default' : 'outline'}
-            onClick={() => setActiveFilter('assigned')}
-            className={cn(activeFilter === 'assigned' ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'border-yellow-400 text-yellow-600 hover:bg-yellow-100 dark:text-yellow-300 dark:hover:bg-yellow-700')}
-          >
-            Assigned ({userTasks.filter(t => t.status === 'assigned').length})
-          </Button>
-          <Button
-            variant={activeFilter === 'completed' ? 'default' : 'outline'}
-            onClick={() => setActiveFilter('completed')}
-            className={cn(activeFilter === 'completed' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-400 text-green-600 hover:bg-green-100 dark:text-green-300 dark:hover:bg-green-700')}
-          >
-            Completed ({userTasks.filter(t => t.status === 'completed').length})
-          </Button>
-          <Button
-            variant={activeFilter === 'cancelled' ? 'default' : 'outline'}
-            onClick={() => setActiveFilter('cancelled')}
-            className={cn(activeFilter === 'cancelled' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-purple-400 text-purple-600 hover:bg-purple-100 dark:text-purple-300 dark:hover:bg-purple-700')}
-          >
-            Cancelled ({userTasks.filter(t => t.status === 'cancelled').length})
-          </Button>
-        </div>
-
-        {filteredTasks.length === 0 && !tasksLoading && !tasksError ? (
+        {userTasks.length === 0 && !tasksLoading && !tasksError ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">No tasks found with status "{activeFilter}".</p>
-            {activeFilter === 'all' && (
-              <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700 text-white">
-                Post a New Task
-              </Button>
-            )}
-            {activeFilter !== 'all' && (
-              <Button onClick={() => setActiveFilter('all')} className="bg-green-600 hover:bg-green-700 text-white">
-                View All Tasks
-              </Button>
-            )}
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">You haven't posted any tasks yet.</p>
+            <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700 text-white">
+              Post a New Task
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task) => {
+            {userTasks.map((task) => {
               const offersForTask = offers.filter(offer => offer.taskId === task.id);
               const assignedOffer = offersForTask.find(offer => offer.status === 'accepted');
               const assignedTaskerName = assignedOffer?.taskerName;
@@ -221,8 +152,7 @@ const MyTasksPage: React.FC = () => {
                     <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
                       task.status === 'open' ? 'bg-blue-600 text-white' :
                       task.status === 'assigned' ? 'bg-yellow-600 text-white' :
-                      task.status === 'completed' ? 'bg-green-600 text-white' :
-                      'bg-gray-600 text-white'
+                      'bg-green-600 text-white'
                     }`}>
                       {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                     </div>
@@ -268,7 +198,7 @@ const MyTasksPage: React.FC = () => {
                         View Details
                       </Button>
                       <div className="flex gap-2">
-                        {(task.status === 'open' || task.status === 'assigned') && (
+                        {task.status === 'open' && ( // Only allow editing if task is open
                           <Button
                             variant="outline"
                             size="icon"
@@ -278,26 +208,14 @@ const MyTasksPage: React.FC = () => {
                             <Edit size={20} />
                           </Button>
                         )}
-                        {(task.status === 'open' || task.status === 'assigned') && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleCancelClick(task.id)}
-                            className="border-red-600 text-red-600 hover:bg-red-100"
-                          >
-                            <Ban size={20} />
-                          </Button>
-                        )}
-                        {task.status !== 'cancelled' && (
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => handleDeleteClick(task.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            <Trash2 size={20} />
-                          </Button>
-                        )}
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleDeleteClick(task.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          <Trash2 size={20} />
+                        </Button>
                       </div>
                     </div>
 
@@ -377,24 +295,6 @@ const MyTasksPage: React.FC = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Cancel Confirmation Dialog */}
-      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to cancel this task?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action will mark the task as cancelled. If the task is assigned, the assignment will be revoked. All pending offers will be rejected. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>No, keep task</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCancel} className="bg-red-600 hover:bg-red-700 text-white">
-              Yes, cancel task
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

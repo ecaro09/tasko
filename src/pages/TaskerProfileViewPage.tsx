@@ -6,14 +6,12 @@ import { useTasks } from '@/hooks/use-tasks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star, MessageSquare, ShieldCheck } from 'lucide-react'; // Added ShieldCheck icon
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useChat } from '@/hooks/use-chat';
 import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
-import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 
 const TaskerProfileViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,16 +19,14 @@ const TaskerProfileViewPage: React.FC = () => {
   const { fetchTaskerProfileById, loading: globalLoading } = useTaskerProfile();
   const { tasks, loading: tasksLoading } = useTasks();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { fetchProfile: fetchSupabaseProfile, loadingProfile: loadingSupabaseProfile } = useSupabaseProfile(); // Use fetchProfile from useSupabaseProfile
   const { createChatRoom } = useChat();
 
   const [tasker, setTasker] = React.useState<TaskerProfile | null>(null);
-  const [taskerSupabaseProfile, setTaskerSupabaseProfile] = React.useState<any | null>(null); // State for Supabase profile
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const loadTaskerData = async () => {
+    const loadTasker = async () => {
       if (!id) {
         setError("Tasker ID is missing.");
         setLoading(false);
@@ -38,21 +34,17 @@ const TaskerProfileViewPage: React.FC = () => {
       }
       setLoading(true);
       setError(null);
-
       const fetchedTasker = await fetchTaskerProfileById(id);
       if (fetchedTasker) {
         setTasker(fetchedTasker);
-        // Fetch Supabase profile for the tasker
-        const fetchedSupabaseProfile = await fetchSupabaseProfile(id);
-        setTaskerSupabaseProfile(fetchedSupabaseProfile);
       } else {
         setError("Tasker not found.");
       }
       setLoading(false);
     };
 
-    loadTaskerData();
-  }, [id, fetchTaskerProfileById, fetchSupabaseProfile]);
+    loadTasker();
+  }, [id, fetchTaskerProfileById]);
 
   const taskerReviews = React.useMemo(() => {
     if (!tasker || tasksLoading) return [];
@@ -68,15 +60,18 @@ const TaskerProfileViewPage: React.FC = () => {
   }, [taskerReviews]);
 
   const isCurrentUserTasker = isAuthenticated && user?.uid === tasker?.userId;
-  const isTaskerVerified = taskerSupabaseProfile?.is_verified_tasker; // Get verification status from Supabase profile
 
   const handleContactTasker = async () => {
-    if (!isAuthenticated || !user || !tasker) {
-      toast.error("You must be logged in to contact a tasker.");
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to contact this tasker.");
+      return;
+    }
+    if (!tasker) {
+      toast.error("Tasker information is missing.");
       return;
     }
     if (isCurrentUserTasker) {
-      toast.info("You cannot chat with yourself.");
+      toast.info("You are viewing your own profile.");
       return;
     }
 
@@ -86,41 +81,16 @@ const TaskerProfileViewPage: React.FC = () => {
         [user.displayName || user.email || "You", tasker.displayName]
       );
       if (roomId) {
-        navigate('/chat'); // Navigate to the chat page
+        navigate('/chat');
       }
     } catch (error) {
       console.error("Failed to create or navigate to chat room:", error);
-      toast.error("Failed to start chat.");
+      toast.error("Failed to start chat with tasker.");
     }
   };
 
-  if (loading || globalLoading || tasksLoading || authLoading || loadingSupabaseProfile) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
-        <div className="container mx-auto max-w-3xl">
-          <Skeleton className="h-10 w-32 mb-6" /> {/* Back button skeleton */}
-          <Card className="shadow-lg p-6">
-            <CardContent className="flex flex-col items-center text-center p-0">
-              <Skeleton className="w-32 h-32 rounded-full mb-4" />
-              <Skeleton className="h-10 w-3/4 mb-2" />
-              <Skeleton className="h-6 w-1/2 mb-4" />
-              <Skeleton className="h-20 w-full mb-6" /> {/* Bio skeleton */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6">
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-              </div>
-              <Skeleton className="h-8 w-1/3 mb-3" /> {/* Skills title */}
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 w-full mb-6">
-                <Skeleton className="h-8 w-20 rounded-full" />
-                <Skeleton className="h-8 w-24 rounded-full" />
-                <Skeleton className="h-8 w-16 rounded-full" />
-              </div>
-              <Skeleton className="h-14 w-full rounded-full" /> {/* Contact button */}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+  if (loading || globalLoading || tasksLoading || authLoading) {
+    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading tasker profile...</div>;
   }
 
   if (error) {
@@ -150,13 +120,6 @@ const TaskerProfileViewPage: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-4">
               <Mail size={18} /> {tasker.userId}
             </p>
-
-            {/* Display Verification Status */}
-            {isTaskerVerified && (
-              <Badge className="bg-green-500 text-white flex items-center gap-1 mb-4">
-                <ShieldCheck size={16} /> Verified Tasker
-              </Badge>
-            )}
 
             <CardDescription className="text-lg text-gray-700 dark:text-gray-300 mb-6 max-w-prose">
               {tasker.bio}
