@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { collection, getDocs } from 'firebase/firestore'; // Only getDocs needed for initial fetch of all profiles
+import { collection, getDocs } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useSupabaseProfile } from './use-supabase-profile'; // New import

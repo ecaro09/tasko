@@ -41,10 +41,9 @@ export const createOrUpdateTaskerProfileFirestore = async (
       photoURL: user.photoURL || undefined,
       isTasker: true,
       dateJoined: new Date().toISOString(),
-      ...data,
     };
 
-    await setDoc(docRef, profileData, { merge: true }); // Use merge to update existing fields or create new doc
+    await setDoc(docRef, { ...profileData, ...data }, { merge: true }); // Use merge to update existing fields or create new doc
     toast.success("Tasker profile saved successfully!");
     return profileData;
   } catch (err: any) {

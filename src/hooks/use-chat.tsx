@@ -154,7 +154,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Subscribe to Supabase presence for participants in the selected room
   React.useEffect(() => {
-    if (!selectedRoom || !isAuthenticated || !user) {
+    if (!isAuthenticated || !user || !currentRoomId) {
+      setOnlineStatuses({});
+      return;
+    }
+
+    const selectedRoom = chatRooms.find(room => room.id === currentRoomId);
+    if (!selectedRoom) {
       setOnlineStatuses({});
       return;
     }
@@ -182,7 +188,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         channel.unsubscribe();
       }
     };
-  }, [selectedRoom, isAuthenticated, user]);
+  }, [currentRoomId, chatRooms, isAuthenticated, user]);
 
   const fetchMessagesForRoom = (roomId: string) => {
     setCurrentRoomId(roomId);
