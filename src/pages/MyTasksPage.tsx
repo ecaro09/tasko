@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 import { useModal } from '@/components/ModalProvider';
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -204,7 +205,14 @@ const MyTasksPage: React.FC = () => {
                               <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                 <div className="flex items-center gap-2">
                                   <Avatar className="w-10 h-10 border-2 border-blue-500">
-                                    <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                                    <AvatarImage 
+                                      src={offer.taskerAvatar || DEFAULT_AVATAR_URL} 
+                                      alt={offer.taskerName} 
+                                      onError={(e) => {
+                                        e.currentTarget.src = DEFAULT_AVATAR_URL;
+                                        e.currentTarget.onerror = null;
+                                      }}
+                                    />
                                     <AvatarFallback className="bg-blue-200 text-blue-800 text-md font-semibold">
                                       {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={16} />}
                                     </AvatarFallback>

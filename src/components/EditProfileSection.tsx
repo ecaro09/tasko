@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Camera, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 interface EditProfileSectionProps {
   onCancel: () => void;
@@ -113,7 +114,14 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
       <CardContent className="p-0 space-y-4">
         <div className="flex flex-col items-center gap-4 mb-6">
           <Avatar className="w-24 h-24 border-4 border-green-500">
-            <AvatarImage src={avatarPreview || undefined} alt={user?.email || "User"} />
+            <AvatarImage 
+              src={avatarPreview || DEFAULT_AVATAR_URL} 
+              alt={user?.email || "User"} 
+              onError={(e) => {
+                e.currentTarget.src = DEFAULT_AVATAR_URL;
+                e.currentTarget.onerror = null;
+              }}
+            />
             <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
               {firstName.charAt(0).toUpperCase()}{lastName.charAt(0).toUpperCase()}
             </AvatarFallback>

@@ -18,7 +18,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '@/components/ModalProvider';
 import { cn } from '@/lib/utils'; // Import cn for conditional class names
-import { DEFAULT_TASK_IMAGE_URL } from '@/utils/image-placeholders'; // Import default image URL
+import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default image URL and avatar URL
 
 const getCategoryName = (category: string) => {
   const names: { [key: string]: string } = {
@@ -149,7 +149,15 @@ const Index = () => {
                     <p className="text-2xl font-bold text-[hsl(var(--primary-color))] mb-4">₱{task.budget.toLocaleString()}</p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <img src={task.posterAvatar} alt={task.posterName} className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" />
+                        <img 
+                          src={task.posterAvatar || DEFAULT_AVATAR_URL} 
+                          alt={task.posterName} 
+                          className="w-8 h-8 rounded-full object-cover border-2 border-[hsl(var(--border-color))]" 
+                          onError={(e) => {
+                            e.currentTarget.src = DEFAULT_AVATAR_URL;
+                            e.currentTarget.onerror = null;
+                          }}
+                        />
                         <span className="font-medium">{task.posterName}</span>
                       </div>
                       <Button variant="outline" onClick={() => handleViewTaskDetails(task.id)} className="border-[hsl(var(--primary-color))] text-[hsl(var(--primary-color))] hover:bg-[hsl(var(--primary-color))] hover:text-white">

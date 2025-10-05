@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from 'lucide-react';
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -53,7 +54,14 @@ const Header: React.FC<HeaderProps> = React.memo(({ isAuthenticated, onSignOut }
             <>
               <Link to="/profile" className="flex items-center">
                 <Avatar className="w-8 h-8 border-2 border-[hsl(var(--primary-color))]">
-                  <AvatarImage src={userAvatarUrl} alt={displayUserName} />
+                  <AvatarImage 
+                    src={userAvatarUrl || DEFAULT_AVATAR_URL} 
+                    alt={displayUserName} 
+                    onError={(e) => {
+                      e.currentTarget.src = DEFAULT_AVATAR_URL;
+                      e.currentTarget.onerror = null;
+                    }}
+                  />
                   <AvatarFallback className="bg-[hsl(var(--primary-color))] text-white text-sm font-semibold">
                     {avatarFallbackText}
                   </AvatarFallback>

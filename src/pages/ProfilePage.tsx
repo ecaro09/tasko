@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, CheckCircle } from 'lucide-react'; // Import Phone and CheckCircle icons
 import EditProfileSection from '@/components/EditProfileSection';
 import { Badge } from '@/components/ui/badge';
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -54,7 +55,14 @@ const ProfilePage: React.FC = () => {
             <Card className="shadow-lg p-6 mb-8">
               <CardContent className="flex flex-col items-center text-center p-0">
                 <Avatar className="w-24 h-24 mb-4 border-4 border-green-500">
-                  <AvatarImage src={avatarUrl} alt={displayName} />
+                  <AvatarImage 
+                    src={avatarUrl || DEFAULT_AVATAR_URL} 
+                    alt={displayName} 
+                    onError={(e) => {
+                      e.currentTarget.src = DEFAULT_AVATAR_URL;
+                      e.currentTarget.onerror = null;
+                    }}
+                  />
                   <AvatarFallback className="bg-green-200 text-green-800 text-3xl font-semibold">
                     {profile?.first_name?.charAt(0).toUpperCase() || ''}
                     {profile?.last_name?.charAt(0).toUpperCase() || <UserIcon size={32} />}

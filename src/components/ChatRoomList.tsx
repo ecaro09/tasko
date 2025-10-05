@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 interface ChatRoomListProps {
   onSelectRoom: (roomId: string) => void;
@@ -62,7 +63,14 @@ const ChatRoomList: React.FC<ChatRoomListProps> = ({ onSelectRoom, activeRoomId 
           >
             <CardContent className="flex items-center p-3">
               <Avatar className="w-10 h-10 mr-3">
-                <AvatarImage src={otherParticipantAvatar} alt={otherParticipantName} />
+                <AvatarImage 
+                  src={otherParticipantAvatar || DEFAULT_AVATAR_URL} 
+                  alt={otherParticipantName} 
+                  onError={(e) => {
+                    e.currentTarget.src = DEFAULT_AVATAR_URL;
+                    e.currentTarget.onerror = null;
+                  }}
+                />
                 <AvatarFallback className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                   {otherParticipantName.charAt(0).toUpperCase() || <UserIcon size={16} />}
                 </AvatarFallback>

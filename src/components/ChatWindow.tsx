@@ -7,6 +7,7 @@ import { Send, User as UserIcon, MessageSquare } from 'lucide-react'; // Added M
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default avatar URL
 
 interface ChatWindowProps {
   roomId: string;
@@ -84,7 +85,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, currentRoom }) => {
               >
                 {!isCurrentUser && (
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={senderAvatar} alt={senderName} />
+                    <AvatarImage 
+                      src={senderAvatar || DEFAULT_AVATAR_URL} 
+                      alt={senderName} 
+                      onError={(e) => {
+                        e.currentTarget.src = DEFAULT_AVATAR_URL;
+                        e.currentTarget.onerror = null;
+                      }}
+                    />
                     <AvatarFallback className="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                       {senderName.charAt(0).toUpperCase() || <UserIcon size={14} />}
                     </AvatarFallback>
@@ -110,7 +118,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, currentRoom }) => {
                 </Card>
                 {isCurrentUser && (
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={senderAvatar} alt={senderName} />
+                    <AvatarImage 
+                      src={senderAvatar || DEFAULT_AVATAR_URL} 
+                      alt={senderName} 
+                      onError={(e) => {
+                        e.currentTarget.src = DEFAULT_AVATAR_URL;
+                        e.currentTarget.onerror = null;
+                      }}
+                    />
                     <AvatarFallback className="bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-200">
                       {senderName.charAt(0).toUpperCase() || <UserIcon size={14} />}
                     </AvatarFallback>

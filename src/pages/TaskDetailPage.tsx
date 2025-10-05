@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 import { useChat } from '@/hooks/use-chat'; // Import useChat
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
-import { DEFAULT_TASK_IMAGE_URL } from '@/utils/image-placeholders'; // Import default image URL
+import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import default image URL and avatar URL
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -168,7 +168,15 @@ const TaskDetailPage: React.FC = () => {
               <div>
                 <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Posted By</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  <img src={task.posterAvatar} alt={task.posterName} className="w-16 h-16 rounded-full object-cover border-2 border-green-500" />
+                  <img 
+                    src={task.posterAvatar || DEFAULT_AVATAR_URL} 
+                    alt={task.posterName} 
+                    className="w-16 h-16 rounded-full object-cover border-2 border-green-500" 
+                    onError={(e) => {
+                      e.currentTarget.src = DEFAULT_AVATAR_URL;
+                      e.currentTarget.onerror = null;
+                    }}
+                  />
                   <div>
                     <p className="font-semibold text-lg text-gray-800 dark:text-gray-100">{task.posterName}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Task Poster</p>
@@ -208,7 +216,14 @@ const TaskDetailPage: React.FC = () => {
                       <CardContent className="p-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-12 h-12 border-2 border-blue-500">
-                            <AvatarImage src={offer.taskerAvatar || undefined} alt={offer.taskerName} />
+                            <AvatarImage 
+                              src={offer.taskerAvatar || DEFAULT_AVATAR_URL} 
+                              alt={offer.taskerName} 
+                              onError={(e) => {
+                                e.currentTarget.src = DEFAULT_AVATAR_URL;
+                                e.currentTarget.onerror = null;
+                              }}
+                            />
                             <AvatarFallback className="bg-blue-200 text-blue-800 text-lg font-semibold">
                               {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <User size={20} />}
                             </AvatarFallback>
