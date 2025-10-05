@@ -246,7 +246,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const completeTaskWithReview = async (taskId: string, rating: number, comment: string) => { // Renamed review to comment for clarity
+  const completeTaskWithReview = async (taskId: string, rating: number, review: string) => {
     if (!user) {
       toast.error("You must be logged in to complete a task.");
       return;
@@ -255,7 +255,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const { data: taskData, error: fetchError } = await supabase
         .from('tasks')
-        .select('poster_id, assigned_tasker_id, status') // Select status to check if already completed
+        .select('poster_id, assigned_tasker_id')
         .eq('id', taskId)
         .single();
 
@@ -274,52 +274,29 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return;
       }
 
-      // Check if a review already exists for this task by this client
-      const { data: existingReview, error: existingReviewError } = await supabase
+      // Insert review first
+      const { error: reviewError } = await supabase
         .from('reviews')
-        .select('id')
-        .eq('task_id', taskId)
-        .eq('reviewerId', user.id)
-        .single();
+        .insert({
+          task_id: taskId,
+          rating: rating,
+          comment: review,
+          reviewerId: user.id, // Client is the reviewer
+          reviewedUserId: taskData.assigned_tasker_id, // Tasker is the reviewed user
+        });
+      if (reviewError) throw reviewError;
 
-      if (existingReviewError && existingReviewError.code !== 'PGRST116') { // PGRST116 means no rows found
-        throw existingReviewError;
-      }
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({
+          status: 'completed',
+          // rating and review are now stored in the 'reviews' table
+          // date_completed: new Date().toISOString(), // Assuming this is handled by Supabase trigger or not needed here
+          // date_updated: new Date().toISOString(), // Assuming this is handled by Supabase trigger or not needed here
+        })
+        .eq('id', taskId);
 
-      if (existingReview) {
-        toast.info("You have already reviewed this task.");
-        // Optionally, allow updating the review
-        // const { error: updateReviewError } = await supabase
-        //   .from('reviews')
-        //   .update({ rating, comment })
-        //   .eq('id', existingReview.id);
-        // if (updateReviewError) throw updateReviewError;
-      } else {
-        // Insert new review
-        const { error: reviewError } = await supabase
-          .from('reviews')
-          .insert({
-            task_id: taskId,
-            rating: rating,
-            comment: comment,
-            reviewerId: user.id, // Client is the reviewer
-            reviewedUserId: taskData.assigned_tasker_id, // Tasker is the reviewed user
-          });
-        if (reviewError) throw reviewError;
-      }
-
-      // Update task status to 'completed' if it's not already
-      if (taskData.status !== 'completed') {
-        const { error: updateError } = await supabase
-          .from('tasks')
-          .update({
-            status: 'completed',
-            date_completed: new Date().toISOString(),
-          })
-          .eq('id', taskId);
-
-        if (updateError) throw updateError;
-      }
+      if (updateError) throw updateError;
 
       // Optionally, update the assigned tasker's overall rating in their profile
       // This would require a separate function in useTaskerProfile or a Supabase trigger
@@ -327,11 +304,11 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       //   await updateTaskerRating(taskData.assigned_tasker_id, rating);
       // }
 
-      toast.success("Task reviewed and finalized successfully!");
-      fetchTasks(); // Re-fetch to reflect status change and review
+      toast.success("Task marked as complete and review submitted!");
+      fetchTasks(); // Re-fetch to reflect status change
     } catch (err: any) {
-      console.error("Error completing task with review:", err);
-      toast.error(`Failed to finalize task: ${err.message}`);
+      console.error("Error completing task:", err);
+      toast.error(`Failed to complete task: ${err.message}`);
       throw err;
     }
   };

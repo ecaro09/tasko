@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks, Task } from '@/hooks/use-tasks';
+import { useTasks, Task } from '@/hooks/use-tasks'; // Updated import
 import { useOffers, Offer } from '@/hooks/use-offers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,7 +90,7 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
-  const handleReviewAndFinalizeClick = (task: Task) => {
+  const handleCompleteTaskClick = (task: Task) => {
     openReviewTaskModal(task);
   };
 
@@ -140,11 +140,9 @@ const MyTasksPage: React.FC = () => {
                     <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
                       task.status === 'open' ? 'bg-blue-600 text-white' :
                       task.status === 'assigned' ? 'bg-yellow-600 text-white' :
-                      task.status === 'in_progress' ? 'bg-orange-600 text-white' : // Added in_progress styling
-                      task.status === 'completed' ? 'bg-green-600 text-white' :
-                      'bg-gray-600 text-white'
+                      'bg-green-600 text-white'
                     }`}>
-                      {task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
+                      {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                     </div>
                   </div>
                   <CardContent className="p-4">
@@ -160,18 +158,18 @@ const MyTasksPage: React.FC = () => {
                       <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                         View Details
                       </Button>
-                      {task.status === 'completed' && !task.review?.comment && ( // Show "Review & Finalize" if completed by tasker but not yet reviewed by client
+                      {task.status === 'assigned' && !task.review?.comment && ( // Fixed property access
                         <Button
-                          onClick={() => handleReviewAndFinalizeClick(task)}
+                          onClick={() => handleCompleteTaskClick(task)}
                           className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
                         >
-                          <CheckCircle size={16} /> Review & Finalize
+                          <CheckCircle size={16} /> Complete & Review
                         </Button>
                       )}
-                      {task.status === 'completed' && task.review?.rating && ( // Show review if already completed and reviewed
+                      {task.status === 'completed' && task.review?.rating && ( // Fixed property access
                         <div className="flex items-center gap-1 text-yellow-500">
                           <Star size={16} fill="currentColor" />
-                          <span className="font-semibold">{task.review.rating.toFixed(1)}</span>
+                          <span className="font-semibold">{task.review.rating.toFixed(1)}</span> {/* Fixed property access */}
                         </div>
                       )}
                       {task.status === 'open' && ( // Only allow editing if task is open
