@@ -4,7 +4,7 @@ import { useTaskerProfile, TaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar } from 'lucide-react';
+import { User as UserIcon, Mail, DollarSign, Briefcase, Calendar, Star } from 'lucide-react'; // Import Star icon
 import { Badge } from '@/components/ui/badge';
 
 const TaskerProfileViewPage: React.FC = () => {
@@ -75,11 +75,15 @@ const TaskerProfileViewPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6">
               <div className="flex items-center justify-center md:justify-start gap-2 text-gray-800 dark:text-gray-100">
                 <DollarSign size={20} className="text-green-600" />
-                <span className="font-semibold">Hourly Rate:</span> ₱{tasker.hourlyRate.toLocaleString()}
+                <span className="font-semibold">Hourly Rate:</span> ₱{tasker.hourlyRate.toLocaleString()}/hr
               </div>
               <div className="flex items-center justify-center md:justify-start gap-2 text-gray-800 dark:text-gray-100">
                 <Calendar size={20} className="text-green-600" />
                 <span className="font-semibold">Joined:</span> {new Date(tasker.dateJoined).toLocaleDateString()}
+              </div>
+              <div className="flex items-center justify-center md:justify-start gap-2 text-gray-800 dark:text-gray-100">
+                <Star size={20} className="text-yellow-500" />
+                <span className="font-semibold">Rating:</span> {tasker.rating.toFixed(1)} ({tasker.reviewCount} reviews)
               </div>
             </div>
 

@@ -25,7 +25,7 @@ interface TaskerProfileContextType {
   createOrUpdateTaskerProfile: (data: Omit<TaskerProfile, 'userId' | 'displayName' | 'photoURL' | 'isTasker' | 'dateJoined' | 'rating' | 'reviewCount'>) => Promise<void>;
   isTasker: boolean;
   fetchTaskerProfileById: (id: string) => Promise<TaskerProfile | null>;
-  updateTaskerRating: (taskerId: string, newRating: number) => Promise<void>; // New function to update rating
+  updateTaskerRatingAndReviewCount: (taskerId: string, newRating: number) => Promise<void>; // New function to update rating and review count
 }
 
 const TaskerProfileContext = createContext<TaskerProfileContextType | undefined>(undefined);
@@ -185,7 +185,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
-  const updateTaskerRating = async (taskerId: string, newRating: number) => {
+  const updateTaskerRatingAndReviewCount = async (taskerId: string, newRating: number) => {
     setLoading(true);
     setError(null);
     try {
@@ -243,7 +243,7 @@ export const TaskerProfileProvider: React.FC<{ children: ReactNode }> = ({ child
     createOrUpdateTaskerProfile,
     isTasker,
     fetchTaskerProfileById,
-    updateTaskerRating,
+    updateTaskerRatingAndReviewCount,
   };
 
   return <TaskerProfileContext.Provider value={value}>{children}</TaskerProfileContext.Provider>;

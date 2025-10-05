@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTaskerProfile } from './use-tasker-profile'; // Import useTaskerProfile
 
 export interface Task {
   id: string;
@@ -49,6 +50,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { updateTaskerRatingAndReviewCount } = useTaskerProfile(); // Use the new function
   const queryClient = useQueryClient();
 
   const fetchTasks = useCallback(async () => {
@@ -246,7 +248,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const completeTaskWithReview = async (taskId: string, rating: number, review: string) => {
+  const completeTaskWithReview = async (taskId: string, rating: number, comment: string) => { // Renamed review to comment for clarity
     if (!user) {
       toast.error("You must be logged in to complete a task.");
       return;
@@ -255,7 +257,7 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const { data: taskData, error: fetchError } = await supabase
         .from('tasks')
-        .select('poster_id, assigned_tasker_id')
+        .select('poster_id, assigned_tasker_id, status') // Select status to check if already completed
         .eq('id', taskId)
         .single();
 
@@ -274,41 +276,63 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return;
       }
 
-      // Insert review first
-      const { error: reviewError } = await supabase
+      // Check if a review already exists for this task by this client
+      const { data: existingReview, error: existingReviewError } = await supabase
         .from('reviews')
-        .insert({
-          task_id: taskId,
-          rating: rating,
-          comment: review,
-          reviewerId: user.id, // Client is the reviewer
-          reviewedUserId: taskData.assigned_tasker_id, // Tasker is the reviewed user
-        });
-      if (reviewError) throw reviewError;
+        .select('id')
+        .eq('task_id', taskId)
+        .eq('reviewerId', user.id)
+        .single();
 
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update({
-          status: 'completed',
-          // rating and review are now stored in the 'reviews' table
-          // date_completed: new Date().toISOString(), // Assuming this is handled by Supabase trigger or not needed here
-          // date_updated: new Date().toISOString(), // Assuming this is handled by Supabase trigger or not needed here
-        })
-        .eq('id', taskId);
+      if (existingReviewError && existingReviewError.code !== 'PGRST116') { // PGRST116 means no rows found
+        throw existingReviewError;
+      }
 
-      if (updateError) throw updateError;
+      if (existingReview) {
+        toast.info("You have already reviewed this task.");
+        // Optionally, allow updating the review
+        // const { error: updateReviewError } = await supabase
+        //   .from('reviews')
+        //   .update({ rating, comment })
+        //   .eq('id', existingReview.id);
+        // if (updateReviewError) throw updateReviewError;
+      } else {
+        // Insert new review
+        const { error: reviewError } = await supabase
+          .from('reviews')
+          .insert({
+            task_id: taskId,
+            rating: rating,
+            comment: comment,
+            reviewerId: user.id, // Client is the reviewer
+            reviewedUserId: taskData.assigned_tasker_id, // Tasker is the reviewed user
+          });
+        if (reviewError) throw reviewError;
+      }
 
-      // Optionally, update the assigned tasker's overall rating in their profile
-      // This would require a separate function in useTaskerProfile or a Supabase trigger
-      // if (taskData.assigned_tasker_id) {
-      //   await updateTaskerRating(taskData.assigned_tasker_id, rating);
-      // }
+      // Update task status to 'completed' if it's not already
+      if (taskData.status !== 'completed') {
+        const { error: updateError } = await supabase
+          .from('tasks')
+          .update({
+            status: 'completed',
+            date_completed: new Date().toISOString(),
+          })
+          .eq('id', taskId);
 
-      toast.success("Task marked as complete and review submitted!");
-      fetchTasks(); // Re-fetch to reflect status change
+        if (updateError) throw updateError;
+      }
+
+      // Update the assigned tasker's overall rating in their profile
+      if (taskData.assigned_tasker_id) {
+        await updateTaskerRatingAndReviewCount(taskData.assigned_tasker_id, rating);
+      }
+
+      toast.success("Task reviewed and finalized successfully!");
+      fetchTasks(); // Re-fetch to reflect status change and review
     } catch (err: any) {
-      console.error("Error completing task:", err);
-      toast.error(`Failed to complete task: ${err.message}`);
+      console.error("Error completing task with review:", err);
+      toast.error(`Failed to finalize task: ${err.message}`);
       throw err;
     }
   };
