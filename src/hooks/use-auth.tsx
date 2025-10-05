@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { auth } from '@/lib/firebase'; // Ensure auth is imported
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -37,6 +38,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loading: true,
   });
 
+  // Function to update user presence in Supabase
+  const updateUserPresence = React.useCallback(async (userId: string, isOnline: boolean) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_presence')
+        .upsert(
+          { user_id: userId, is_online: isOnline, last_seen_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        )
+        .select();
+
+      if (error) throw error;
+      console.log(`[Supabase Presence] User ${userId} presence updated: ${isOnline ? 'online' : 'offline'}`);
+    } catch (error: any) {
+      console.error("Error updating user presence:", error.message);
+    }
+  }, []);
+
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -45,7 +64,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           isAuthenticated: true,
           loading: false,
         });
+        updateUserPresence(user.uid, true); // Set user online on login
       } else {
+        if (authState.user) { // Only set offline if there was a user previously
+          updateUserPresence(authState.user.uid, false); // Set user offline on logout
+        }
         setAuthState({
           user: null,
           isAuthenticated: false,
@@ -53,8 +76,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
       }
     });
-    return () => unsubscribe();
-  }, []);
+
+    // Handle tab/window closing to set user offline
+    const handleBeforeUnload = () => {
+      if (authState.user) {
+        updateUserPresence(authState.user.uid, false);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (authState.user) {
+        updateUserPresence(authState.user.uid, false); // Ensure offline status on component unmount
+      }
+    };
+  }, [updateUserPresence]); // Add updateUserPresence to dependencies
 
   const sendVerificationEmail = async () => {
     if (!authState.user) {
@@ -134,6 +173,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
+      if (authState.user) {
+        await updateUserPresence(authState.user.uid, false); // Set user offline before logging out
+      }
       await signOut(auth);
       toast.success("Logged out successfully!");
       console.log(`[Auth Log] Logout successful at ${new Date().toISOString()}`);

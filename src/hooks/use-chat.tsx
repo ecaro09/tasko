@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile';
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client for presence
 
 export interface ChatMessage {
   id: string;
@@ -39,6 +40,7 @@ export interface ChatRoom {
   createdAt: string;
   typingUsers?: string[]; // New field for typing indicator
   status: 'active' | 'closed'; // New: Status of the chat room
+  onlineStatus?: Record<string, boolean>; // New: Online status of participants
 }
 
 interface ChatContextType {
@@ -66,6 +68,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = React.useState<string | null>(null);
   const [currentRoomId, setCurrentRoomId] = React.useState<string | null>(null);
   const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null); // For debouncing typing status
+  const [onlineStatuses, setOnlineStatuses] = React.useState<Record<string, boolean>>({}); // New state for online statuses
 
   // Fetch chat rooms for the current user
   React.useEffect(() => {
@@ -148,6 +151,38 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return () => unsubscribe();
   }, [currentRoomId]);
+
+  // Subscribe to Supabase presence for participants in the selected room
+  React.useEffect(() => {
+    if (!selectedRoom || !isAuthenticated || !user) {
+      setOnlineStatuses({});
+      return;
+    }
+
+    const participantIds = selectedRoom.participants;
+    const channel = supabase.channel(`room_presence_${selectedRoom.id}`);
+
+    const subscription = channel
+      .on('presence', { event: 'sync' }, () => {
+        const newState = channel.presenceState();
+        const newOnlineStatuses: Record<string, boolean> = {};
+        participantIds.forEach(pId => {
+          newOnlineStatuses[pId] = newState[pId] && newState[pId].length > 0;
+        });
+        setOnlineStatuses(newOnlineStatuses);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user_id: user.uid, online_at: new Date().toISOString() });
+        }
+      });
+
+    return () => {
+      if (channel) {
+        channel.unsubscribe();
+      }
+    };
+  }, [selectedRoom, isAuthenticated, user]);
 
   const fetchMessagesForRoom = (roomId: string) => {
     setCurrentRoomId(roomId);
@@ -277,8 +312,15 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const chatRoomsWithOnlineStatus = React.useMemo(() => {
+    return chatRooms.map(room => ({
+      ...room,
+      onlineStatus: onlineStatuses,
+    }));
+  }, [chatRooms, onlineStatuses]);
+
   const value = {
-    chatRooms,
+    chatRooms: chatRoomsWithOnlineStatus,
     messages,
     loadingRooms: loadingRooms || authLoading,
     loadingMessages,

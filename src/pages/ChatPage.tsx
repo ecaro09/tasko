@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle, Lock } from 'lucide-react'; // Added Lock icon
+import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle, Lock, Circle } from 'lucide-react'; // Added Lock and Circle icons
 import { useNavigate } from 'react-router-dom';
 import { useChat, ChatRoom, ChatMessage } from '@/hooks/use-chat';
 import { useAuth } from '@/hooks/use-auth';
@@ -111,6 +111,8 @@ const ChatPage: React.FC = () => {
   }
 
   const isChatClosed = selectedRoom?.status === 'closed';
+  const otherParticipantId = selectedRoom?.participants.find(pId => pId !== user.uid);
+  const isOtherParticipantOnline = otherParticipantId ? selectedRoom?.onlineStatus?.[otherParticipantId] : false;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] flex flex-col md:flex-row w-full">
@@ -147,6 +149,9 @@ const ChatPage: React.FC = () => {
                       <AvatarFallback className="bg-blue-200 text-blue-800">
                         {getParticipantName(room).charAt(0).toUpperCase()}
                       </AvatarFallback>
+                      {room.onlineStatus && otherParticipantId && room.onlineStatus[otherParticipantId] && (
+                        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
+                      )}
                     </Avatar>
                     <div className="flex-1">
                       <p className="font-semibold text-gray-800 dark:text-gray-100">{getParticipantName(room)}</p>
@@ -192,8 +197,20 @@ const ChatPage: React.FC = () => {
                     <AvatarFallback className="bg-blue-200 text-blue-800">
                       {getParticipantName(selectedRoom).charAt(0).toUpperCase()}
                     </AvatarFallback>
+                    {isOtherParticipantOnline && (
+                      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
+                    )}
                   </Avatar>
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getParticipantName(selectedRoom)}</h3>
+                  <div className="flex flex-col">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">{getParticipantName(selectedRoom)}</h3>
+                    {isOtherParticipantOnline ? (
+                      <span className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <Circle size={10} fill="currentColor" /> Online
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Offline</span>
+                    )}
+                  </div>
                   <Badge variant="outline" className={cn(
                     "ml-auto text-xs px-2 py-0.5",
                     selectedRoom.status === 'active' ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
