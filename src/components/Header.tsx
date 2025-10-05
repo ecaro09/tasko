@@ -23,9 +23,18 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
     ? `${userFirstName} ${userLastName}`
     : user?.email || "User";
 
-  const avatarFallbackText = userFirstName && userLastName
-    ? `${userFirstName.charAt(0).toUpperCase()}${userLastName.charAt(0).toUpperCase()}`
-    : user?.email?.charAt(0).toUpperCase() || <UserIcon size={16} />;
+  const getAvatarFallbackText = () => {
+    if (userFirstName && userLastName) {
+      return `${userFirstName.charAt(0).toUpperCase()}${userLastName.charAt(0).toUpperCase()}`;
+    }
+    if (userFirstName) {
+      return userFirstName.charAt(0).toUpperCase();
+    }
+    if (userLastName) {
+      return userLastName.charAt(0).toUpperCase();
+    }
+    return user?.email?.charAt(0).toUpperCase() || <UserIcon size={16} />;
+  };
 
   return (
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center pt-[var(--safe-area-top)]">
@@ -52,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
                 <Avatar className="w-8 h-8 border-2 border-[hsl(var(--primary-color))]">
                   <AvatarImage src={userAvatarUrl} alt={displayUserName} />
                   <AvatarFallback className="bg-[hsl(var(--primary-color))] text-white text-sm font-semibold">
-                    {avatarFallbackText}
+                    {getAvatarFallbackText()}
                   </AvatarFallback>
                 </Avatar>
               </Link>
