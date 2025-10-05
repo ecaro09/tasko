@@ -31,6 +31,7 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { ChatSessionProvider } from "./hooks/use-chat-session";
 import { SupabaseProfileProvider } from "./hooks/use-supabase-profile";
+import { VerificationProvider } from "./hooks/use-verification-requests"; // New import
 import ErrorBoundary from "./components/ErrorBoundary"; // New import
 
 const queryClient = new QueryClient();
@@ -40,7 +41,7 @@ const AppProviders = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   return (
     <SupabaseProfileProvider firebaseUser={user}>
-      {children}
+      <VerificationProvider>{children}</VerificationProvider> {/* Wrap with VerificationProvider */}
     </SupabaseProfileProvider>
   );
 };

@@ -5,22 +5,24 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, DollarSign, Star } from 'lucide-react'; // Added DollarSign, Star icons
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, DollarSign, Star, ShieldCheck, Clock, XCircle } from 'lucide-react'; // Added ShieldCheck, Clock, XCircle icons
 import EditProfileSection from '@/components/EditProfileSection';
 import { useModal } from '@/components/ModalProvider'; // Import useModal
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import { useVerificationRequests } from '@/hooks/use-verification-requests'; // New import
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
   const { taskerProfile, isTasker, loading: taskerProfileLoading } = useTaskerProfile();
+  const { verificationRequest, loading: verificationLoading, requestVerification, cancelVerificationRequest } = useVerificationRequests(); // Use verification hook
   const { openTaskerRegistrationModal } = useModal(); // Get the modal opener
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = React.useState(false);
 
-  if (authLoading || loadingProfile || taskerProfileLoading) { // Include loadingProfile
+  if (authLoading || loadingProfile || taskerProfileLoading || verificationLoading) { // Include loadingProfile and verificationLoading
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
         <div className="container mx-auto max-w-3xl">
@@ -72,6 +74,10 @@ const ProfilePage: React.FC = () => {
     ? `${profile.first_name} ${profile.last_name}`
     : user.displayName || "Anonymous User";
 
+  const isVerified = verificationRequest?.status === 'approved';
+  const isPendingVerification = verificationRequest?.status === 'pending';
+  const isRejectedVerification = verificationRequest?.status === 'rejected';
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
       <div className="container mx-auto max-w-3xl">
@@ -96,6 +102,28 @@ const ProfilePage: React.FC = () => {
                     <Phone size={18} /> {profile.phone}
                   </p>
                 )}
+
+                {/* Verification Status */}
+                <div className="mt-4 flex items-center gap-2">
+                  {isVerified ? (
+                    <Badge className="bg-green-500 text-white flex items-center gap-1">
+                      <ShieldCheck size={16} /> Verified User
+                    </Badge>
+                  ) : isPendingVerification ? (
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200 flex items-center gap-1">
+                      <Clock size={16} /> Pending Verification
+                    </Badge>
+                  ) : isRejectedVerification ? (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <XCircle size={16} /> Verification Rejected
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                      Not Verified
+                    </Badge>
+                  )}
+                </div>
+
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(true)}
@@ -103,6 +131,52 @@ const ProfilePage: React.FC = () => {
                 >
                   <Edit size={18} /> Edit Profile
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Verification Request Section */}
+            <Card className="shadow-lg p-6 mb-8">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                  <ShieldCheck size={24} /> Account Verification
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 space-y-4">
+                <p className="text-gray-700 dark:text-gray-300">
+                  Get your account verified to build trust with clients and taskers. Verified users often receive more task opportunities.
+                </p>
+                {isVerified ? (
+                  <p className="text-green-600 dark:text-green-400 font-semibold flex items-center gap-2">
+                    <CheckCircle size={20} /> Your account is successfully verified!
+                  </p>
+                ) : isPendingVerification ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={cancelVerificationRequest}
+                      disabled={verificationLoading}
+                      className="w-full sm:w-auto border-red-600 text-red-600 hover:bg-red-100 flex items-center gap-2"
+                    >
+                      <XCircle size={18} /> {verificationLoading ? 'Cancelling...' : 'Cancel Request'}
+                    </Button>
+                    <p className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-2">
+                      <Clock size={20} /> Your verification request is pending review.
+                    </p>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={requestVerification}
+                    disabled={verificationLoading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-6 flex items-center justify-center gap-2"
+                  >
+                    <ShieldCheck size={20} /> {verificationLoading ? 'Submitting...' : 'Request Verification'}
+                  </Button>
+                )}
+                {isRejectedVerification && verificationRequest?.admin_notes && (
+                  <p className="text-red-500 text-sm italic">
+                    Admin Notes: {verificationRequest.admin_notes}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
