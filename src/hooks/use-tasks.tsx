@@ -16,17 +16,20 @@ import {
   editTaskFirestore,
   deleteTaskFirestore,
   completeTaskWithReviewFirestore,
+  cancelTaskFirestore, // New import
 } from '@/lib/task-firestore'; // Import new utility functions
+import { cancelOffersForTaskFirestore } from '@/lib/offer-firestore'; // New import
 import { seedInitialTasks } from '@/lib/seed-tasks'; // Import seed function from new location
 
 interface UseTasksContextType {
   tasks: Task[];
   loading: boolean;
   error: string | null;
-  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }) => Promise<void>; // Updated addTask signature
-  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => Promise<void>;
+  addTask: (newTask: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted'> & { imageUrl?: string }) => Promise<void>; // Updated addTask signature
+  editTask: (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted'>>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
+  cancelTask: (taskId: string) => Promise<void>; // New function
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -79,6 +82,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
           rating: data.rating || undefined, // Include rating
           review: data.review || undefined, // Include review
+          dateUpdated: data.dateUpdated?.toDate().toISOString(),
+          dateCompleted: data.dateCompleted?.toDate().toISOString(),
         };
       });
       setAllTasks(fetchedTasks);
@@ -98,7 +103,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
 
-  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }) => {
+  const addTask = async (newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted'> & { imageUrl?: string }) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to post a task.");
       return;
@@ -106,7 +111,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     await addTaskFirestore(newTaskData, user);
   };
 
-  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>) => {
+  const editTask = async (taskId: string, updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted'>>) => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to edit a task.");
       return;
@@ -130,6 +135,19 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     await completeTaskWithReviewFirestore(taskId, rating, review, user);
   };
 
+  const cancelTask = async (taskId: string) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to cancel a task.");
+      return;
+    }
+    try {
+      await cancelTaskFirestore(taskId, user);
+      await cancelOffersForTaskFirestore(taskId, user); // Cancel associated offers
+    } catch (error) {
+      // Errors handled by firestore functions
+    }
+  };
+
   const value = {
     tasks: allTasks,
     loading,
@@ -138,6 +156,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     editTask,
     deleteTask,
     completeTaskWithReview,
+    cancelTask, // Expose new function
   };
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;

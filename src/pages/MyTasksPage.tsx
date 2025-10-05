@@ -5,7 +5,7 @@ import { useOffers } from '@/hooks/use-offers';
 import { Offer } from '@/lib/offer-firestore'; // Corrected import path for Offer interface
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Star and Edit icons
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit, Ban } from 'lucide-react'; // Added Ban icon
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -25,12 +25,14 @@ import { useModal } from '@/components/ModalProvider'; // Import useModal
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks(); // Destructure deleteTask
+  const { tasks, loading: tasksLoading, error: tasksError, deleteTask, cancelTask } = useTasks(); // Destructure deleteTask and cancelTask
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers(); // Use offers hook
   const { openReviewTaskModal, openEditTaskModal } = useModal(); // Get the new modal openers
   const navigate = useNavigate();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false); // New state for cancel dialog
+  const [taskToCancel, setTaskToCancel] = React.useState<string | null>(null); // New state for task to cancel
 
   if (authLoading || tasksLoading || offersLoading) { // Include offersLoading
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
@@ -65,13 +67,10 @@ const MyTasksPage: React.FC = () => {
     if (taskToDelete) {
       try {
         // Before deleting the task, also delete any associated offers
-        const offersToDelete = offers.filter(offer => offer.taskId === taskToDelete);
-        for (const offer of offersToDelete) {
-          // This would ideally be handled by a server-side function or cascade delete in a real DB
-          // For Firebase, we'd need to explicitly delete them.
-          // For now, we'll just delete the task.
-          // In a real app, you'd want to ensure data consistency.
-        }
+        // This would ideally be handled by a server-side function or cascade delete in a real DB
+        // For Firebase, we'd need to explicitly delete them.
+        // For now, we'll just delete the task.
+        // In a real app, you'd want to ensure data consistency.
         await deleteTask(taskToDelete);
       } catch (error) {
         // Error handled by useTasks hook, toast already shown
@@ -82,9 +81,27 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
+  const handleCancelClick = (taskId: string) => { // New handler for cancel
+    setTaskToCancel(taskId);
+    setIsCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = async () => { // New handler for confirm cancel
+    if (taskToCancel) {
+      try {
+        await cancelTask(taskToCancel);
+      } catch (error) {
+        // Error handled by useTasks hook
+      } finally {
+        setTaskToCancel(null);
+        setIsCancelDialogOpen(false);
+      }
+    }
+  };
+
   const handleAcceptOffer = async (offerId: string, taskId: string) => {
     try {
-      const roomId = await acceptOffer(offerId, taskId);
+      const roomId = await acceptOffer(offerId, task.id);
       if (roomId) {
         navigate('/chat'); // Navigate to the chat page after accepting the offer
       }
@@ -119,6 +136,8 @@ const MyTasksPage: React.FC = () => {
         return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">Rejected</Badge>;
       case 'withdrawn':
         return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Withdrawn</Badge>;
+      case 'cancelled': // New status
+        return <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200">Cancelled</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -152,7 +171,8 @@ const MyTasksPage: React.FC = () => {
                     <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
                       task.status === 'open' ? 'bg-blue-600 text-white' :
                       task.status === 'assigned' ? 'bg-yellow-600 text-white' :
-                      'bg-green-600 text-white'
+                      task.status === 'completed' ? 'bg-green-600 text-white' :
+                      'bg-gray-600 text-white' // For 'cancelled' status
                     }`}>
                       {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                     </div>
@@ -198,7 +218,7 @@ const MyTasksPage: React.FC = () => {
                         View Details
                       </Button>
                       <div className="flex gap-2">
-                        {task.status === 'open' && ( // Only allow editing if task is open
+                        {(task.status === 'open' || task.status === 'assigned') && ( // Only allow editing if task is open or assigned
                           <Button
                             variant="outline"
                             size="icon"
@@ -208,14 +228,26 @@ const MyTasksPage: React.FC = () => {
                             <Edit size={20} />
                           </Button>
                         )}
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => handleDeleteClick(task.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          <Trash2 size={20} />
-                        </Button>
+                        {(task.status === 'open' || task.status === 'assigned') && ( // Only allow cancelling if task is open or assigned
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleCancelClick(task.id)}
+                            className="border-red-600 text-red-600 hover:bg-red-100"
+                          >
+                            <Ban size={20} />
+                          </Button>
+                        )}
+                        {task.status !== 'cancelled' && ( // Allow deleting if not cancelled (or if cancelled, but we want to allow deletion of cancelled tasks)
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleDeleteClick(task.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            <Trash2 size={20} />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -295,6 +327,24 @@ const MyTasksPage: React.FC = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to cancel this task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will mark the task as cancelled. If the task is assigned, the assignment will be revoked. All pending offers will be rejected. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, keep task</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCancel} className="bg-red-600 hover:bg-red-700 text-white">
+              Yes, cancel task
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

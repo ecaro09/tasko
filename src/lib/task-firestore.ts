@@ -22,16 +22,18 @@ export interface Task {
   posterName: string;
   posterAvatar: string;
   datePosted: string;
-  status: 'open' | 'assigned' | 'completed';
+  status: 'open' | 'assigned' | 'completed' | 'cancelled'; // Added 'cancelled' status
   imageUrl?: string; // Made optional
   assignedTaskerId?: string;
   assignedOfferId?: string;
   rating?: number;
   review?: string;
+  dateUpdated?: string; // Added dateUpdated for consistency
+  dateCompleted?: string; // Added dateCompleted for consistency
 }
 
 export const addTaskFirestore = async (
-  newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review'> & { imageUrl?: string }, // Allow imageUrl
+  newTaskData: Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateUpdated' | 'dateCompleted'> & { imageUrl?: string }, // Allow imageUrl
   user: FirebaseUser
 ) => {
   try {
@@ -54,7 +56,7 @@ export const addTaskFirestore = async (
 
 export const editTaskFirestore = async (
   taskId: string,
-  updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted'>>,
+  updatedTask: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'dateUpdated' | 'dateCompleted'>>,
   user: FirebaseUser
 ) => {
   try {
@@ -65,7 +67,10 @@ export const editTaskFirestore = async (
       return;
     }
 
-    await updateDoc(taskRef, updatedTask);
+    await updateDoc(taskRef, {
+      ...updatedTask,
+      dateUpdated: serverTimestamp(), // Update dateUpdated on edit
+    });
     toast.success("Task updated successfully!");
   } catch (err: any) {
     console.error("Error updating task:", err);
@@ -100,17 +105,46 @@ export const completeTaskWithReviewFirestore = async (
 ) => {
   try {
     const taskRef = doc(db, 'tasks', taskId);
-    // Optionally, verify if the current user is the poster or assigned tasker
-    // For simplicity, we'll assume the calling context ensures authorization.
+    const taskSnap = await getDoc(taskRef);
+    if (!taskSnap.exists() || taskSnap.data()?.posterId !== user.uid) {
+      toast.error("You are not authorized to complete and review this task.");
+      return;
+    }
+
     await updateDoc(taskRef, {
       status: 'completed',
       rating: rating,
       review: review,
+      dateCompleted: serverTimestamp(), // Set completion date
+      dateUpdated: serverTimestamp(),
     });
     toast.success("Task marked as completed and reviewed!");
   } catch (err: any) {
     console.error("Error completing task with review:", err);
     toast.error(`Failed to complete task and add review: ${err.message}`);
+    throw err;
+  }
+};
+
+export const cancelTaskFirestore = async (taskId: string, user: FirebaseUser) => {
+  try {
+    const taskRef = doc(db, 'tasks', taskId);
+    const taskSnap = await getDoc(taskRef);
+    if (!taskSnap.exists() || taskSnap.data()?.posterId !== user.uid) {
+      toast.error("You are not authorized to cancel this task.");
+      return;
+    }
+
+    await updateDoc(taskRef, {
+      status: 'cancelled',
+      assignedTaskerId: null, // Clear assigned tasker
+      assignedOfferId: null, // Clear assigned offer
+      dateUpdated: serverTimestamp(),
+    });
+    toast.success("Task cancelled successfully!");
+  } catch (err: any) {
+    console.error("Error cancelling task:", err);
+    toast.error(`Failed to cancel task: ${err.message}`);
     throw err;
   }
 };
