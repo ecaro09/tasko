@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client'; // Import Supabase cl
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 import { useTaskerProfile } from './use-tasker-profile'; // To check if user is a tasker
+import { Task } from './use-tasks'; // Import Task interface from the correct path
 
 export interface Offer {
   id: string;
@@ -41,7 +42,7 @@ export const OffersProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { taskerProfile, isTasker, loading: taskerLoading } = useTaskerProfile();
   const [allOffers, setAllOffers] = React.useState<Offer[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, React.useState] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null); // Fixed typo: React.useState to setError
 
   React.useEffect(() => {
     setLoading(true);

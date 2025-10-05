@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client'; // Fixed import path
+import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
-export interface Task { // Exported Task interface
+interface Task {
   id: string;
   title: string;
   description: string;
@@ -38,8 +38,6 @@ interface TaskContextType {
   createTask: (taskData: Omit<Task, 'id' | 'status' | 'posterName' | 'posterAvatar' | 'assignedTaskerId' | 'assignedTaskerName' | 'assignedTaskerAvatar' | 'review' | 'created_at'>) => Promise<void>;
   updateTaskStatus: (taskId: string, status: 'assigned' | 'in_progress' | 'completed' | 'cancelled', assignedTaskerId?: string, reviewData?: { rating: number; comment: string; reviewerId: string; reviewedUserId: string; }) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'created_at' | 'dueDate'>>) => Promise<void>; // Added editTask
-  completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>; // Added completeTaskWithReview
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -213,106 +211,8 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const editTask = async (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated' | 'created_at' | 'dueDate'>>) => {
-    if (!user) {
-      toast.error("You must be logged in to edit a task.");
-      return;
-    }
-    try {
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update({
-          title: updatedFields.title,
-          description: updatedFields.description,
-          location: updatedFields.location,
-          budget: updatedFields.budget,
-          category: updatedFields.category,
-          image_url: updatedFields.imageUrl === undefined ? null : updatedFields.imageUrl,
-          // date_updated: new Date().toISOString(), // Assuming this is handled by Supabase trigger or not needed here
-        })
-        .eq('id', taskId)
-        .eq('poster_id', user.id); // Ensure only poster can edit
-
-      if (updateError) throw updateError;
-      toast.success("Task updated successfully!");
-      fetchTasks();
-    } catch (err: any) {
-      console.error("Error updating task:", err);
-      toast.error(`Failed to update task: ${err.message}`);
-      throw err;
-    }
-  };
-
-  const completeTaskWithReview = async (taskId: string, rating: number, review: string) => {
-    if (!user) {
-      toast.error("You must be logged in to complete a task.");
-      return;
-    }
-
-    try {
-      const { data: taskData, error: fetchError } = await supabase
-        .from('tasks')
-        .select('poster_id, assigned_tasker_id')
-        .eq('id', taskId)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!taskData) {
-        toast.error("Task not found.");
-        return;
-      }
-      // This logic should be for the client to mark as complete and review the tasker
-      if (taskData.poster_id !== user.id) {
-        toast.error("You are not authorized to complete this task.");
-        return;
-      }
-      if (!taskData.assigned_tasker_id) {
-        toast.error("This task has not been assigned to a tasker yet.");
-        return;
-      }
-
-      // Insert review first
-      const { error: reviewError } = await supabase
-        .from('reviews')
-        .insert({
-          task_id: taskId,
-          rating: rating,
-          comment: review,
-          reviewerId: user.id, // Client is the reviewer
-          reviewedUserId: taskData.assigned_tasker_id, // Tasker is the reviewed user
-        });
-      if (reviewError) throw reviewError;
-
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update({
-          status: 'completed',
-          // rating and review are now stored in the 'reviews' table
-          // date_completed: new Date().toISOString(), // Assuming this is handled by Supabase trigger or not needed here
-          // date_updated: new Date().toISOString(), // Assuming this is handled by Supabase trigger or not needed here
-        })
-        .eq('id', taskId);
-
-      if (updateError) throw updateError;
-
-      // Optionally, update the assigned tasker's overall rating in their profile
-      // This would require a separate function in useTaskerProfile or a Supabase trigger
-      // if (taskData.assigned_tasker_id) {
-      //   await updateTaskerRating(taskData.assigned_tasker_id, rating);
-      // }
-
-      toast.success("Task marked as complete and review submitted!");
-      fetchTasks(); // Re-fetch to reflect status change
-    } catch (err: any) {
-      console.error("Error completing task:", err);
-      toast.error(`Failed to complete task: ${err.message}`);
-      throw err;
-    }
-  };
-
-
   return (
-    <TaskContext.Provider value={{ tasks, loading, error, fetchTasks, createTask, updateTaskStatus, deleteTask, editTask, completeTaskWithReview }}>
+    <TaskContext.Provider value={{ tasks, loading, error, fetchTasks, createTask, updateTaskStatus, deleteTask }}>
       {children}
     </TaskContext.Provider>
   );

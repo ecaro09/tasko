@@ -1,0 +1,2 @@
+export const DEFAULT_AVATAR_URL = "https://randomuser.me/api/portraits/lego/1.jpg";
+export const DEFAULT_TASK_IMAGE_URL = "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80";

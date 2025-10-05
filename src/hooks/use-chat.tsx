@@ -1,12 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
+import { useSupabaseProfile } from './use-supabase-profile';
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders';
 
 export interface ChatRoom {
   id: string;
   participants: string[]; // Array of user_ids
   participantNames: string[]; // Array of display names
+  participantAvatars?: (string | null)[]; // Array of avatar URLs
   lastMessage?: string;
   lastMessageTimestamp?: string;
   createdAt: string;
@@ -26,7 +29,7 @@ interface ChatContextType {
   loadingRooms: boolean;
   loadingMessages: boolean;
   error: string | null;
-  createChatRoom: (participantIds: string[], participantNames: string[]) => Promise<string | null>;
+  createChatRoom: (otherParticipantId: string) => Promise<string | null>;
   getMessagesForRoom: (roomId: string) => Promise<void>;
   sendMessage: (roomId: string, text: string) => Promise<void>;
 }
@@ -35,6 +38,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { profile: currentUserProfile, fetchProfile } = useSupabaseProfile();
   const [chatRooms, setChatRooms] = React.useState<ChatRoom[]>([]);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [loadingRooms, setLoadingRooms] = React.useState(true);
@@ -42,8 +46,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = React.useState<string | null>(null);
   const [activeRoomId, setActiveRoomId] = React.useState<string | null>(null);
 
-  // Fetch chat rooms for the current user
-  React.useEffect(() => {
+  const fetchChatRooms = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setChatRooms([]);
       setLoadingRooms(false);
@@ -53,33 +56,36 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoadingRooms(true);
     setError(null);
 
-    const fetchChatRooms = async () => {
+    try {
       const { data, error: fetchError } = await supabase
         .from('chat_rooms')
         .select('*')
         .contains('participants', [user.id])
         .order('last_message_timestamp', { ascending: false });
 
-      if (fetchError) {
-        console.error("Error fetching chat rooms:", fetchError);
-        setError("Failed to load chat rooms.");
-        toast.error("Failed to load chat rooms.");
-        setLoadingRooms(false);
-        return;
-      }
+      if (fetchError) throw fetchError;
 
       const fetchedRooms: ChatRoom[] = data.map((item: any) => ({
         id: item.id,
         participants: item.participants,
         participantNames: item.participant_names,
+        participantAvatars: item.participant_avatars,
         lastMessage: item.last_message || undefined,
         lastMessageTimestamp: item.last_message_timestamp ? new Date(item.last_message_timestamp).toISOString() : undefined,
         createdAt: new Date(item.created_at).toISOString(),
       }));
       setChatRooms(fetchedRooms);
+    } catch (err: any) {
+      console.error("Error fetching chat rooms:", err);
+      setError("Failed to load chat rooms.");
+      toast.error("Failed to load chat rooms.");
+    } finally {
       setLoadingRooms(false);
-    };
+    }
+  }, [isAuthenticated, user]);
 
+  // Fetch chat rooms for the current user
+  React.useEffect(() => {
     fetchChatRooms();
 
     // Set up real-time subscription for chat rooms
@@ -88,7 +94,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_rooms' }, payload => {
         console.log('Chat room change received!', payload);
         // Only re-fetch if the current user is a participant in the changed room
-        if (payload.new?.participants?.includes(user.id) || payload.old?.participants?.includes(user.id)) {
+        if ((payload.new as any)?.participants?.includes(user?.id) || (payload.old as any)?.participants?.includes(user?.id)) { // Fixed type assertion
           fetchChatRooms();
         }
       })
@@ -97,7 +103,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [isAuthenticated, user, authLoading]);
+  }, [isAuthenticated, user, authLoading, fetchChatRooms]);
 
   // Fetch messages for the active chat room
   React.useEffect(() => {
@@ -111,29 +117,30 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
 
     const fetchMessages = async () => {
-      const { data, error: fetchError } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('room_id', activeRoomId)
-        .order('timestamp', { ascending: true });
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('room_id', activeRoomId)
+          .order('timestamp', { ascending: true });
 
-      if (fetchError) {
-        console.error("Error fetching messages:", fetchError);
+        if (fetchError) throw fetchError;
+
+        const fetchedMessages: ChatMessage[] = data.map((item: any) => ({
+          id: item.id,
+          roomId: item.room_id,
+          senderId: item.sender_id,
+          text: item.text,
+          timestamp: new Date(item.timestamp).toISOString(),
+        }));
+        setMessages(fetchedMessages);
+      } catch (err: any) {
+        console.error("Error fetching messages:", err);
         setError("Failed to load messages.");
         toast.error("Failed to load messages.");
+      } finally {
         setLoadingMessages(false);
-        return;
       }
-
-      const fetchedMessages: ChatMessage[] = data.map((item: any) => ({
-        id: item.id,
-        roomId: item.room_id,
-        senderId: item.sender_id,
-        text: item.text,
-        timestamp: new Date(item.timestamp).toISOString(),
-      }));
-      setMessages(fetchedMessages);
-      setLoadingMessages(false);
     };
 
     fetchMessages();
@@ -152,11 +159,33 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [activeRoomId, isAuthenticated, user]);
 
-  const createChatRoom = async (participantIds: string[], participantNames: string[]): Promise<string | null> => {
-    if (!isAuthenticated || !user) {
+  const createChatRoom = async (otherParticipantId: string): Promise<string | null> => {
+    if (!isAuthenticated || !user || !currentUserProfile) {
       toast.error("You must be logged in to create a chat room.");
       return null;
     }
+
+    const participantIds = [user.id, otherParticipantId].sort(); // Ensure consistent order
+    
+    // Fetch other participant's profile
+    const otherProfile = await fetchProfile(otherParticipantId);
+    if (!otherProfile) {
+      toast.error("Could not find the other participant's profile.");
+      return null;
+    }
+
+    const currentUserName = currentUserProfile.first_name && currentUserProfile.last_name
+      ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
+      : user.email || "You";
+    const currentUserAvatar = currentUserProfile.avatar_url || DEFAULT_AVATAR_URL;
+
+    const otherParticipantName = otherProfile.first_name && otherProfile.last_name
+      ? `${otherProfile.first_name} ${otherProfile.last_name}`
+      : otherProfile.id || "Unknown User";
+    const otherParticipantAvatar = otherProfile.avatar_url || DEFAULT_AVATAR_URL;
+
+    const participantNames = [currentUserName, otherParticipantName];
+    const participantAvatars = [currentUserAvatar, otherParticipantAvatar];
 
     // Check if a room already exists between these participants
     const { data: existingRooms, error: checkError } = await supabase
@@ -183,6 +212,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .insert({
           participants: participantIds,
           participant_names: participantNames,
+          participant_avatars: participantAvatars,
         })
         .select()
         .single();

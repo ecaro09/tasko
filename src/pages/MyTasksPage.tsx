@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks } from '@/hooks/use-tasks';
+import { useTasks, Task } from '@/hooks/use-tasks'; // Updated import
 import { useOffers, Offer } from '@/hooks/use-offers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Edit icon
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -27,7 +27,7 @@ const MyTasksPage: React.FC = () => {
   const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers();
   const navigate = useNavigate();
-  const { openReviewTaskModal, openEditTaskModal } = useModal(); // Get openEditTaskModal from useModal
+  const { openReviewTaskModal, openEditTaskModal } = useModal();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
@@ -158,7 +158,7 @@ const MyTasksPage: React.FC = () => {
                       <Button variant="outline" onClick={() => navigate(`/tasks/${task.id}`)} className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white">
                         View Details
                       </Button>
-                      {task.status === 'assigned' && !task.dateCompleted && (
+                      {task.status === 'assigned' && !task.review?.comment && ( // Fixed property access
                         <Button
                           onClick={() => handleCompleteTaskClick(task)}
                           className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
@@ -166,10 +166,10 @@ const MyTasksPage: React.FC = () => {
                           <CheckCircle size={16} /> Complete & Review
                         </Button>
                       )}
-                      {task.status === 'completed' && task.rating && (
+                      {task.status === 'completed' && task.review?.rating && ( // Fixed property access
                         <div className="flex items-center gap-1 text-yellow-500">
                           <Star size={16} fill="currentColor" />
-                          <span className="font-semibold">{task.rating.toFixed(1)}</span>
+                          <span className="font-semibold">{task.review.rating.toFixed(1)}</span> {/* Fixed property access */}
                         </div>
                       )}
                       {task.status === 'open' && ( // Only allow editing if task is open

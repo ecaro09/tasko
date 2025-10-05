@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTasks, Task } from '@/hooks/use-tasks';
+import { useTasks, Task } from '@/hooks/use-tasks'; // Updated import
 import { toast } from 'sonner';
 import { useFileUpload } from '@/hooks/use-file-upload';
 import { Camera, Image as ImageIcon } from 'lucide-react';
@@ -17,7 +17,7 @@ interface EditTaskModalProps {
 }
 
 const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) => {
-  const { editTask } = useTasks();
+  const { editTask } = useTasks(); // Using editTask
   const { uploadFile, loading: uploadLoading } = useFileUpload();
   const [taskTitle, setTaskTitle] = React.useState(task?.title || '');
   const [taskDescription, setTaskDescription] = React.useState(task?.description || '');
@@ -66,7 +66,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
     }
 
     setIsLoading(true);
-    let imageUrl: string | undefined = task.imageUrl;
+    let imageUrl: string | undefined = task.imageUrl || undefined;
 
     if (taskImageFile) {
       const filePath = `task_images/${task.id}_${Date.now()}_${taskImageFile.name}`;

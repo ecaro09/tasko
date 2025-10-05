@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTasks } from '@/hooks/use-tasks';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth'; // Import useAuth to get user ID
 
 interface PostTaskModalProps {
   isOpen: boolean;
@@ -14,7 +15,8 @@ interface PostTaskModalProps {
 }
 
 const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
-  const { addTask } = useTasks();
+  const { createTask } = useTasks();
+  const { user } = useAuth(); // Get current user
   const [taskTitle, setTaskTitle] = React.useState('');
   const [taskDescription, setTaskDescription] = React.useState('');
   const [taskLocation, setTaskLocation] = React.useState('');
@@ -23,19 +25,30 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handlePostTask = async () => {
+    if (!user) {
+      toast.error("You must be logged in to post a task.");
+      return;
+    }
     if (!taskTitle || !taskDescription || !taskLocation || !taskBudget || !taskCategory) {
       toast.error("Please fill in all task details.");
+      return;
+    }
+    if (isNaN(parseFloat(taskBudget)) || parseFloat(taskBudget) <= 0) {
+      toast.error("Budget must be a positive number.");
       return;
     }
 
     setIsLoading(true);
     try {
-      await addTask({
+      await createTask({
         title: taskTitle,
         description: taskDescription,
         location: taskLocation,
         budget: parseFloat(taskBudget),
         category: taskCategory,
+        dueDate: new Date().toISOString().split('T')[0],
+        posterId: user.id, // Provide posterId
+        imageUrl: null, // Provide a default or allow user to upload later
       });
       // Clear form fields on success
       setTaskTitle('');
@@ -125,7 +138,7 @@ const PostTaskModal: React.FC<PostTaskModalProps> = ({ isOpen, onClose }) => {
                 <SelectItem value="delivery">Delivery & Errands</SelectItem>
                 <SelectItem value="painting">Painting Services</SelectItem>
                 <SelectItem value="assembly">Assembly Services</SelectItem>
-                <SelectItem value="marketing">Marketing Services</SelectItem> {/* Added Marketing */}
+                <SelectItem value="marketing">Marketing Services</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>

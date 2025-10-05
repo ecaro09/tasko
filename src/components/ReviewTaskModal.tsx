@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Star } from 'lucide-react';
-import { useTasks, Task } from '@/hooks/use-tasks';
+import { useTasks, Task } from '@/hooks/use-tasks'; // Updated import
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -15,15 +15,16 @@ interface ReviewTaskModalProps {
 }
 
 const ReviewTaskModal: React.FC<ReviewTaskModalProps> = ({ isOpen, onClose, task }) => {
-  const { completeTaskWithReview } = useTasks();
+  const { completeTaskWithReview } = useTasks(); // Using completeTaskWithReview
   const [rating, setRating] = React.useState(0);
   const [review, setReview] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen && task) {
-      setRating(task.rating || 0);
-      setReview(task.review || '');
+      // Assuming task.review is an object with rating and comment
+      setRating(task.review?.rating || 0);
+      setReview(task.review?.comment || '');
     } else {
       setRating(0);
       setReview('');

@@ -60,7 +60,7 @@ const MyOffersPage: React.FC = () => {
     );
   }
 
-  const myOffers = offers.filter(offer => offer.taskerId === user.uid);
+  const myOffers = offers.filter(offer => offer.taskerId === user.id);
 
   const handleWithdrawOffer = async (offerId: string) => {
     try {
