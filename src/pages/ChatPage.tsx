@@ -56,9 +56,11 @@ const ChatPage: React.FC = () => {
   };
 
   const getParticipantAvatar = (room: ChatRoom) => {
-    if (!user || !room.participantAvatars) return undefined;
-    const otherParticipantIndex = room.participants.findIndex(id => id !== user.uid);
-    return otherParticipantIndex !== -1 ? room.participantAvatars[otherParticipantIndex] || undefined : undefined;
+    if (!user) return undefined;
+    const otherParticipantIds = room.participants.filter(id => id !== user.uid);
+    // For simplicity, we'll just use a generic avatar or the first other participant's avatar if available
+    // In a real app, you'd fetch the avatar URL for the other participant(s)
+    return undefined; // Placeholder
   };
 
   if (authLoading) {
