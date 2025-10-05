@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"; // Import AlertDialog components
+import { cn } from '@/lib/utils'; // Import cn for conditional class names
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -168,12 +169,13 @@ const TaskDetailPage: React.FC = () => {
                 e.currentTarget.onerror = null; // Prevent infinite loop if fallback also fails
               }}
             />
-            <div className="absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold bg-opacity-80 backdrop-blur-sm text-white
-              ${task.status === 'open' ? 'bg-blue-600' :
-              task.status === 'assigned' ? 'bg-yellow-600' :
-              task.status === 'completed' ? 'bg-green-600' :
-              'bg-gray-600' // For 'cancelled' status
-            }">
+            <div className={cn(
+              "absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold bg-opacity-80 backdrop-blur-sm text-white",
+              task.status === 'open' && 'bg-blue-600',
+              task.status === 'assigned' && 'bg-yellow-600',
+              task.status === 'completed' && 'bg-green-600',
+              task.status === 'cancelled' && 'bg-gray-600'
+            )}>
               {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
             </div>
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">

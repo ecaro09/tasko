@@ -12,6 +12,7 @@ import { ArrowLeft, MapPin, Tag, DollarSign, MessageSquare, CheckCircle, User } 
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { DEFAULT_TASK_IMAGE_URL, DEFAULT_AVATAR_URL } from '@/utils/image-placeholders';
+import { cn } from '@/lib/utils'; // Import cn for conditional class names
 
 const MyAssignedTasksPage: React.FC = () => {
   const navigate = useNavigate();
@@ -126,10 +127,12 @@ const MyAssignedTasksPage: React.FC = () => {
                       e.currentTarget.onerror = null;
                     }}
                   />
-                  <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                    task.status === 'assigned' ? 'bg-yellow-600 text-white' :
-                    'bg-green-600 text-white'
-                  }`}>
+                  <div className={cn(
+                    "absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold",
+                    task.status === 'assigned' && 'bg-yellow-600 text-white',
+                    task.status === 'completed' && 'bg-green-600 text-white',
+                    task.status === 'cancelled' && 'bg-gray-600 text-white'
+                  )}>
                     {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                   </div>
                 </div>
