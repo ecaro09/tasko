@@ -45,6 +45,10 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ isOpen, onClose, task }
       toast.error("No task selected to make an offer on.");
       return;
     }
+    if (task.posterId === user.id) {
+      toast.error("You cannot make an offer on your own task.");
+      return;
+    }
     if (!offerAmount || !message.trim()) {
       toast.error("Please enter an offer amount and a message.");
       return;
