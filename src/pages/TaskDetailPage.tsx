@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 import { useChat } from '@/hooks/use-chat'; // Import useChat
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // Import useSupabaseProfile
+import { DEFAULT_TASK_IMAGE_URL } from '@/utils/image-placeholders'; // Import default image URL
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -135,7 +136,15 @@ const TaskDetailPage: React.FC = () => {
 
         <Card className="shadow-lg">
           <CardHeader className="relative p-0">
-            <img src={task.imageUrl} alt={task.title} className="w-full h-64 object-cover rounded-t-lg" />
+            <img 
+              src={task.imageUrl} 
+              alt={task.title} 
+              className="w-full h-64 object-cover rounded-t-lg" 
+              onError={(e) => {
+                e.currentTarget.src = DEFAULT_TASK_IMAGE_URL;
+                e.currentTarget.onerror = null; // Prevent infinite loop if fallback also fails
+              }}
+            />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
               <CardTitle className="text-3xl font-bold mb-1">{task.title}</CardTitle>
               <CardDescription className="text-gray-200 flex items-center gap-2">
