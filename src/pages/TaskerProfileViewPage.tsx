@@ -75,7 +75,7 @@ const TaskerProfileViewPage: React.FC = () => {
       toast.error("You must be logged in to contact a tasker.");
       return;
     }
-    if (user.uid === tasker.userId) {
+    if (isCurrentUserTasker) {
       toast.info("You cannot chat with yourself.");
       return;
     }
@@ -198,27 +198,42 @@ const TaskerProfileViewPage: React.FC = () => {
               </div>
             )}
 
-            <div className="w-full mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 text-center md:text-left">Client Reviews</h3>
-              <div className="space-y-4">
-                {taskerReviews.map((task, index) => (
-                  <Card key={index} className="p-4 shadow-sm">
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-1 mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={16} className={i < task.rating! ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"} />
-                        ))}
-                        <span className="font-semibold ml-1">{task.rating}/5</span>
-                      </div>
-                      <p className="text-gray-700 dark:text-gray-300 italic mb-2">"{task.review}"</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        - {task.posterName} for "{task.title}"
-                      </p>
-                    </CardContent>
-                  </Card>
+            <div className="w-full mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center justify-center md:justify-start gap-2">
+                <Briefcase size={20} /> Skills
+              </h3>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                {tasker.skills.map((skill, index) => (
+                  <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 px-3 py-1 rounded-full">
+                    {skill}
+                  </Badge>
                 ))}
               </div>
             </div>
+
+            {taskerReviews.length > 0 && (
+              <div className="w-full mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 text-center md:text-left">Client Reviews</h3>
+                <div className="space-y-4">
+                  {taskerReviews.map((task, index) => (
+                    <Card key={index} className="p-4 shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="flex items-center gap-1 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={16} className={i < task.rating! ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"} />
+                          ))}
+                          <span className="font-semibold ml-1">{task.rating}/5</span>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 italic mb-2">"{task.review}"</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          - {task.posterName} for "{task.title}"
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Button
               onClick={handleContactTasker}
