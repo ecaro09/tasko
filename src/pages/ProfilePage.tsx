@@ -3,31 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
-import { useTasks } from '@/hooks/use-tasks'; // Import useTasks
-import { useOffers } from '@/hooks/use-offers'; // Import useOffers
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, CheckCircle, ListTodo, Star, DollarSign, MapPin, Tag, MessageSquare } from 'lucide-react'; // Added MessageSquare
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, CheckCircle, ListTodo, Star, DollarSign } from 'lucide-react';
 import EditProfileSection from '@/components/EditProfileSection';
 import EditTaskerProfileSection from '@/components/EditTaskerProfileSection'; // Import the new component
 import { Badge } from '@/components/ui/badge';
-import { DEFAULT_AVATAR_URL, DEFAULT_TASK_IMAGE_URL } from '@/utils/image-placeholders'; // Import DEFAULT_TASK_IMAGE_URL
+import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders';
 import { cn } from '@/lib/utils';
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { isTasker, taskerProfile, loading: taskerProfileLoading } = useTaskerProfile();
+  const { isTasker, taskerProfile, loading: taskerProfileLoading } = useTaskerProfile(); // Get taskerProfile
   const { profile, loadingProfile } = useSupabaseProfile();
-  const { tasks, loading: tasksLoading } = useTasks(); // Fetch all tasks
-  const { offers, loading: offersLoading } = useOffers(); // Fetch all offers
   const navigate = useNavigate();
   const [isEditingGeneral, setIsEditingGeneral] = React.useState(false);
   const [isEditingTasker, setIsEditingTasker] = React.useState(false);
 
-  const isLoading = authLoading || taskerProfileLoading || loadingProfile || tasksLoading || offersLoading;
-
-  if (isLoading) {
+  if (authLoading || taskerProfileLoading || loadingProfile) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
   }
 
@@ -61,9 +55,6 @@ const ProfilePage: React.FC = () => {
   const handleSaveTaskerSuccess = () => {
     setIsEditingTasker(false);
   };
-
-  const userPostedTasks = tasks.filter(task => task.posterId === user.id);
-  const userMadeOffers = offers.filter(offer => offer.taskerId === user.id);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
@@ -189,110 +180,6 @@ const ProfilePage: React.FC = () => {
                   >
                     <Edit size={18} /> Edit Tasker Profile
                   </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* My Posted Tasks Summary */}
-            <Card className="shadow-lg p-6 mb-8">
-              <CardHeader className="p-0 mb-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                  <ListTodo size={24} /> My Posted Tasks ({userPostedTasks.length})
-                </CardTitle>
-                <Button variant="link" onClick={() => navigate('/my-tasks')} className="text-green-600 hover:text-green-700 p-0 h-auto">
-                  View All
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0 space-y-4">
-                {userPostedTasks.length === 0 ? (
-                  <p className="text-gray-500 dark:text-gray-400">You haven't posted any tasks yet.</p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-4">
-                    {userPostedTasks.slice(0, 3).map(task => ( // Show up to 3 tasks
-                      <Card key={task.id} className="p-3 shadow-sm flex items-center gap-3">
-                        <img
-                          src={task.imageUrl || DEFAULT_TASK_IMAGE_URL}
-                          alt={task.title}
-                          className="w-16 h-16 object-cover rounded-md"
-                          onError={(e) => {
-                            e.currentTarget.src = DEFAULT_TASK_IMAGE_URL;
-                            e.currentTarget.onerror = null;
-                          }}
-                        />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-800 dark:text-gray-100">{task.title}</h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                            <MapPin size={14} /> {task.location}
-                          </p>
-                          <p className="text-sm font-bold text-green-600">₱{task.budget.toLocaleString()}</p>
-                        </div>
-                        <Badge className={cn(
-                          "text-xs",
-                          task.status === 'open' && 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200',
-                          task.status === 'assigned' && 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200',
-                          task.status === 'completed' && 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200',
-                          task.status === 'cancelled' && 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                        )}>
-                          {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
-                        </Badge>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* My Offers Summary (only if user is a tasker) */}
-            {isTasker && (
-              <Card className="shadow-lg p-6 mb-8">
-                <CardHeader className="p-0 mb-4 flex flex-row items-center justify-between">
-                  <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                    <Briefcase size={24} /> My Offers ({userMadeOffers.length})
-                  </CardTitle>
-                  <Button variant="link" onClick={() => navigate('/my-offers')} className="text-green-600 hover:text-green-700 p-0 h-auto">
-                    View All
-                  </Button>
-                </CardHeader>
-                <CardContent className="p-0 space-y-4">
-                  {userMadeOffers.length === 0 ? (
-                    <p className="text-gray-500 dark:text-gray-400">You haven't made any offers yet.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                      {userMadeOffers.slice(0, 3).map(offer => ( // Show up to 3 offers
-                        <Card key={offer.id} className="p-3 shadow-sm flex items-center gap-3">
-                          <Avatar className="w-12 h-12 border-2 border-blue-500">
-                            <AvatarImage
-                              src={offer.taskerAvatar || DEFAULT_AVATAR_URL}
-                              alt={offer.taskerName}
-                              onError={(e) => {
-                                e.currentTarget.src = DEFAULT_AVATAR_URL;
-                                e.currentTarget.onerror = null;
-                              }}
-                            />
-                            <AvatarFallback className="bg-blue-200 text-blue-800 text-md font-semibold">
-                              {offer.taskerName ? offer.taskerName.charAt(0).toUpperCase() : <UserIcon size={16} />}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800 dark:text-gray-100">Offer for {offer.taskId.substring(0, 8)}...</h4> {/* Placeholder for task title */}
-                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                              <MessageSquare size={14} /> {offer.message.substring(0, 30)}{offer.message.length > 30 ? '...' : ''}
-                            </p>
-                            <p className="text-sm font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
-                          </div>
-                          <Badge className={cn(
-                            "text-xs",
-                            offer.status === 'pending' && 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200',
-                            offer.status === 'accepted' && 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200',
-                            offer.status === 'rejected' && 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200',
-                            offer.status === 'withdrawn' && 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                          )}>
-                            {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
-                          </Badge>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             )}
