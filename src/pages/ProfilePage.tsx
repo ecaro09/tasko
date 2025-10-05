@@ -5,21 +5,21 @@ import { useTaskerProfile } from '@/hooks/use-tasker-profile';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, DollarSign, Star, LayoutList } from 'lucide-react'; // Added LayoutList icon
+import { User as UserIcon, Mail, Edit, Briefcase, Settings as SettingsIcon, Phone, DollarSign, Star } from 'lucide-react'; // Added DollarSign, Star icons
 import EditProfileSection from '@/components/EditProfileSection';
-import { useModal } from '@/components/ModalProvider';
-import { Badge } from '@/components/ui/badge';
-import { useSupabaseProfile } from '@/hooks/use-supabase-profile';
+import { useModal } from '@/components/ModalProvider'; // Import useModal
+import { Badge } from '@/components/ui/badge'; // Import Badge
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { profile, loadingProfile } = useSupabaseProfile();
+  const { profile, loadingProfile } = useSupabaseProfile(); // Get profile from useSupabaseProfile
   const { taskerProfile, isTasker, loading: taskerProfileLoading } = useTaskerProfile();
-  const { openTaskerRegistrationModal } = useModal();
+  const { openTaskerRegistrationModal } = useModal(); // Get the modal opener
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = React.useState(false);
 
-  if (authLoading || loadingProfile || taskerProfileLoading) {
+  if (authLoading || loadingProfile || taskerProfileLoading) { // Include loadingProfile
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
   }
 
@@ -79,7 +79,7 @@ const ProfilePage: React.FC = () => {
               </CardContent>
             </Card>
 
-            {isTasker && taskerProfile ? (
+            {isTasker && taskerProfile && (
               <Card className="shadow-lg p-6 mb-8">
                 <CardHeader className="p-0 mb-4">
                   <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -121,21 +121,6 @@ const ProfilePage: React.FC = () => {
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 flex items-center justify-center gap-2 mt-4"
                   >
                     <Briefcase size={20} /> View Tasker Dashboard
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="shadow-lg p-6 mb-8">
-                <CardHeader className="p-0 mb-4">
-                  <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Client Dashboard</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 space-y-4">
-                  <p className="text-gray-600 dark:text-gray-400">Manage your posted tasks and offers here.</p>
-                  <Button
-                    onClick={() => navigate('/client-dashboard')}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6 flex items-center justify-center gap-2 mt-4"
-                  >
-                    <LayoutList size={20} /> View My Client Dashboard
                   </Button>
                 </CardContent>
               </Card>

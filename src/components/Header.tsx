@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 import { useModal } from './ModalProvider';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, Plus, Briefcase, LayoutList } from 'lucide-react'; // New import for LayoutList icon
-import { useTaskerProfile } from '@/hooks/use-tasker-profile';
+import { User as UserIcon, Plus, Briefcase } from 'lucide-react'; // New import for Briefcase icon
+import { useTaskerProfile } from '@/hooks/use-tasker-profile'; // New import
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -15,7 +15,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
   const { openLoginModal, openSignupModal, openPostTaskModal } = useModal();
   const { user } = useAuth();
-  const { isTasker, loading: taskerProfileLoading } = useTaskerProfile(); // Use isTasker from hook
+  const { isTasker } = useTaskerProfile(); // Use isTasker from hook
 
   return (
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center pt-[var(--safe-area-top)]">
@@ -26,10 +26,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onSignOut }) => {
         <nav className="hidden md:flex gap-8">
           <Link to="/" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Home</Link>
           <a href="#categories" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Services</a>
-          {isAuthenticated && !taskerProfileLoading && !isTasker && ( // Conditional link for clients
-            <Link to="/client-dashboard" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">My Dashboard</Link>
+          {isAuthenticated && (
+            <Link to="/my-tasks" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">My Tasks</Link>
           )}
-          {isAuthenticated && !taskerProfileLoading && isTasker && ( // Conditional link for taskers
+          {isAuthenticated && isTasker && ( // Conditional link for taskers
             <Link to="/tasker-dashboard" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">Tasker Dashboard</Link>
           )}
           <a href="#how-it-works" className="text-[hsl(var(--text-dark))] hover:text-[hsl(var(--primary-color))] font-semibold transition-colors p-2 rounded-md text-sm">How It Works</a>
