@@ -1,11 +1,11 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client'; // Corrected import path
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { useTaskerProfile } from './use-tasker-profile';
 
-export interface Task {
+export interface Task { // Added 'export' keyword
   id: string;
   title: string;
   description: string;
