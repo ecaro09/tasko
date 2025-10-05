@@ -30,74 +30,58 @@ import {
   Treemap,
   XAxis,
   YAxis,
-  // Recharts types are often imported from 'recharts/types' or inferred from components
-  // Using React.ComponentProps for better compatibility
 } from "recharts";
-import type {
-  ContentProps as TooltipContentProps,
-  NameType,
-  Payload as TooltipPayload,
-  Props as TooltipProps,
-  ValueType,
-} from "recharts/types/component/Tooltip";
-import type {
-  LegendProps,
-  Payload as LegendPayload,
-} from "recharts/types/component/Legend";
+import type { Payload as RechartsTooltipPayload } from "recharts/types/component/Tooltip";
+import type { Payload as RechartsLegendPayload } from "recharts/types/component/Legend";
 
 import { cn } from "@/lib/utils";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"; // Self-referential import, will be removed
-
-// Re-exporting components defined in this file
-export {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-};
 
 // Define types using React.ComponentProps for Recharts components
-type AreaChartProps = React.ComponentProps<typeof AreaChart>;
-type BarChartProps = React.ComponentProps<typeof BarChart>;
-type LineChartProps = React.ComponentProps<typeof LineChart>;
-type PieChartProps = React.ComponentProps<typeof PieChart>;
-type RadarChartProps = React.ComponentProps<typeof RadarChart>;
-type RadialBarChartProps = React.ComponentProps<typeof RadialBarChart>;
-type ScatterChartProps = React.ComponentProps<typeof ScatterChart>;
-type ComposedChartProps = React.ComponentProps<typeof ComposedChart>;
-type FunnelChartProps = React.ComponentProps<typeof FunnelChart>;
-type TreemapProps = React.ComponentProps<typeof Treemap>;
-type SankeyProps = React.ComponentProps<typeof Sankey>;
-type BrushProps = React.ComponentProps<typeof Brush>;
+type TooltipProps = React.ComponentProps<typeof Tooltip>;
+type LegendProps = React.ComponentProps<typeof Legend>;
 
+// ChartConfig type definition (assuming it's defined elsewhere or needs to be here)
+export type ChartConfig = {
+  [key: string]: {
+    label: string;
+    color?: string;
+    icon?: React.ComponentType<{ className?: string }>;
+  };
+};
+
+interface ChartContextProps {
+  config: ChartConfig;
+  id: string;
+}
 
 // --- Chart
-const ChartContext = React.createContext<ChartContextProps | null>(null);
-
 function Chart({
   config,
   children,
   className,
   ...props
-}: React.ComponentProps<typeof ResponsiveContainer> & {
+}: React.ComponentPropsWithoutRef<"div"> & {
   config: ChartConfig;
-}) {
+} & React.ComponentProps<typeof ResponsiveContainer>) {
   const defaultId = React.useId();
   const [id] = React.useState(defaultId);
 
+  // Separate props for the outer div and ResponsiveContainer
+  const { aspect, width, height, minWidth, minHeight, initialDimension, ...divProps } = props;
+
   return (
     <ChartContext.Provider value={{ config, id }}>
-      <div className={cn("h-[400px] w-full", className)} {...props}>
-        <ResponsiveContainer>{children}</ResponsiveContainer>
+      <div className={cn("h-[400px] w-full", className)} {...divProps}>
+        <ResponsiveContainer
+          aspect={aspect}
+          width={width}
+          height={height}
+          minWidth={minWidth}
+          minHeight={minHeight}
+          initialDimension={initialDimension}
+        >
+          {children}
+        </ResponsiveContainer>
       </div>
     </ChartContext.Provider>
   );
@@ -130,7 +114,7 @@ function ChartTooltip({
   formatter,
   ...props
 }: TooltipProps & {
-  content?: React.ComponentPropsWithoutRef<"div">["children"];
+  content?: React.ReactNode; // Use React.ReactNode for content
 }) {
   const { id, config } = React.useContext(ChartContext) as ChartContextProps;
 
@@ -142,7 +126,7 @@ function ChartTooltip({
           return (
             <ChartTooltipContent
               config={config}
-              payload={payload}
+              payload={payload as RechartsTooltipPayload[]} // Cast to RechartsTooltipPayload[]
               label={label}
               formatter={formatter}
             >
@@ -166,11 +150,13 @@ function ChartTooltipContent({
   config,
   formatter,
   children,
-}: TooltipContentProps & {
-  config: ChartConfig;
-  payload?: TooltipPayload[];
+}: {
+  className?: string;
+  payload?: RechartsTooltipPayload[];
   label?: string | number;
+  config: ChartConfig;
   formatter?: TooltipProps["formatter"];
+  children?: React.ReactNode;
 }) {
   if (!payload || !payload.length) return null;
 
@@ -197,7 +183,7 @@ function ChartTooltipContent({
             </div>
             <span className="font-mono font-medium text-foreground">
               {formatter
-                ? formatter(item.value, item.name, item, index) // Corrected formatter signature
+                ? formatter(item.value, item.name, item, index)
                 : item.value}
             </span>
           </div>
@@ -214,7 +200,7 @@ function ChartLegend({
   content,
   ...props
 }: LegendProps & {
-  content?: React.ComponentPropsWithoutRef<"div">["children"];
+  content?: React.ReactNode;
 }) {
   const { id, config } = React.useContext(ChartContext) as ChartContextProps;
 
@@ -226,7 +212,7 @@ function ChartLegend({
         }
 
         return (
-          <ChartLegendContent config={config} payload={payload} className={className} />
+          <ChartLegendContent config={config} payload={payload as RechartsLegendPayload[]} className={className} />
         );
       }}
       {...props}
@@ -241,7 +227,7 @@ function ChartLegendContent({
   config,
 }: {
   className?: string;
-  payload?: LegendPayload[];
+  payload?: RechartsLegendPayload[];
   config: ChartConfig;
 }) {
   if (!payload || !payload.length) return null;
@@ -278,11 +264,6 @@ function ChartLegendContent({
       })}
     </div>
   );
-}
-
-interface ChartContextProps {
-  config: ChartConfig;
-  id: string;
 }
 
 // Export all components
