@@ -10,6 +10,7 @@ import EditProfileSection from '@/components/EditProfileSection';
 import { useModal } from '@/components/ModalProvider'; // Import useModal
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -20,7 +21,33 @@ const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = React.useState(false);
 
   if (authLoading || loadingProfile || taskerProfileLoading) { // Include loadingProfile
-    return <div className="container mx-auto p-4 text-center pt-[80px]">Loading profile...</div>;
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 pt-[80px] px-4">
+        <div className="container mx-auto max-w-3xl">
+          <h1 className="text-4xl font-bold text-green-600 mb-8 text-center">My Profile</h1>
+          <Card className="shadow-lg p-6 mb-8">
+            <CardContent className="flex flex-col items-center text-center p-0">
+              <Skeleton className="w-24 h-24 rounded-full mb-4" />
+              <Skeleton className="h-8 w-3/4 mb-2" />
+              <Skeleton className="h-5 w-1/2 mb-1" />
+              <Skeleton className="h-5 w-1/3 mb-4" />
+              <Skeleton className="h-10 w-40 rounded-md" />
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg p-6">
+            <CardHeader className="p-0 mb-4">
+              <Skeleton className="h-7 w-2/3 mb-2" />
+            </CardHeader>
+            <CardContent className="p-0 space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated || !user) {
