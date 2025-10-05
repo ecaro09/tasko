@@ -4,7 +4,7 @@ import { useTasks, Task } from '@/hooks/use-tasks';
 import { useOffers, Offer } from '@/hooks/use-offers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit } from 'lucide-react'; // Added Edit icon
+import { MapPin, Tag, DollarSign, Trash2, User, MessageSquare, CheckCircle, XCircle, Star, Edit, Ban } from 'lucide-react'; // Added Ban icon
 import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
@@ -25,13 +25,14 @@ import { DEFAULT_AVATAR_URL } from '@/utils/image-placeholders'; // Import defau
 
 const MyTasksPage: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { tasks, loading: tasksLoading, error: tasksError, deleteTask } = useTasks();
+  const { tasks, loading: tasksLoading, error: tasksError, deleteTask, cancelTask } = useTasks(); // Added cancelTask
   const { offers, loading: offersLoading, acceptOffer, rejectOffer } = useOffers();
   const navigate = useNavigate();
-  const { openReviewTaskModal, openEditTaskModal } = useModal(); // Get openEditTaskModal from useModal
+  const { openReviewTaskModal, openEditTaskModal } = useModal();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
+  const [actionType, setActionType] = React.useState<'delete' | 'cancel' | null>(null); // New state for action type
+  const [taskToActOn, setTaskToActOn] = React.useState<string | null>(null);
 
   if (authLoading || tasksLoading || offersLoading) {
     return <div className="container mx-auto p-4 text-center pt-[80px]">Loading your tasks and offers...</div>;
@@ -55,21 +56,27 @@ const MyTasksPage: React.FC = () => {
     );
   }
 
-  const userTasks = tasks.filter(task => task.posterId === user.id); // Changed user.uid to user.id
+  const userTasks = tasks.filter(task => task.posterId === user.id);
 
-  const handleDeleteClick = (taskId: string) => {
-    setTaskToDelete(taskId);
+  const handleActionClick = (taskId: string, type: 'delete' | 'cancel') => {
+    setTaskToActOn(taskId);
+    setActionType(type);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
-    if (taskToDelete) {
+  const handleConfirmAction = async () => {
+    if (taskToActOn && actionType) {
       try {
-        await deleteTask(taskToDelete);
+        if (actionType === 'delete') {
+          await deleteTask(taskToActOn);
+        } else if (actionType === 'cancel') {
+          await cancelTask(taskToActOn);
+        }
       } catch (error) {
         // Error handled by useTasks hook, toast already shown
       } finally {
-        setTaskToDelete(null);
+        setTaskToActOn(null);
+        setActionType(null);
         setIsDeleteDialogOpen(false);
       }
     }
@@ -141,7 +148,8 @@ const MyTasksPage: React.FC = () => {
                     <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold ${
                       task.status === 'open' ? 'bg-blue-600 text-white' :
                       task.status === 'assigned' ? 'bg-yellow-600 text-white' :
-                      'bg-green-600 text-white'
+                      task.status === 'completed' ? 'bg-green-600 text-white' :
+                      'bg-gray-600 text-white' // For 'cancelled' status
                     }`}>
                       {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                     </div>
@@ -183,14 +191,26 @@ const MyTasksPage: React.FC = () => {
                           <Edit size={20} />
                         </Button>
                       )}
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleDeleteClick(task.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                      >
-                        <Trash2 size={20} />
-                      </Button>
+                      {(task.status === 'open' || task.status === 'assigned') && (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleActionClick(task.id, 'cancel')}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          <Ban size={20} />
+                        </Button>
+                      )}
+                      {task.status === 'completed' || task.status === 'cancelled' ? (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleActionClick(task.id, 'delete')}
+                          className="border-gray-400 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
+                          <Trash2 size={20} />
+                        </Button>
+                      ) : null}
                     </div>
 
                     {/* Offers for this task */}
@@ -261,19 +281,25 @@ const MyTasksPage: React.FC = () => {
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete/Cancel Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Are you absolutely sure you want to {actionType === 'delete' ? 'delete' : 'cancel'} this task?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your task.
+              This action cannot be undone. This will permanently {actionType === 'delete' ? 'delete' : 'cancel'} your task.
+              {actionType === 'cancel' && " If an offer was accepted, the assigned tasker will be unassigned."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
-              Delete
+            <AlertDialogAction
+              onClick={handleConfirmAction}
+              className={actionType === 'delete' ? "bg-red-600 hover:bg-red-700 text-white" : "bg-orange-600 hover:bg-orange-700 text-white"}
+            >
+              {actionType === 'delete' ? 'Delete' : 'Confirm Cancellation'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

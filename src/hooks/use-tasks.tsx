@@ -17,7 +17,7 @@ export interface Task {
   posterName: string;
   posterAvatar: string;
   datePosted: string;
-  status: 'open' | 'assigned' | 'completed';
+  status: 'open' | 'assigned' | 'completed' | 'cancelled'; // Added 'cancelled' status
   imageUrl?: string | null;
   assignedTaskerId?: string;
   assignedOfferId?: string;
@@ -35,6 +35,7 @@ interface UseTasksContextType {
   deleteTask: (taskId: string) => Promise<void>;
   editTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'posterId' | 'posterName' | 'posterAvatar' | 'datePosted' | 'status' | 'assignedTaskerId' | 'assignedOfferId' | 'rating' | 'review' | 'dateCompleted' | 'dateUpdated'>>) => Promise<void>;
   completeTaskWithReview: (taskId: string, rating: number, review: string) => Promise<void>;
+  cancelTask: (taskId: string) => Promise<void>; // New function
 }
 
 const TasksContext = createContext<UseTasksContextType | undefined>(undefined);
@@ -349,6 +350,52 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   }, [isAuthenticated, user, updateTaskerRating]);
 
+  const cancelTask = useCallback(async (taskId: string) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to cancel a task.");
+      return;
+    }
+
+    try {
+      const { data: taskData, error: fetchError } = await supabase
+        .from('tasks')
+        .select('poster_id, status')
+        .eq('id', taskId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!taskData) {
+        toast.error("Task not found.");
+        return;
+      }
+      if (taskData.poster_id !== user.id) {
+        toast.error("You are not authorized to cancel this task.");
+        return;
+      }
+      if (taskData.status === 'completed' || taskData.status === 'cancelled') {
+        toast.info("This task is already completed or cancelled.");
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({
+          status: 'cancelled',
+          date_updated: new Date().toISOString(),
+          assigned_tasker_id: null, // Clear assigned tasker if cancelled
+          assigned_offer_id: null, // Clear assigned offer if cancelled
+        })
+        .eq('id', taskId);
+
+      if (updateError) throw updateError;
+      toast.success("Task cancelled successfully!");
+    } catch (err: any) {
+      console.error("Error cancelling task:", err);
+      toast.error(`Failed to cancel task: ${err.message}`);
+      throw err;
+    }
+  }, [isAuthenticated, user]);
+
   const value = React.useMemo(() => ({
     tasks: allTasks,
     loading,
@@ -357,6 +404,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     deleteTask,
     editTask,
     completeTaskWithReview,
+    cancelTask, // Added new function
   }), [
     allTasks,
     loading,
@@ -365,6 +413,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     deleteTask,
     editTask,
     completeTaskWithReview,
+    cancelTask,
   ]);
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;
