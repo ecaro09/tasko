@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { MessageSquare, ArrowLeft, Send, User as UserIcon, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
 import { useNavigate } from 'react-router-dom';
-import { useChat, ChatRoom, ChatMessage } from '@/hooks/use-chat';
+import { useChat, ChatRoom, Message } from '@/hooks/use-chat'; // Corrected import for Message
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -14,7 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { chatRooms, messages, loadingRooms, loadingMessages, error, sendMessage, fetchMessagesForRoom } = useChat();
+  const { chatRooms, messages, loadingRooms, loadingMessages, error, sendMessage, fetchMessagesForRoom, clearCurrentRoomMessages } = useChat();
   const [selectedRoom, setSelectedRoom] = React.useState<ChatRoom | null>(null);
   const [messageInput, setMessageInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -35,8 +35,11 @@ const ChatPage: React.FC = () => {
   }, [chatRooms, selectedRoom, fetchMessagesForRoom]);
 
   const handleRoomSelect = (room: ChatRoom) => {
-    setSelectedRoom(room);
-    fetchMessagesForRoom(room.id);
+    if (selectedRoom?.id !== room.id) { // Only fetch if a different room is selected
+      clearCurrentRoomMessages(); // Clear messages of previous room
+      setSelectedRoom(room);
+      fetchMessagesForRoom(room.id);
+    }
     if (isMobile) {
       setShowRoomsList(false); // Hide room list on mobile after selecting a room
     }
@@ -194,7 +197,7 @@ const ChatPage: React.FC = () => {
                               : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-none"
                           )}
                         >
-                          <p className="text-sm">{message.text}</p>
+                          <p className="text-sm">{message.content}</p> {/* Changed from message.text to message.content */}
                           <span className="text-xs opacity-75 mt-1 block">
                             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>

@@ -1,232 +1,157 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-  DocumentData,
-  where,
-  or,
-  limit,
-  doc, // Import doc
-  updateDoc, // Import updateDoc
-  getDocs, // Import getDocs
-} from 'firebase/firestore';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
-import { useTaskerProfile } from './use-tasker-profile';
+import {
+  Message,
+  ChatRoom,
+  createChatRoomFirestore,
+  addMessageFirestore,
+  subscribeToChatMessages,
+  fetchChatRoomsForUserFirestore,
+} from '@/lib/chat-firestore';
+import { loadChatMessagesFromCache, saveChatMessagesToCache, clearChatMessagesCache } from '@/lib/chat-local-cache'; // Import caching utilities
 
-export interface ChatMessage {
-  id: string;
-  roomId: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar?: string;
-  text: string;
-  timestamp: string;
-}
-
-export interface ChatRoom {
-  id: string;
-  participants: string[]; // Array of user UIDs
-  participantNames: string[]; // Array of user display names
-  lastMessage?: string;
-  lastMessageTimestamp?: string;
-  createdAt: string;
-}
+// Re-export ChatRoom and Message interfaces
+export { ChatRoom, Message } from '@/lib/chat-firestore';
 
 interface ChatContextType {
   chatRooms: ChatRoom[];
-  messages: ChatMessage[];
+  messages: Message[];
   loadingRooms: boolean;
   loadingMessages: boolean;
   error: string | null;
-  sendMessage: (roomId: string, text: string) => Promise<void>;
   createChatRoom: (participantIds: string[], participantNames: string[]) => Promise<string | null>;
-  fetchMessagesForRoom: (roomId: string) => void;
+  sendMessage: (roomId: string, content: string) => Promise<void>;
+  fetchMessagesForRoom: (roomId: string) => void; // Function to trigger message fetching/subscription
+  clearCurrentRoomMessages: () => void; // Function to clear messages for the current room
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { taskerProfile, loading: taskerProfileLoading } = useTaskerProfile();
   const [chatRooms, setChatRooms] = React.useState<ChatRoom[]>([]);
-  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [messages, setMessages] = React.useState<Message[]>([]);
   const [loadingRooms, setLoadingRooms] = React.useState(true);
   const [loadingMessages, setLoadingMessages] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [currentRoomId, setCurrentRoomId] = React.useState<string | null>(null);
+  const [activeRoomId, setActiveRoomId] = React.useState<string | null>(null);
 
-  // Fetch chat rooms for the current user
+  // Effect to fetch chat rooms for the authenticated user
   React.useEffect(() => {
-    if (!isAuthenticated || !user || authLoading) {
+    if (isAuthenticated && user) {
+      setLoadingRooms(true);
+      setError(null);
+      const fetchRooms = async () => {
+        try {
+          const fetchedRooms = await fetchChatRoomsForUserFirestore(user.uid);
+          setChatRooms(fetchedRooms);
+        } catch (err: any) {
+          setError(err.message || "Failed to load chat rooms.");
+          toast.error(`Failed to load chat rooms: ${err.message}`);
+        } finally {
+          setLoadingRooms(false);
+        }
+      };
+      fetchRooms();
+    } else {
       setChatRooms([]);
       setLoadingRooms(false);
-      return;
     }
+  }, [isAuthenticated, user]);
 
-    setLoadingRooms(true);
-    setError(null);
-
-    const roomsCollectionRef = collection(db, 'chatRooms');
-    const q = query(
-      roomsCollectionRef,
-      where('participants', 'array-contains', user.uid),
-      orderBy('lastMessageTimestamp', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRooms: ChatRoom[] = snapshot.docs.map((doc) => {
-        const data = doc.data() as DocumentData;
-        return {
-          id: doc.id,
-          participants: data.participants,
-          participantNames: data.participantNames,
-          lastMessage: data.lastMessage,
-          lastMessageTimestamp: data.lastMessageTimestamp?.toDate().toISOString(),
-          createdAt: data.createdAt?.toDate().toISOString(),
-        };
-      });
-      setChatRooms(fetchedRooms);
-      setLoadingRooms(false);
-    }, (err) => {
-      console.error("Error fetching chat rooms:", err);
-      setError("Failed to fetch chat rooms.");
-      setLoadingRooms(false);
-      toast.error("Failed to load chat rooms.");
-    });
-
-    return () => unsubscribe();
-  }, [isAuthenticated, user, authLoading]);
-
-  // Fetch messages for the currently selected chat room
+  // Effect to subscribe to messages for the active room
   React.useEffect(() => {
-    if (!currentRoomId) {
+    if (activeRoomId) {
+      setLoadingMessages(true);
+      setError(null);
+
+      // Load from cache immediately
+      const cachedMessages = loadChatMessagesFromCache(activeRoomId);
+      if (cachedMessages.length > 0) {
+        setMessages(cachedMessages);
+        setLoadingMessages(false);
+        console.log(`Messages for room ${activeRoomId} loaded from cache.`);
+      } else {
+        setLoadingMessages(true); // Only show loading if cache is empty
+      }
+
+      const unsubscribe = subscribeToChatMessages(
+        activeRoomId,
+        (fetchedMessages) => {
+          setMessages(fetchedMessages);
+          setLoadingMessages(false);
+        },
+        (errMessage) => {
+          setError(errMessage);
+          setLoadingMessages(false);
+          toast.error(errMessage);
+        }
+      );
+      return () => {
+        unsubscribe();
+        setMessages([]); // Clear messages when leaving a room
+        clearChatMessagesCache(activeRoomId); // Clear cache for the room when unsubscribing
+      };
+    } else {
       setMessages([]);
-      return;
-    }
-
-    setLoadingMessages(true);
-    setError(null);
-
-    const messagesCollectionRef = collection(db, 'chatRooms', currentRoomId, 'messages');
-    const q = query(messagesCollectionRef, orderBy('timestamp', 'asc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedMessages: ChatMessage[] = snapshot.docs.map((doc) => {
-        const data = doc.data() as DocumentData;
-        return {
-          id: doc.id,
-          roomId: currentRoomId,
-          senderId: data.senderId,
-          senderName: data.senderName,
-          senderAvatar: data.senderAvatar,
-          text: data.text,
-          timestamp: data.timestamp?.toDate().toISOString(),
-        };
-      });
-      setMessages(fetchedMessages);
       setLoadingMessages(false);
-    }, (err) => {
-      console.error("Error fetching messages:", err);
-      setError("Failed to fetch messages.");
-      setLoadingMessages(false);
-      toast.error("Failed to load messages.");
-    });
-
-    return () => unsubscribe();
-  }, [currentRoomId]);
-
-  const fetchMessagesForRoom = (roomId: string) => {
-    setCurrentRoomId(roomId);
-  };
-
-  const sendMessage = async (roomId: string, text: string) => {
-    if (!isAuthenticated || !user || !text.trim()) {
-      toast.error("You must be logged in and provide a message.");
-      return;
     }
+  }, [activeRoomId]);
 
-    try {
-      const messagesCollectionRef = collection(db, 'chatRooms', roomId, 'messages');
-      await addDoc(messagesCollectionRef, {
-        senderId: user.uid,
-        senderName: user.displayName || user.email || "Anonymous",
-        senderAvatar: user.photoURL || undefined,
-        text: text.trim(),
-        timestamp: serverTimestamp(),
-      });
-
-      // Update last message in chat room
-      const roomRef = doc(collection(db, 'chatRooms'), roomId); // Fixed: Use doc function
-      await updateDoc(roomRef, { // Fixed: Use updateDoc function
-        lastMessage: text.trim(),
-        lastMessageTimestamp: serverTimestamp(),
-      });
-
-    } catch (err: any) {
-      console.error("Error sending message:", err);
-      toast.error(`Failed to send message: ${err.message}`);
-      throw err;
-    }
-  };
-
-  const createChatRoom = async (participantIds: string[], participantNames: string[]): Promise<string | null> => {
+  const createChatRoom = useCallback(async (participantIds: string[], participantNames: string[]): Promise<string | null> => {
     if (!isAuthenticated || !user) {
       toast.error("You must be logged in to create a chat room.");
       return null;
     }
-    if (!participantIds.includes(user.uid)) {
-      participantIds.push(user.uid);
-      participantNames.push(user.displayName || user.email || "Anonymous");
-    }
-    participantIds.sort(); // Ensure consistent order for querying
-
     try {
-      const roomsCollectionRef = collection(db, 'chatRooms');
-      // Check if a room with these participants already exists
-      const existingRoomQuery = query(
-        roomsCollectionRef,
-        where('participants', '==', participantIds),
-        limit(1)
-      );
-      const existingRoomSnapshot = await getDocs(existingRoomQuery); // Fixed: getDocs is now imported
-
-      if (!existingRoomSnapshot.empty) {
-        const existingRoomId = existingRoomSnapshot.docs[0].id;
-        toast.info("Chat room already exists.");
-        return existingRoomId;
-      }
-
-      const newRoomRef = await addDoc(roomsCollectionRef, {
-        participants: participantIds,
-        participantNames: participantNames,
-        createdAt: serverTimestamp(),
-        lastMessage: "New chat started.",
-        lastMessageTimestamp: serverTimestamp(),
-      });
-      toast.success("Chat room created!");
-      return newRoomRef.id;
-    } catch (err: any) {
-      console.error("Error creating chat room:", err);
-      toast.error(`Failed to create chat room: ${err.message}`);
-      throw err;
+      const roomId = await createChatRoomFirestore(participantIds, participantNames);
+      // Re-fetch chat rooms to update the list
+      const fetchedRooms = await fetchChatRoomsForUserFirestore(user.uid);
+      setChatRooms(fetchedRooms);
+      return roomId;
+    } catch (err) {
+      // Error handled by createChatRoomFirestore
+      return null;
     }
-  };
+  }, [isAuthenticated, user]);
+
+  const sendMessage = useCallback(async (roomId: string, content: string) => {
+    if (!isAuthenticated || !user) {
+      toast.error("You must be logged in to send a message.");
+      return;
+    }
+    if (!content.trim()) {
+      toast.error("Message cannot be empty.");
+      return;
+    }
+    try {
+      await addMessageFirestore(roomId, content, user);
+      // The onSnapshot listener will update the messages state and cache
+    } catch (err) {
+      // Error handled by addMessageFirestore
+    }
+  }, [isAuthenticated, user]);
+
+  const fetchMessagesForRoom = useCallback((roomId: string) => {
+    setActiveRoomId(roomId);
+  }, []);
+
+  const clearCurrentRoomMessages = useCallback(() => {
+    setMessages([]);
+    setActiveRoomId(null);
+  }, []);
 
   const value = {
     chatRooms,
     messages,
-    loadingRooms: loadingRooms || authLoading,
+    loadingRooms,
     loadingMessages,
     error,
-    sendMessage,
     createChatRoom,
+    sendMessage,
     fetchMessagesForRoom,
+    clearCurrentRoomMessages,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
