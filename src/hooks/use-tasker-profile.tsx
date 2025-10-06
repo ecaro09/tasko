@@ -11,6 +11,7 @@ import {
 } from '@/lib/tasker-profile-firestore'; // Import new utility functions
 import { seedInitialTaskerProfiles } from '@/lib/seed-tasker-profiles'; // Import seed function from new location
 import { loadTaskerProfilesFromCache, saveTaskerProfilesToCache } from '@/lib/tasker-profile-local-cache'; // Import caching utilities
+import { db } from '@/lib/firebase'; // Import db
 
 interface TaskerProfileContextType {
   taskerProfile: TaskerProfile | null;
