@@ -12,7 +12,7 @@ import {
 import { loadChatMessagesFromCache, saveChatMessagesToCache, clearChatMessagesCache } from '@/lib/chat-local-cache'; // Import caching utilities
 
 // Re-export ChatRoom and Message interfaces
-export { ChatRoom, Message } from '@/lib/chat-firestore';
+export type { ChatRoom, Message } from '@/lib/chat-firestore';
 
 interface ChatContextType {
   chatRooms: ChatRoom[];
