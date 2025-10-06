@@ -2,6 +2,7 @@ import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { User as FirebaseUser } from 'firebase/auth';
+import { saveTaskerProfilesToCache, loadTaskerProfilesFromCache } from './tasker-profile-local-cache'; // Import caching utilities
 
 export interface TaskerProfile {
   userId: string;
@@ -46,6 +47,15 @@ export const createOrUpdateTaskerProfileFirestore = async (
 
     await setDoc(docRef, profileData, { merge: true }); // Use merge to update existing fields or create new doc
     toast.success("Tasker profile saved successfully!");
+
+    // Optimistically update local cache
+    const currentProfiles = loadTaskerProfilesFromCache();
+    const updatedProfiles = currentProfiles.map(p => p.userId === user.uid ? profileData : p);
+    if (!currentProfiles.some(p => p.userId === user.uid)) {
+      updatedProfiles.push(profileData);
+    }
+    saveTaskerProfilesToCache(updatedProfiles);
+
     return profileData;
   } catch (err: any) {
     console.error("Error saving tasker profile:", err);
@@ -58,6 +68,7 @@ export const fetchAllTaskerProfilesFirestore = async (): Promise<TaskerProfile[]
   try {
     const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
     const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
+    saveTaskerProfilesToCache(profiles); // Update cache with fresh data
     return profiles;
   } catch (err: any) {
     console.error("Error fetching all tasker profiles:", err);
