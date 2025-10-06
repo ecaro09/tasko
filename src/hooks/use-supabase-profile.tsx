@@ -33,33 +33,16 @@ export const SupabaseProfileProvider: React.FC<{ children: ReactNode; firebaseUs
     setLoadingProfile(true);
     setErrorProfile(null);
     try {
-      let fetchedProfile = await fetchUserProfileSupabase(userId);
-      if (!fetchedProfile) {
-        // If no profile exists, create a basic one using Firebase user data
-        console.log(`No Supabase profile found for ${userId}, creating a default one.`);
-        fetchedProfile = await createOrUpdateUserProfileSupabase(
-          userId,
-          firebaseUser?.displayName?.split(' ')[0] || null, // Use Firebase display name for initial first name
-          firebaseUser?.displayName?.split(' ').slice(1).join(' ') || null, // Use Firebase display name for initial last name
-          null, // No phone initially
-          firebaseUser?.photoURL || null, // Use Firebase photoURL
-          'user' // Default role
-        );
-        if (!fetchedProfile) {
-          throw new Error("Failed to create initial Supabase profile.");
-        }
-        toast.info("Initial user profile created in Supabase.");
-      }
+      const fetchedProfile = await fetchUserProfileSupabase(userId);
       setProfile(fetchedProfile);
       return fetchedProfile;
     } catch (err: any) {
-      setErrorProfile(err.message || "Failed to fetch or create Supabase profile.");
-      toast.error(`Failed to load or create user profile: ${err.message}`);
+      setErrorProfile(err.message || "Failed to fetch Supabase profile.");
       return null;
     } finally {
       setLoadingProfile(false);
     }
-  }, [firebaseUser]); // Add firebaseUser to dependencies to access its properties
+  }, []);
 
   const updateProfile = React.useCallback(async (
     userId: string,

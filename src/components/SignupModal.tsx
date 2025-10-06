@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { useSupabaseProfile } from '@/hooks/use-supabase-profile'; // New import
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -13,7 +14,8 @@ interface SignupModalProps {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
-  const { signupWithEmailPassword, loading: authLoading } = useAuth();
+  const { signupWithEmailPassword, loading: authLoading } = useAuth(); // Removed firebaseUser from destructuring
+  const { updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // Get updateProfile from useSupabaseProfile
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [firstName, setFirstName] = React.useState('');
@@ -30,8 +32,21 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSwitchToLo
     }
     setIsLoadingLocal(true);
     try {
-      await signupWithEmailPassword(email, password, firstName, lastName, phone);
-      onClose();
+      const newUser = await signupWithEmailPassword(email, password, firstName, lastName); // Get the new user directly
+      
+      // After successful Firebase signup, update Supabase profile with additional details
+      if (newUser) { // Use the newUser object
+        await updateSupabaseProfile(
+          newUser.uid, // Use the newly signed up user's UID
+          firstName,
+          lastName,
+          phone,
+          newUser.photoURL || null, // Use Firebase user's photoURL if available
+          'user' // Default role for new signups
+        );
+      }
+      
+      onClose(); // Close the modal after successful signup and verification email sent
     } catch (error) {
       // Error handled by useAuth hook, toast already shown
     } finally {

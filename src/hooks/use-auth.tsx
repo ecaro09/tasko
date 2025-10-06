@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
 import {
   signOut,
   User as FirebaseUser,
@@ -7,10 +6,13 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithCredential,
+  sendEmailVerification,
+  sendSignInLinkToEmail, // New import
 } from 'firebase/auth';
 import { toast } from 'sonner';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { auth, actionCodeSettings } from '@/lib/firebase'; // Ensure auth and actionCodeSettings are imported
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -19,11 +21,13 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signupWithEmailPassword: (email: string, password: string, firstName: string, lastName: string, phone?: string) => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string) => Promise<FirebaseUser | null>; // Modified return type
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (firstName: string, lastName: string, phone: string, photoURL?: string) => Promise<void>;
+  updateUserProfile: (firstName: string, lastName: string, photoURL?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
+  sendLoginLinkToEmail: (email: string) => Promise<void>; // New function signature
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,31 +40,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   React.useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          setAuthState({
-            user: result.user,
-            isAuthenticated: true,
-            loading: false,
-          });
-          toast.success("Logged in with Google successfully!");
-          console.log(`[Auth Log] Redirect login successful (Google) for user: ${result.user.email} at ${new Date().toISOString()}`);
-        }
-      } catch (error: any) {
-        console.error("Error during Google redirect sign-in:", error);
-        let errorMessage = "Failed to sign in with Google after redirect.";
-        if (error.message) {
-          errorMessage = error.message;
-        }
-        toast.error(errorMessage);
-        setAuthState(prev => ({ ...prev, loading: false }));
-      }
-    };
-
-    handleRedirectResult();
-
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setAuthState({
@@ -79,22 +58,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const signupWithEmailPassword = async (email: string, password: string, firstName: string, lastName: string, phone?: string) => {
+  const sendVerificationEmail = async () => {
+    if (!authState.user) {
+      toast.error("No user logged in to send verification email.");
+      return;
+    }
+    try {
+      await sendEmailVerification(authState.user);
+      toast.success("Verification email sent! Please check your inbox.");
+      console.log(`[Auth Log] Verification email sent to ${authState.user.email} at ${new Date().toISOString()}`);
+    } catch (error: any) {
+      console.error("Error sending verification email:", error);
+      toast.error(`Failed to send verification email: ${error.message}`);
+      console.log(`[Auth Log] Failed to send verification email to ${authState.user.email} at ${new Date().toISOString()} - Error: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string): Promise<FirebaseUser | null> => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const displayName = `${firstName} ${lastName}`.trim();
+      const displayName = `${firstName || ''} ${lastName || ''}`.trim();
       await updateProfile(userCredential.user, {
         displayName: displayName,
         photoURL: null, // Can be updated later
       });
 
-      // The SupabaseProfileProvider's useEffect will detect the new Firebase user
-      // and automatically create a default Supabase profile for them.
-      // The initial firstName, lastName, and phone will be passed via Firebase user's displayName
-      // and then updated by the SupabaseProfileProvider's logic.
-
-      toast.success("Account created successfully! You are now logged in.");
-      console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
+      // Send email verification after successful signup
+      if (userCredential.user) {
+        await sendEmailVerification(userCredential.user);
+        toast.success("Account created successfully! A verification email has been sent to your inbox. Please verify your email to continue.");
+        console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}. Verification email sent.`);
+        return userCredential.user; // Return the user object
+      } else {
+        toast.success("Account created successfully! You are now logged in.");
+        console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
+        return null;
+      }
     } catch (error: any) {
       console.error("Auth error caught during signup:", error);
       console.log(`[Auth Log] Signup failed (Email/Password) for user: ${email} at ${new Date().toISOString()} - Error: ${error.message}`);
@@ -146,34 +146,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateUserProfile = async (firstName: string, lastName: string, phone: string, photoURL?: string) => {
+  const updateUserProfile = async (firstName: string, lastName: string, photoURL?: string) => {
     if (!authState.user) {
       toast.error("You must be logged in to update your profile.");
       return;
     }
     try {
-      // Only update Firebase Auth displayName and photoURL here.
-      // The Supabase profile update is handled directly by EditProfileSection
-      // calling useSupabaseProfile's updateProfile.
       const newDisplayName = `${firstName} ${lastName}`.trim();
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
 
-      toast.success("Firebase Auth profile updated successfully!");
-      console.log(`[Auth Log] Firebase Auth profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
+      toast.success("Firebase profile updated successfully!");
+      console.log(`[Auth Log] Firebase profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
     } catch (error: any) {
-      console.error("Error updating Firebase Auth profile:", error);
-      toast.error(`Failed to update Firebase Auth profile: ${error.message}`);
-      console.log(`[Auth Log] Firebase Auth profile update failed for user: ${authState.user.uid} at ${new Date().toISOString()} - Error: ${error.message}`);
+      console.error("Error updating Firebase profile:", error);
+      toast.error(`Failed to update Firebase profile: ${error.message}`);
+      console.log(`[Auth Log] Firebase profile update failed for user: ${authState.user.uid} at ${new Date().toISOString()} - Error: ${error.message}`);
       throw error;
     }
   };
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
     try {
       setAuthState(prev => ({ ...prev, loading: true }));
-      await signInWithRedirect(auth, provider);
-      console.log(`[Auth Log] Initiating Google sign-in redirect at ${new Date().toISOString()}`);
+      const result = await FirebaseAuthentication.signInWithGoogle();
+
+      if (result.credential?.idToken && result.credential?.accessToken) {
+        const credential = GoogleAuthProvider.credential(result.credential.idToken, result.credential.accessToken);
+        await signInWithCredential(auth, credential);
+        toast.success("Logged in with Google successfully!");
+        console.log(`[Auth Log] Google sign-in successful for user: ${auth.currentUser?.email} at ${new Date().toISOString()}`);
+      } else {
+        throw new Error("Google sign-in did not return valid credentials.");
+      }
     } catch (error: any) {
       console.error("Auth error caught during Google sign-in:", error);
       console.log(`[Auth Log] Login failed (Google) at ${new Date().toISOString()} - Error: ${error.message}`);
@@ -189,7 +193,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle };
+  const sendLoginLinkToEmail = async (email: string) => {
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      toast.success("Login link sent! Please check your email.");
+      console.log(`[Auth Log] Email login link sent to ${email} at ${new Date().toISOString()}`);
+    } catch (error: any) {
+      console.error("Error sending email login link:", error);
+      toast.error(`Failed to send login link: ${error.message}`);
+      console.log(`[Auth Log] Failed to send email login link to ${email} at ${new Date().toISOString()} - Error: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const value = { ...authState, signupWithEmailPassword, loginWithEmailPassword, logout, updateUserProfile, signInWithGoogle, sendVerificationEmail, sendLoginLinkToEmail };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

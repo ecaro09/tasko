@@ -1,0 +1,14 @@
+{
+	"appId": "com.tasko.application",
+	"appName": "Tasko",
+	"webDir": "dist",
+	"plugins": {
+		"FirebaseAuthentication": {
+			"serverClientId": "YOUR_GOOGLE_WEB_CLIENT_ID_HERE",
+			"forceCodeForRefreshToken": true
+		}
+	},
+	"packageClassList": [
+		"FirebaseAuthenticationPlugin"
+	]
+}

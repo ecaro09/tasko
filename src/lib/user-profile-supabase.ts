@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { saveUserProfileToCache, loadUserProfileFromCache } from './local-cache'; // Import caching utilities
 
 // Define the structure for the Supabase profile
 export interface UserProfile {
@@ -14,13 +13,6 @@ export interface UserProfile {
 }
 
 export const fetchUserProfileSupabase = async (userId: string): Promise<UserProfile | null> => {
-  // Try to load from cache first
-  const cachedProfile = loadUserProfileFromCache();
-  if (cachedProfile && cachedProfile.id === userId) {
-    console.log("Loaded user profile from cache.");
-    return cachedProfile;
-  }
-
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -32,8 +24,6 @@ export const fetchUserProfileSupabase = async (userId: string): Promise<UserProf
       throw error;
     }
 
-    // Save to cache if fetched successfully
-    saveUserProfileToCache(data as UserProfile | null);
     return data as UserProfile | null;
   } catch (error: any) {
     console.error("Error fetching Supabase profile:", error);
@@ -67,8 +57,6 @@ export const createOrUpdateUserProfileSupabase = async (
 
     if (error) throw error;
 
-    // Save to cache after successful upsert
-    saveUserProfileToCache(data as UserProfile);
     return data as UserProfile;
   } catch (error: any) {
     console.error("Error creating/updating Supabase profile:", error);

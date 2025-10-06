@@ -4,9 +4,6 @@ import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { toast } from 'sonner';
 
-// Log all environment variables for debugging
-// console.log("All VITE_ environment variables:", import.meta.env); // Removed for security
-
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -23,8 +20,8 @@ const requiredConfigKeys = [
   'authDomain',
   'projectId',
   'appId',
-  'storageBucket', // Added for validation
-  'messagingSenderId', // Added for validation
+  'storageBucket',
+  'messagingSenderId',
 ];
 const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
 
@@ -35,9 +32,6 @@ if (missingKeys.length > 0) {
   // Prevent further execution if critical config is missing
   throw new Error(errorMessage);
 }
-
-// Log the API key to check if it's being loaded
-// console.log("Firebase API Key:", firebaseConfig.apiKey ? "Loaded" : "Not Loaded", firebaseConfig.apiKey); // Removed for security
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -63,3 +57,19 @@ enableIndexedDbPersistence(db)
       console.error("Firestore persistence failed for unknown reason:", err);
     }
   });
+
+// Export actionCodeSettings for email link sign-in
+export const actionCodeSettings = {
+  // Use VITE_FIREBASE_SIGN_IN_REDIRECT_URL if set, otherwise construct from current origin
+  url: import.meta.env.VITE_FIREBASE_SIGN_IN_REDIRECT_URL || `${window.location.origin}/finishSignIn`,
+  handleCodeInApp: true,
+  android: {
+    packageName: "com.tasko.app",
+    installApp: true,
+    minimumVersion: "12"
+  },
+  ios: {
+    bundleId: "com.tasko.app",
+  },
+  // dynamicLinkDomain: "tasko.page.link" // Optional: if you have a custom dynamic link domain
+};

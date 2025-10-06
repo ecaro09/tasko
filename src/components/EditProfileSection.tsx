@@ -68,10 +68,10 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
     }
 
     try {
-      // Update Firebase Auth profile
-      await updateUserProfile(firstName, lastName, phone, newPhotoURL || undefined);
+      // Update Firebase profile (displayName, photoURL)
+      await updateUserProfile(firstName, lastName, newPhotoURL || undefined);
 
-      // Update Supabase profile
+      // Update Supabase profile (first_name, last_name, phone, avatar_url, role)
       await updateSupabaseProfile(
         user.uid,
         firstName,
@@ -83,7 +83,7 @@ const EditProfileSection: React.FC<EditProfileSectionProps> = ({ onCancel, onSav
 
       onSaveSuccess();
     } catch (error) {
-      // Error handled by useAuth/useSupabaseProfile, toast already shown
+      // Error handled by useAuth or useSupabaseProfile, toast already shown
     } finally {
       setIsLoading(false);
     }
