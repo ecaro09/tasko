@@ -16,6 +16,9 @@ import {
   editTaskFirestore,
   deleteTaskFirestore,
   completeTaskWithReviewFirestore,
+  saveTasksToCache, // New import
+  loadTasksFromCache, // New import
+  fetchTasksFirestore, // New import
 } from '@/lib/task-firestore'; // Import new utility functions
 import { seedInitialTasks } from '@/lib/seed-tasks'; // Import seed function from new location
 
@@ -42,58 +45,34 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setLoading(true);
+    // 1. Attempt to load tasks from cache first
+    const cachedTasks = loadTasksFromCache();
+    if (cachedTasks.length > 0) {
+      setAllTasks(cachedTasks);
+      setLoading(false); // Set loading to false as we have data
+      console.log("Tasks loaded from cache.");
+    } else {
+      setLoading(true); // Keep loading true if no cache data
+    }
+
     setError(null);
 
-    const tasksCollectionRef = collection(db, 'tasks');
-    const q = query(tasksCollectionRef, orderBy('datePosted', 'desc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedTasks: Task[] = snapshot.docs.map((doc) => {
-        const data = doc.data() as DocumentData;
-        
-        // Handle datePosted which can be a Firebase Timestamp or a string (from seeded data)
-        let datePostedDate: Date;
-        if (data.datePosted instanceof Timestamp) {
-          datePostedDate = data.datePosted.toDate();
-        } else if (typeof data.datePosted === 'string') {
-          datePostedDate = new Date(data.datePosted);
-        } else {
-          datePostedDate = new Date(); // Fallback to current date if unexpected type
+    // 2. Set up real-time Firestore listener
+    const unsubscribe = fetchTasksFirestore(
+      (fetchedTasks) => {
+        setAllTasks(fetchedTasks);
+        setLoading(false);
+        // The fetchTasksFirestore function already saves to cache
+        // Only seed if no tasks are present after initial fetch AND Firestore is empty
+        if (fetchedTasks.length === 0) {
+          seedInitialTasks();
         }
-
-        return {
-          id: doc.id,
-          title: data.title,
-          category: data.category,
-          description: data.description,
-          location: data.location,
-          budget: data.budget,
-          posterId: data.posterId,
-          posterName: data.posterName,
-          posterAvatar: data.posterAvatar || "https://randomuser.me/api/portraits/lego/1.jpg",
-          datePosted: datePostedDate.toISOString().split('T')[0], // Format to YYYY-MM-DD
-          status: data.status || 'open',
-          imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Default image if none provided
-          assignedTaskerId: data.assignedTaskerId || undefined, // Include assignedTaskerId
-          assignedOfferId: data.assignedOfferId || undefined, // Include assignedOfferId
-          rating: data.rating || undefined, // Include rating
-          review: data.review || undefined, // Include review
-        };
-      });
-      setAllTasks(fetchedTasks);
-      setLoading(false);
-
-      // Only seed if no tasks are present after initial fetch
-      if (fetchedTasks.length === 0) {
-        seedInitialTasks();
+      },
+      (errorMessage) => {
+        setError(errorMessage);
+        setLoading(false);
       }
-    }, (err) => {
-      console.error("Error fetching tasks:", err);
-      setError("Failed to fetch tasks.");
-      setLoading(false);
-      toast.error("Failed to load tasks.");
-    });
+    );
 
     return () => unsubscribe();
   }, []); // Empty dependency array to run once on mount
