@@ -121,7 +121,7 @@ const MyOffersPage: React.FC = () => {
                       <MessageSquare size={16} className="mr-2" /> {offer.message}
                     </p>
                     <p className="text-2xl font-bold text-blue-600 mb-4 flex items-center">
-                      <DollarSign size={20} className="mr-2" /> ₱{offer.offerAmount.toLocaleString()}
+                      <DollarSign size={20} className="mr-2" /> ₱{offer.amount.toLocaleString()}
                     </p>
                     <div className="flex justify-between items-center">
                       <Link to={`/tasks/${task.id}`}>

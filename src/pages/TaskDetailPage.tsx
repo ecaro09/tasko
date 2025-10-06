@@ -75,13 +75,20 @@ const TaskDetailPage: React.FC = () => {
     }
   };
 
-  const handleAcceptOffer = async (offerId: string) => {
+  const handleAcceptOffer = async (offerId: string, taskerId: string, taskerName: string) => {
     if (!isTaskPoster) {
       toast.error("You are not authorized to accept offers for this task.");
       return;
     }
+    if (!user) {
+      toast.error("User information is missing.");
+      return;
+    }
     try {
-      await acceptOffer(offerId, task.id);
+      const roomId = await acceptOffer(offerId, task.id, taskerId, taskerName, user.displayName || user.email || "Client");
+      if (roomId) {
+        navigate('/chat'); // Navigate to the chat page after accepting the offer
+      }
     } catch (error) {
       // Error handled by useOffers hook
     }
@@ -210,14 +217,14 @@ const TaskDetailPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end sm:items-center gap-2">
-                          <p className="text-2xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
+                          <p className="text-2xl font-bold text-blue-600">₱{offer.amount.toLocaleString()}</p>
                           {getOfferStatusBadge(offer.status)}
                           {isTaskPoster && offer.status === 'pending' && (
                             <div className="flex gap-2 mt-2">
                               <Button
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => handleAcceptOffer(offer.id)}
+                                onClick={() => handleAcceptOffer(offer.id, offer.taskerId, offer.taskerName)}
                               >
                                 <CheckCircle size={16} className="mr-1" /> Accept
                               </Button>

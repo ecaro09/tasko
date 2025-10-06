@@ -57,7 +57,12 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ isOpen, onClose, task }
 
     setIsLoading(true);
     try {
-      await addOffer(task.id, task.posterId, amount, message);
+      await addOffer({
+        taskId: task.id,
+        clientId: task.posterId, // Client ID is the task poster's ID
+        amount: amount,
+        message: message,
+      });
       onClose();
     } catch (error) {
       // Error handled by useOffers hook, toast already shown

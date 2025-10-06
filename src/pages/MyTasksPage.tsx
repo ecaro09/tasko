@@ -82,9 +82,13 @@ const MyTasksPage: React.FC = () => {
     }
   };
 
-  const handleAcceptOffer = async (offerId: string, taskId: string) => {
+  const handleAcceptOffer = async (offerId: string, taskId: string, taskerId: string, taskerName: string) => {
+    if (!user) {
+      toast.error("User information is missing.");
+      return;
+    }
     try {
-      const roomId = await acceptOffer(offerId, taskId);
+      const roomId = await acceptOffer(offerId, taskId, taskerId, taskerName, user.displayName || user.email || "Client");
       if (roomId) {
         navigate('/chat'); // Navigate to the chat page after accepting the offer
       }
@@ -245,14 +249,14 @@ const MyTasksPage: React.FC = () => {
                                     </div>
                                   </div>
                                   <div className="flex flex-col items-end sm:items-center gap-1">
-                                    <p className="text-xl font-bold text-blue-600">₱{offer.offerAmount.toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-blue-600">₱{offer.amount.toLocaleString()}</p>
                                     {getOfferStatusBadge(offer.status)}
                                     {offer.status === 'pending' && (
                                       <div className="flex gap-1 mt-1">
                                         <Button
                                           size="sm"
                                           className="bg-green-600 hover:bg-green-700 text-white h-7 px-3 text-xs"
-                                          onClick={() => handleAcceptOffer(offer.id, task.id)}
+                                          onClick={() => handleAcceptOffer(offer.id, task.id, offer.taskerId, offer.taskerName)}
                                         >
                                           <CheckCircle size={14} className="mr-1" /> Accept
                                         </Button>

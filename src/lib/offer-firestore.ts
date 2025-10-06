@@ -1,43 +1,60 @@
 import { db } from '@/lib/firebase';
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, updateDoc, DocumentData, getDoc } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  deleteDoc,
+  doc,
+  updateDoc,
+  getDoc,
+} from 'firebase/firestore';
 import { toast } from 'sonner';
 import { User as FirebaseUser } from 'firebase/auth';
+import { saveOffersToCache, loadOffersFromCache } from './offer-local-cache'; // Import caching utilities
+import { loadTasksFromCache, saveTasksToCache } from './task-local-cache'; // Import task caching utilities
+import { Task } from './task-firestore'; // Import Task interface
 
 export interface Offer {
   id: string;
   taskId: string;
   taskerId: string;
   taskerName: string;
-  taskerAvatar?: string;
-  clientId: string; // The ID of the user who posted the task
-  offerAmount: number;
+  taskerAvatar: string;
+  clientId: string; // Added clientId
+  amount: number;
   message: string;
+  dateOffered: string;
   status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
-  dateCreated: string;
-  dateUpdated?: string;
 }
 
 export const addOfferFirestore = async (
-  taskId: string,
-  clientId: string,
-  offerAmount: number,
-  message: string,
-  user: FirebaseUser,
-  taskerProfile: { displayName: string; photoURL?: string }
+  newOfferData: Omit<Offer, 'id' | 'taskerId' | 'taskerName' | 'taskerAvatar' | 'dateOffered' | 'status'>,
+  user: FirebaseUser
 ) => {
   try {
-    await addDoc(collection(db, 'offers'), {
-      taskId,
+    const docRef = await addDoc(collection(db, 'offers'), {
+      ...newOfferData,
       taskerId: user.uid,
-      taskerName: taskerProfile.displayName,
-      taskerAvatar: taskerProfile.photoURL,
-      clientId,
-      offerAmount,
-      message,
+      taskerName: user.displayName || user.email || "Anonymous Tasker",
+      taskerAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/2.jpg",
+      dateOffered: serverTimestamp(),
       status: 'pending',
-      dateCreated: serverTimestamp(),
     });
     toast.success("Offer submitted successfully!");
+
+    // Optimistically update local cache
+    const newOffer: Offer = {
+      id: docRef.id,
+      ...newOfferData,
+      taskerId: user.uid,
+      taskerName: user.displayName || user.email || "Anonymous Tasker",
+      taskerAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/2.jpg",
+      dateOffered: new Date().toISOString(), // Use current date for optimistic update
+      status: 'pending',
+    };
+    const currentOffers = loadOffersFromCache();
+    saveOffersToCache([newOffer, ...currentOffers]);
+
   } catch (err: any) {
     console.error("Error adding offer:", err);
     toast.error(`Failed to submit offer: ${err.message}`);
@@ -45,130 +62,151 @@ export const addOfferFirestore = async (
   }
 };
 
-export const acceptOfferFirestore = async (offerId: string, taskId: string, user: FirebaseUser): Promise<{ taskerId: string; clientId: string } | null> => {
+export const updateOfferFirestore = async (
+  offerId: string,
+  updatedOffer: Partial<Omit<Offer, 'id' | 'taskId' | 'taskerId' | 'taskerName' | 'taskerAvatar' | 'dateOffered'>>,
+  user: FirebaseUser
+) => {
   try {
     const offerRef = doc(db, 'offers', offerId);
     const offerSnap = await getDoc(offerRef);
+
     if (!offerSnap.exists()) {
       toast.error("Offer not found.");
-      return null;
+      return;
     }
+
     const offerData = offerSnap.data() as Offer;
-
-    // Ensure the current user is the client of the task
-    if (offerData.clientId !== user.uid) {
-      toast.error("You are not authorized to accept this offer.");
-      return null;
+    // Allow tasker to update their own offer (e.g., withdraw)
+    // Allow client (task poster) to update offer status (accept/reject)
+    if (offerData.taskerId !== user.uid && offerData.clientId !== user.uid) {
+      toast.error("You are not authorized to update this offer.");
+      return;
     }
 
-    await updateDoc(offerRef, {
-      status: 'accepted',
-      dateUpdated: serverTimestamp(),
-    });
+    await updateDoc(offerRef, updatedOffer);
+    toast.success("Offer updated successfully!");
 
-    // Update the task status to 'assigned' and set the correct assignedTaskerId
-    const taskRef = doc(db, 'tasks', taskId);
-    await updateDoc(taskRef, {
-      status: 'assigned',
-      assignedTaskerId: offerData.taskerId,
-      assignedOfferId: offerId,
-    });
+    // Optimistically update local cache
+    const currentOffers = loadOffersFromCache();
+    const updatedOffers = currentOffers.map(offer =>
+      offer.id === offerId ? { ...offer, ...updatedOffer, dateOffered: offer.dateOffered } : offer
+    );
+    saveOffersToCache(updatedOffers);
 
-    toast.success("Offer accepted!");
-    return { taskerId: offerData.taskerId, clientId: offerData.clientId };
   } catch (err: any) {
-    console.error("Error accepting offer:", err);
-    toast.error(`Failed to accept offer: ${err.message}`);
+    console.error("Error updating offer:", err);
+    toast.error(`Failed to update offer: ${err.message}`);
     throw err;
   }
 };
 
-export const rejectOfferFirestore = async (offerId: string, user: FirebaseUser) => {
+export const deleteOfferFirestore = async (offerId: string, user: FirebaseUser) => {
   try {
     const offerRef = doc(db, 'offers', offerId);
     const offerSnap = await getDoc(offerRef);
+
     if (!offerSnap.exists()) {
       toast.error("Offer not found.");
       return;
     }
+
     const offerData = offerSnap.data() as Offer;
-
-    // Ensure the current user is the client of the task
-    if (offerData.clientId !== user.uid) {
-      toast.error("You are not authorized to reject this offer.");
-      return;
-    }
-
-    await updateDoc(offerRef, {
-      status: 'rejected',
-      dateUpdated: serverTimestamp(),
-    });
-    toast.info("Offer rejected.");
-  } catch (err: any) {
-    console.error("Error rejecting offer:", err);
-    toast.error(`Failed to reject offer: ${err.message}`);
-    throw err;
-  }
-};
-
-export const withdrawOfferFirestore = async (offerId: string, user: FirebaseUser) => {
-  try {
-    const offerRef = doc(db, 'offers', offerId);
-    const offerSnap = await getDoc(offerRef);
-    if (!offerSnap.exists()) {
-      toast.error("Offer not found.");
-      return;
-    }
-    const offerData = offerSnap.data() as Offer;
-
-    // Ensure the current user is the tasker who made the offer
     if (offerData.taskerId !== user.uid) {
+      toast.error("You are not authorized to delete this offer.");
+      return;
+    }
+
+    await deleteDoc(offerRef);
+    toast.success("Offer deleted successfully!");
+
+    // Optimistically update local cache
+    const currentOffers = loadOffersFromCache();
+    const updatedOffers = currentOffers.filter(offer => offer.id !== offerId);
+    saveOffersToCache(updatedOffers);
+
+  } catch (err: any) {
+    console.error("Error deleting offer:", err);
+    toast.error(`Failed to delete offer: ${err.message}`);
+    throw err;
+  }
+};
+
+export const updateOfferStatusFirestore = async (
+  offerId: string,
+  status: Offer['status'],
+  user: FirebaseUser
+) => {
+  try {
+    const offerRef = doc(db, 'offers', offerId);
+    const offerSnap = await getDoc(offerRef);
+
+    if (!offerSnap.exists()) {
+      toast.error("Offer not found.");
+      return;
+    }
+
+    const offerData = offerSnap.data() as Offer;
+    // Only allow tasker to withdraw their own offer
+    // Only allow client (task poster) to accept/reject offers on their task
+    if (status === 'withdrawn' && offerData.taskerId !== user.uid) {
       toast.error("You are not authorized to withdraw this offer.");
       return;
     }
+    if ((status === 'accepted' || status === 'rejected') && offerData.clientId !== user.uid) {
+      toast.error("You are not authorized to change the status of this offer.");
+      return;
+    }
 
-    await updateDoc(offerRef, {
-      status: 'withdrawn',
-      dateUpdated: serverTimestamp(),
-    });
-    toast.info("Offer withdrawn.");
+    await updateDoc(offerRef, { status });
+    toast.success(`Offer status updated to ${status}!`);
+
+    // Optimistically update local cache
+    const currentOffers = loadOffersFromCache();
+    const updatedOffers = currentOffers.map(offer =>
+      offer.id === offerId ? { ...offer, status: status, dateOffered: offer.dateOffered } : offer
+    );
+    saveOffersToCache(updatedOffers);
+
   } catch (err: any) {
-    console.error("Error withdrawing offer:", err);
-    toast.error(`Failed to withdraw offer: ${err.message}`);
+    console.error("Error updating offer status:", err);
+    toast.error(`Failed to update offer status: ${err.message}`);
     throw err;
   }
 };
 
-export const fetchOffersFirestore = (
-  onOffersFetched: (offers: Offer[]) => void,
-  onError: (error: string) => void
+export const assignTaskToOfferFirestore = async (
+  taskId: string,
+  offerId: string,
+  taskerId: string,
+  user: FirebaseUser
 ) => {
-  const offersCollectionRef = collection(db, 'offers');
-  const q = query(offersCollectionRef);
+  try {
+    const taskRef = doc(db, 'tasks', taskId);
+    const taskSnap = await getDoc(taskRef);
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const fetchedOffers: Offer[] = snapshot.docs.map((doc) => {
-      const data = doc.data() as DocumentData;
-      return {
-        id: doc.id,
-        taskId: data.taskId,
-        taskerId: data.taskerId,
-        taskerName: data.taskerName,
-        taskerAvatar: data.taskerAvatar,
-        clientId: data.clientId,
-        offerAmount: data.offerAmount,
-        message: data.message,
-        status: data.status,
-        dateCreated: data.dateCreated?.toDate().toISOString() || new Date().toISOString(),
-        dateUpdated: data.dateUpdated?.toDate().toISOString(),
-      };
+    if (!taskSnap.exists() || taskSnap.data()?.posterId !== user.uid) {
+      toast.error("You are not authorized to assign a tasker to this task.");
+      return;
+    }
+
+    await updateDoc(taskRef, {
+      status: 'assigned',
+      assignedTaskerId: taskerId,
+      assignedOfferId: offerId,
     });
-    onOffersFetched(fetchedOffers);
-  }, (err) => {
-    console.error("Error fetching offers:", err);
-    onError("Failed to fetch offers.");
-    toast.error("Failed to load offers.");
-  });
+    toast.success("Task assigned successfully!");
 
-  return unsubscribe;
+    // Optimistically update local cache
+    const currentTasks = loadTasksFromCache();
+    const updatedTasks = currentTasks.map(task =>
+      task.id === taskId ? { ...task, status: 'assigned' as 'assigned', assignedTaskerId: taskerId, assignedOfferId: offerId, datePosted: task.datePosted } : task
+    );
+    saveTasksToCache(updatedTasks);
+
+  } catch (err: any) {
+    console.error("Error assigning task to offer:", err);
+    toast.error(`Failed to assign task: ${err.message}`);
+    throw err;
+  }
 };

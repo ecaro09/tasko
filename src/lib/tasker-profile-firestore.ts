@@ -2,6 +2,7 @@ import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { User as FirebaseUser } from 'firebase/auth';
+import { saveTaskerProfilesToCache, loadTaskerProfilesFromCache } from './tasker-profile-local-cache'; // Import caching utilities
 
 export interface TaskerProfile {
   userId: string;
@@ -15,11 +16,22 @@ export interface TaskerProfile {
 }
 
 export const fetchTaskerProfileByIdFirestore = async (id: string): Promise<TaskerProfile | null> => {
+  // Try to load from cache first
+  const cachedProfiles = loadTaskerProfilesFromCache();
+  const cachedProfile = cachedProfiles.find(profile => profile.userId === id);
+  if (cachedProfile) {
+    console.log(`Loaded tasker profile ${id} from cache.`);
+    return cachedProfile;
+  }
+
   try {
     const docRef = doc(db, 'taskerProfiles', id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data() as TaskerProfile;
+      const profile = docSnap.data() as TaskerProfile;
+      // Update cache with this single profile
+      saveTaskerProfilesToCache([...cachedProfiles.filter(p => p.userId !== id), profile]);
+      return profile;
     }
     return null;
   } catch (err: any) {
@@ -46,6 +58,12 @@ export const createOrUpdateTaskerProfileFirestore = async (
 
     await setDoc(docRef, profileData, { merge: true }); // Use merge to update existing fields or create new doc
     toast.success("Tasker profile saved successfully!");
+
+    // Optimistically update local cache
+    const currentProfiles = loadTaskerProfilesFromCache();
+    const updatedProfiles = currentProfiles.filter(p => p.userId !== user.uid);
+    saveTaskerProfilesToCache([...updatedProfiles, profileData]);
+
     return profileData;
   } catch (err: any) {
     console.error("Error saving tasker profile:", err);
@@ -58,6 +76,7 @@ export const fetchAllTaskerProfilesFirestore = async (): Promise<TaskerProfile[]
   try {
     const querySnapshot = await getDocs(collection(db, 'taskerProfiles'));
     const profiles: TaskerProfile[] = querySnapshot.docs.map(doc => doc.data() as TaskerProfile);
+    saveTaskerProfilesToCache(profiles); // Update cache with all fetched profiles
     return profiles;
   } catch (err: any) {
     console.error("Error fetching all tasker profiles:", err);
