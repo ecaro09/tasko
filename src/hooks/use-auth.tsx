@@ -11,7 +11,6 @@ import {
   getRedirectResult,
 } from 'firebase/auth';
 import { toast } from 'sonner';
-// Removed: import { useSupabaseProfile } from './use-supabase-profile'; // This import is no longer needed here
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -20,7 +19,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signupWithEmailPassword: (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => Promise<void>;
+  signupWithEmailPassword: (email: string, password: string, firstName: string, lastName: string, phone?: string) => Promise<void>;
   loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (firstName: string, lastName: string, phone: string, photoURL?: string) => Promise<void>;
@@ -35,7 +34,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: false,
     loading: true,
   });
-  // Removed: const { profile, loadingProfile, updateProfile: updateSupabaseProfile } = useSupabaseProfile(); // No longer directly used here
 
   React.useEffect(() => {
     const handleRedirectResult = async () => {
@@ -49,7 +47,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           });
           toast.success("Logged in with Google successfully!");
           console.log(`[Auth Log] Redirect login successful (Google) for user: ${result.user.email} at ${new Date().toISOString()}`);
-          // Supabase profile will be handled by SupabaseProfileProvider's useEffect
         }
       } catch (error: any) {
         console.error("Error during Google redirect sign-in:", error);
@@ -80,22 +77,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
     return () => unsubscribe();
-  }, []); // Empty dependency array to ensure listeners are added/removed once
+  }, []);
 
-  const signupWithEmailPassword = async (email: string, password: string, firstName?: string, lastName?: string, phone?: string) => {
+  const signupWithEmailPassword = async (email: string, password: string, firstName: string, lastName: string, phone?: string) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const displayName = `${firstName || ''} ${lastName || ''}`.trim();
+      const displayName = `${firstName} ${lastName}`.trim();
       await updateProfile(userCredential.user, {
         displayName: displayName,
         photoURL: null, // Can be updated later
       });
 
-      // Supabase profile creation will be handled by SupabaseProfileProvider's useEffect
-      // when firebaseUser prop changes.
-      // The initial profile data (firstName, lastName, phone, role) can be passed
-      // to SupabaseProfileProvider if needed, or handled by a separate explicit call
-      // from the SignupModal component itself. For now, relying on SupabaseProfileProvider's useEffect.
+      // The SupabaseProfileProvider's useEffect will detect the new Firebase user
+      // and automatically create a default Supabase profile for them.
+      // The initial firstName, lastName, and phone will be passed via Firebase user's displayName
+      // and then updated by the SupabaseProfileProvider's logic.
 
       toast.success("Account created successfully! You are now logged in.");
       console.log(`[Auth Log] Signup successful (Email/Password) for user: ${email} at ${new Date().toISOString()}`);
@@ -156,19 +152,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
     try {
-      // Update Firebase Auth profile
+      // Only update Firebase Auth displayName and photoURL here.
+      // The Supabase profile update is handled directly by EditProfileSection
+      // calling useSupabaseProfile's updateProfile.
       const newDisplayName = `${firstName} ${lastName}`.trim();
       await updateProfile(authState.user, { displayName: newDisplayName, photoURL });
 
-      // Supabase profile update will be handled by EditProfileSection directly calling useSupabaseProfile's updateProfile.
-      // Or by SupabaseProfileProvider's useEffect if it detects changes in Firebase user's display name/photoURL.
-
-      toast.success("Profile updated successfully!");
-      console.log(`[Auth Log] Profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
+      toast.success("Firebase Auth profile updated successfully!");
+      console.log(`[Auth Log] Firebase Auth profile update successful for user: ${authState.user.uid} at ${new Date().toISOString()}`);
     } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast.error(`Failed to update profile: ${error.message}`);
-      console.log(`[Auth Log] Profile update failed for user: ${authState.user.uid} at ${new Date().toISOString()} - Error: ${error.message}`);
+      console.error("Error updating Firebase Auth profile:", error);
+      toast.error(`Failed to update Firebase Auth profile: ${error.message}`);
+      console.log(`[Auth Log] Firebase Auth profile update failed for user: ${authState.user.uid} at ${new Date().toISOString()} - Error: ${error.message}`);
       throw error;
     }
   };
