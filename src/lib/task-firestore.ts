@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { User as FirebaseUser } from 'firebase/auth';
+import { saveTasksToCache, loadTasksFromCache } from './task-local-cache'; // Import caching utilities
 
 export interface Task {
   id: string;
@@ -35,7 +36,7 @@ export const addTaskFirestore = async (
   user: FirebaseUser
 ) => {
   try {
-    await addDoc(collection(db, 'tasks'), {
+    const docRef = await addDoc(collection(db, 'tasks'), {
       ...newTaskData,
       posterId: user.uid,
       posterName: user.displayName || user.email || "Anonymous User",
@@ -45,6 +46,21 @@ export const addTaskFirestore = async (
       imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", // Use provided image or default
     });
     toast.success("Task posted successfully!");
+
+    // Optimistically update local cache
+    const newTask: Task = {
+      id: docRef.id,
+      ...newTaskData,
+      posterId: user.uid,
+      posterName: user.displayName || user.email || "Anonymous User",
+      posterAvatar: user.photoURL || "https://randomuser.me/api/portraits/lego/1.jpg",
+      datePosted: new Date().toISOString(), // Use current date for optimistic update
+      status: 'open',
+      imageUrl: newTaskData.imageUrl || "https://images.unsplash.com/photo-1581578731548-c646952?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+    };
+    const currentTasks = loadTasksFromCache();
+    saveTasksToCache([newTask, ...currentTasks]);
+
   } catch (err: any) {
     console.error("Error adding task:", err);
     toast.error(`Failed to post task: ${err.message}`);
@@ -67,6 +83,14 @@ export const editTaskFirestore = async (
 
     await updateDoc(taskRef, updatedTask);
     toast.success("Task updated successfully!");
+
+    // Optimistically update local cache
+    const currentTasks = loadTasksFromCache();
+    const updatedTasks = currentTasks.map(task =>
+      task.id === taskId ? { ...task, ...updatedTask, datePosted: task.datePosted } : task
+    );
+    saveTasksToCache(updatedTasks);
+
   } catch (err: any) {
     console.error("Error updating task:", err);
     toast.error(`Failed to update task: ${err.message}`);
@@ -85,6 +109,12 @@ export const deleteTaskFirestore = async (taskId: string, user: FirebaseUser) =>
 
     await deleteDoc(taskRef);
     toast.success("Task deleted successfully!");
+
+    // Optimistically update local cache
+    const currentTasks = loadTasksFromCache();
+    const updatedTasks = currentTasks.filter(task => task.id !== taskId);
+    saveTasksToCache(updatedTasks);
+
   } catch (err: any) {
     console.error("Error deleting task:", err);
     toast.error(`Failed to delete task: ${err.message}`);
@@ -108,6 +138,14 @@ export const completeTaskWithReviewFirestore = async (
       review: review,
     });
     toast.success("Task marked as completed and reviewed!");
+
+    // Optimistically update local cache
+    const currentTasks = loadTasksFromCache();
+    const updatedTasks = currentTasks.map(task =>
+      task.id === taskId ? { ...task, status: 'completed' as 'completed', rating, review, datePosted: task.datePosted } : task
+    );
+    saveTasksToCache(updatedTasks);
+
   } catch (err: any) {
     console.error("Error completing task with review:", err);
     toast.error(`Failed to complete task and add review: ${err.message}`);

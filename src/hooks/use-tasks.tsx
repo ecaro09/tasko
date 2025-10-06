@@ -17,6 +17,7 @@ import {
   completeTaskWithReviewFirestore,
 } from '@/lib/task-firestore'; // Import new utility functions
 import { seedInitialTasks } from '@/lib/seed-tasks'; // Import seed function from new location
+import { loadTasksFromCache, saveTasksToCache } from '@/lib/task-local-cache'; // Import caching utilities
 
 interface UseTasksContextType {
   tasks: Task[];
@@ -41,7 +42,16 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setLoading(true);
+    // Load from cache immediately
+    const cachedTasks = loadTasksFromCache();
+    if (cachedTasks.length > 0) {
+      setAllTasks(cachedTasks);
+      setLoading(false);
+      console.log("Tasks loaded from cache.");
+    } else {
+      setLoading(true); // Only show loading if cache is empty
+    }
+
     setError(null);
 
     const tasksCollectionRef = collection(db, 'tasks');
@@ -70,6 +80,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         };
       });
       setAllTasks(fetchedTasks);
+      saveTasksToCache(fetchedTasks); // Update cache with fresh data
       setLoading(false);
 
       // Only seed if no tasks are present after initial fetch
