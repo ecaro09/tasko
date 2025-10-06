@@ -193,7 +193,5 @@ export const seedInitialTaskerProfiles = async () => {
       await setDoc(doc(taskerProfilesCollectionRef, tasker.userId), tasker);
     }
     toast.info("Initial demo tasker profiles added!");
-  } else {
-    console.log("Tasker profiles collection is not empty, skipping seeding.");
   }
 };

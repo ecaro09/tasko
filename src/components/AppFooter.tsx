@@ -1,7 +1,6 @@
 import React from 'react';
 import { Facebook, Instagram, Twitter, Linkedin, Apple, Play } from 'lucide-react'; // Added Apple and Play icons
 import { Button } from '../components/ui/button'; // Assuming Button is already imported or available
-import { Link } from 'react-router-dom'; // Import Link
 
 const AppFooter = () => {
   return (
@@ -18,10 +17,10 @@ const AppFooter = () => {
         <div>
           <h3 className="text-xl font-semibold text-white mb-4">Quick Links</h3>
           <ul className="space-y-2">
-            <li><Link to="/" className="hover:text-white transition-colors duration-200">Home</Link></li>
-            <li><a href="#how-it-works" className="hover:text-white transition-colors duration-200">How it Works</a></li>
-            <li><Link to="/features-earnings" className="hover:text-white transition-colors duration-200">Become a Tasker</Link></li>
-            <li><Link to="/contact" className="hover:text-white transition-colors duration-200">Help & Support</Link></li>
+            <li><a href="#" className="hover:text-white transition-colors duration-200">Home</a></li>
+            <li><a href="#" className="hover:text-white transition-colors duration-200">How it Works</a></li>
+            <li><a href="#" className="hover:text-white transition-colors duration-200">Become a Tasker</a></li>
+            <li><a href="#" className="hover:text-white transition-colors duration-200">Help & Support</a></li>
           </ul>
         </div>
 
@@ -29,9 +28,9 @@ const AppFooter = () => {
         <div>
           <h3 className="text-xl font-semibold text-white mb-4">Legal</h3>
           <ul className="space-y-2">
-            <li><Link to="/privacy" className="hover:text-white transition-colors duration-200">Privacy Policy</Link></li>
-            <li><Link to="/terms" className="hover:text-white transition-colors duration-200">Terms of Service</Link></li>
-            <li><Link to="/eula" className="hover:text-white transition-colors duration-200">EULA</Link></li>
+            <li><a href="/privacy" className="hover:text-white transition-colors duration-200">Privacy Policy</a></li>
+            <li><a href="/terms" className="hover:text-white transition-colors duration-200">Terms of Service</a></li>
+            <li><a href="#" className="hover:text-white transition-colors duration-200">EULA</a></li>
           </ul>
         </div>
 
@@ -42,7 +41,7 @@ const AppFooter = () => {
           <div className="flex flex-col space-y-3 mb-6">
             {/* App Store Buttons */}
             <div className="flex flex-col space-y-3">
-              <a href="/app-store-badge.png" target="_blank" rel="noopener noreferrer">
+              <a href="#" target="_blank" rel="noopener noreferrer">
                 <Button className="w-full bg-black text-white hover:bg-gray-700 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg">
                   <Apple size={20} />
                   <div className="flex flex-col items-start">
@@ -51,7 +50,7 @@ const AppFooter = () => {
                   </div>
                 </Button>
               </a>
-              <a href="/google-play-badge.png" target="_blank" rel="noopener noreferrer">
+              <a href="#" target="_blank" rel="noopener noreferrer">
                 <Button className="w-full bg-black text-white hover:bg-gray-700 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg">
                   <Play size={20} />
                   <div className="flex flex-col items-start">
@@ -67,11 +66,10 @@ const AppFooter = () => {
           <div>
             <h3 className="text-xl font-semibold text-white mb-4">Follow Us</h3>
             <div className="flex space-x-4">
-              {/* Removed placeholder social media links */}
-              {/* <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Facebook size={24} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Facebook size={24} /></a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Twitter size={24} /></a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Instagram size={24} /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Linkedin size={24} /></a> */}
+              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200"><Linkedin size={24} /></a>
             </div>
           </div>
         </div>
